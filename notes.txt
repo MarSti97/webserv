@@ -1,0 +1,37 @@
+** Webserv Documentation **
+
+Documentation to read:
+1. How to set up a HTTP server from scrach - https://osasazamegbe.medium.com/showing-building-an-http-server-from-scratch-in-c-2da7c0db6cb7
+2. Information about HTTP and web in general - https://developer.mozilla.org/en-US/docs/Web/HTTP
+
+
+Functions: 
+* strerror() - takes an error number and retruns a humanly readable string about system related errors using 'errno'.
+char* strerror(int errnum);
+
+* gai_strerror() - almost the same as strerror but specific to netweord related errors indicated by EAI_ error code.
+const char* gai_strerror(int errcode);
+
+* errno - is an external int veriable, holds the error code of the last error.
+
+* socketpair() - creates a pair of connected sockets, allows communication between processes through these sockets.
+int socketpair(int domain, int type, int protocol, int sv[2]);
+- domain: communication domain for socket. AF_UNIX for local, AF_INET for network communication.
+- type: type of socket. Search the macros but SOCK_STREAM is recommended.
+- protocal: protocal used by sockets. 0 will automatically select the appropriate protocal.
+- sv[2]: the file descriptors of the sockets will fill this array.
+-- success 0 is return, failure -1 is returned --
+
+* socket() - create a new communication endpoint, socket.
+int socket(int domain, int type, int protocol);
+- works very simular to sockpair();
+
+(The difference between the two is that the pair is used for inter-process communication, much like a pipe I'm guessing.
+The single socket just creates an end point to communicate with other processes or systems over a network)
+
+* htons() - (host to network short) converts the port number a 16bit unsigned short int to the network byte order.
+uint16_t htons(uint16_t hostshort);
+
+* htonl() - same but for long.
+
+
