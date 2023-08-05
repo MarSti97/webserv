@@ -34,4 +34,35 @@ uint16_t htons(uint16_t hostshort);
 
 * htonl() - same but for long.
 
+* accept() - when the server is in listening state this function accpets client connections
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+- sockfd: file dscriptor of the socket.
+- addr: same struct as bind, this one is empty and will recieve the client address information, if not needed NULL.
+- addrlen: pointer to socklen_t veriable indicating the size of the previous parameter (addr).
 
+* listen() - used to make a bound socket enter a listening state, allows to accept connections from clients.
+int listen(int sockfd, int backlog);
+- sockfd: file dscriptor of the socket.
+- backlog: the maximum number of incoming connections that can be queued.
+-- success returns 0, failure returns -1 --
+
+...
+
+* getaddrinfo() - converts a humanly readable hostname or service name to a numberic address.
+int getaddrinfo(const char* node, const char* service, const struct addrinfo* hints, struct addrinfo** res);
+- node: a c string of the hostname or IP.
+- service: a c string of a port or service (http, ftp).
+- optional, can give hints to the type of stuct you want to recieve.
+- pointer to linked list of struct addreinfo
+
+* bind() - it is used to associate a socket with a sepcific address and port. binding allows clients to connect.
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+- sockfd: file dscriptor of the socket.
+- addr: the sockaddr struct is an existing structure in <netinet/in.h>. the parameter is usually either struct sockaddr_in for IPv4 or
+struct sockaddr_in6 for IPv6, then it is cast with (struct sockaddr*), this is to maintain a common interface.
+- addrlen: is the length in bytes, use sizeof() on whichever sockaddr you choose to use.
+
+** Steps **
+
+1.
+To communicate the server has to listen for communcation, for this it needs a socket, a socket then needs to bind to a port and an IP.
