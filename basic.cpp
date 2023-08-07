@@ -7,7 +7,7 @@ int main()
     // addr.sin_port = htons(80);
     // addr.sin_addr.s_addr = (127U << 24) | (0U << 16) | (0U << 8) | 1U;
     struct addrinfo *addr;
-    if (getaddrinfo("127.0.0.1", "80", NULL, &addr) < 0){
+    if (getaddrinfo("127.73.73.7", "7681", NULL, &addr) < 0){
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }
@@ -23,7 +23,7 @@ int main()
         close(socketfd);
         return 1;
     }
-    if (listen(socketfd, 5) == -1){
+    if (listen(socketfd, 2) == -1){
         std::cerr << "Error: listen unsuccesful" << std::endl;
         freeaddrinfo(addr);
         close(socketfd);
@@ -46,12 +46,13 @@ int main()
             std::cerr << "Error reading from socket" << std::endl;
             return 1;
         }
-        const char* response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nWell hello motherfuckers!";
+        const char* response = "HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
         n = write(clientsocket, response, std::strlen(response));
         if (n < 0) {
             std::cerr << "Error writing to socket" << std::endl;
             return 1;
         }
+		close(clientsocket);
     }
     return 0;
 }
