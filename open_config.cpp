@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+#include "./includes/webserv.hpp"
 #include <map>
 #include <iostream>
 #include <fstream>
@@ -9,7 +9,7 @@ std::string readFile( std::string filePath ) {
 
     if (!file) {
         std::cerr << "Error opening file." << std::endl;
-        return NULL;
+        return "";
     }
 
     // Get the size of the file
@@ -84,6 +84,9 @@ std::string getURL(char *buffer)
         return "";
     
     size_t end = buf.find(" ", start + 4);
+    size_t end2 = buf.find("?", start + 4);
+	if (end2 < end)
+		end = end2;
     if (start == std::string::npos)
         return "";
 

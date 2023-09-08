@@ -1,4 +1,7 @@
-#include "webserv.hpp"
+#include "./includes/webserv.hpp"
+
+int glob_fd;
+int cli_glob;
 
 int main(int ac, char **av)
 {
@@ -16,8 +19,15 @@ int main(int ac, char **av)
         return 1;
     }
     int socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-    if (socketfd < 0)
+    if (socketfd < 0) {
         return failToStart("Error: socket creation", addr, socketfd);
+	}
+	int opt = 1;
+	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
+		return failToStart("Error: socket optimise", addr, socketfd);
+	// printlog("socket created", socketfd);
+	glob_fd = socketfd;
+	signal(SIGINT, ctrlc);
     int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
     if (flags == -1)
         return failToStart("Error getting socket flags", addr, socketfd);
@@ -25,8 +35,9 @@ int main(int ac, char **av)
         return failToStart("Error setting socket to non-blocking", addr, socketfd);
     if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
         return failToStart("Error: bind unsuccesful", addr, socketfd);
-    if (listen(socketfd, 2) == -1)
+    if (listen(socketfd, 2) == -1) {
         return failToStart("Error: listen unsuccesful", addr, socketfd);
+	}
     struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
     char buffer[1024];
@@ -40,13 +51,14 @@ int main(int ac, char **av)
             }
             std::cerr << "Error: client connection failed" << std::endl;
             close(socketfd);
-            return 1;
+            continue;
         }
+		cli_glob = clientsocket;
         bzero(buffer, 1024);
         int n = read(clientsocket, buffer, 1023);
         if (n < 0) {
             std::cerr << "Error reading from socket" << std::endl;
-            return 1;
+            continue;
         }
 
         std::string filePath = getURL(buffer);
@@ -62,22 +74,22 @@ int main(int ac, char **av)
         int f = write(clientsocket, responseHeaders.c_str(), responseHeaders.size());
         if (f < 0) {
             std::cerr << "Error writing to socket" << std::endl;
-            return 1;
+            continue;
         }
 
         std::string response; 
-/*         if (filePath.empty() || filePath == "/") */
+         if (filePath.empty() || filePath == "/")
             response = readFile("guarder-html/index.html");
-        /*else
-            response = readFile(filePath);//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
+        else
+            response = readFile("guarder-html" + filePath);//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
         if (!response.empty())
-        { */
+        { 
             n = write(clientsocket, response.c_str(), response.size());
             if (n < 0) {
                 std::cerr << "Error writing to socket" << std::endl;
-                return 1;
+                continue;
             }
-/*         } */
+        }
 		close(clientsocket);
     }
     return 0;
@@ -90,4 +102,19 @@ int failToStart(std::string error, struct addrinfo *addr, int socketfd)
     if (socketfd > 0)
         close(socketfd);
     return 1;
+}
+
+void	ctrlc(int signum)
+{
+	if (signum == SIGINT)
+	{
+		close(glob_fd);
+		close(cli_glob);
+		exit(EXIT_FAILURE);
+	}
+}
+
+void	printlog(std::string msg, int arg)
+{
+	std::cout << "server log [8-9-23] " << msg << " " << arg << std::endl; 
 }
