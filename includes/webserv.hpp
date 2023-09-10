@@ -31,5 +31,6 @@ void	ctrlc(int signum);
 void	printlog(std::string msg, int arg);
 void	validate_config(void);
 void	print_server_config(std::vector<Config> config_array);
+bool 	check_new_attribute(std::string token);
 
 #endif
