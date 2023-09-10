@@ -1,10 +1,10 @@
-SRC = basic.cpp
+SRC = basic.cpp open_config.cpp
 BIN = bin
 OBJ = $(SRC:%.cpp=${BIN}/%.o)
 FLAGS = -Wall -Werror -Wextra -Wshadow -g -std=c++98
 CC = c++
 NAME = webserv
-INC = webserv.hpp 
+INC = ./includes/webserv.hpp 
 
 COLOUR =\033[0;32m
 END =\033[0m
