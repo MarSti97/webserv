@@ -13,6 +13,9 @@ int main(int ac, char **av)
     // addr.sin_family = AF_UNIX;
     // addr.sin_port = htons(80);
     // addr.sin_addr.s_addr = (127U << 24) | (0U << 16) | (0U << 8) | 1U;
+    validate_config();
+  
+  
     struct addrinfo *addr;
     if (getaddrinfo("127.73.73.7", "7681", NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
         std::cerr << "Error: couldn't get address" << std::endl;

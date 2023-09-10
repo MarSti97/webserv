@@ -5,12 +5,16 @@
 
 class Config
 {
-	private :
+	public :
 		std::string port;
-		std::string	host;
-		std::string server_name;
+		std::string	root;
+		std::string	max_body_size;
+		std::string autoindex;
+		std::vector<std::string> server_names;
+
+
 		std::string error_pages;
-		std::string	body_size;
+
 		std::string methods; // maybe... project makes no sense 
 };
 
