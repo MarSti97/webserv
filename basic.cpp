@@ -49,7 +49,7 @@ int main(int ac, char **av)
     while (1)
     {
         bzero(buffer, 1024);
-        std::cout << fds.size() << std::endl;
+        // std::cout << fds.size() << std::endl;
         int ret = poll(&fds[0], fds.size(), -1);
         if (ret == -1)
         {
@@ -68,6 +68,7 @@ int main(int ac, char **av)
                 }
                 else if (fds[i].revents & POLLOUT)
                 {
+                    // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
                     if (!parseRecv(fds, i, buffer))
                         parseSend(fds, i, buffer);
                     // std::cout << " " << n << std::endl;
@@ -81,6 +82,8 @@ int main(int ac, char **av)
 int parseSend(std::vector<pollfd> &fds, int pos, char *buffer)
 {
     std::string response = getResponse(buffer, "guarder-html", "/index.html");
+    // std::cout << response << std::endl;
+
     // std::cout << response.size();
     ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
     if (n < 0)
@@ -112,16 +115,68 @@ std::string getResponse(char *buffer, std::string path, std::string index)
     if (filePath.empty() || filePath == "/")
         return responseHeaders + readFile(path + index);
     else
-        return responseHeaders + readFile(path + filePath);//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
+    {
+        std::string response = readFile(path + filePath);
+        if (response == "" || response.empty())
+            response = readFile(path + "/404.html");
+        return responseHeaders + response;//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
+    }
 }
 
+int GetbyUser(std::string buffer)
+{
+    size_t user = buffer.find("Sec-Fetch-User:");
+    if (user != std::string::npos)
+        return 1;
+    return 0;
+}
+
+int checkAllowGet(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_get;
+}
+
+int checkAllowPost(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_post;
+}
+int checkAllowDelete(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_delete;
+}
 
 int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
 {
     ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
 
     std::string findbuffer(buffer);
-
+    // std::cout << findbuffer << std::endl;
+    // std::cout << GetbyUser(findbuffer) << std::endl;
+    // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
+    // {
+    //     if (checkAllowGet(getURL(buffer), 0))
+    // }
     if (n <= 0)
     {
         if (n == 0)
