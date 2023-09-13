@@ -44,59 +44,168 @@ int main(int ac, char **av)
     struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
     char buffer[1024];
+
+
+    freeaddrinfo(addr);
+
+    std::vector<pollfd> fds;
+    fds.push_back(pollfd());
+    fds[0].fd = socketfd;
+    fds[0].events = POLLIN; // Monitor server socket for incoming connections
+
     while (1)
     {
-        int clientsocket = accept(socketfd, (struct sockaddr*)&clientinfo, &size);
-        if (clientsocket < 0){
-            // No incoming connections, continue with the loop
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                continue;
-            }
-            std::cerr << "Error: client connection failed" << std::endl;
-            close(socketfd);
-            continue;
-        }
-		cli_glob = clientsocket;
         bzero(buffer, 1024);
-        int n = read(clientsocket, buffer, 1023);
-        if (n < 0) {
-            std::cerr << "Error reading from socket" << std::endl;
+        // std::cout << fds.size() << std::endl;
+        int ret = poll(&fds[0], fds.size(), -1);
+        if (ret == -1)
+        {
+            std::cerr << "Error in poll" << std::endl;
             continue;
         }
 
-        std::string filePath = getURL(buffer);
-        
-        // Get the MIME type based on the file extension
-        std::string mimeType = getMimeType(filePath);
-
-        // Construct the HTTP response headers
-        std::string responseHeaders = "HTTP/1.1 200 OK\r\n";
-        responseHeaders += "Content-Type: " + getMimeType(filePath) + "\r\n\r\n";
-
-        // Send the response headers
-        int f = write(clientsocket, responseHeaders.c_str(), responseHeaders.size());
-        if (f < 0) {
-            std::cerr << "Error writing to socket" << std::endl;
-            continue;
-        }
-
-        std::string response; 
-         if (filePath.empty() || filePath == "/")
-            response = readFile("guarder-html/index.html");
-        else
-            response = readFile("guarder-html" + filePath);//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
-        if (!response.empty())
-        { 
-            n = write(clientsocket, response.c_str(), response.size());
-            if (n < 0) {
-                std::cerr << "Error writing to socket" << std::endl;
-                continue;
+        for (size_t i = 0; i < fds.size(); ++i)
+        {
+            if (fds[i].revents & POLLIN)
+            {
+                if (fds[i].fd == socketfd)
+                {
+                    if (acceptConnection(socketfd, &clientinfo, size, &fds))
+                        continue;
+                }
+                else if (fds[i].revents & POLLOUT)
+                {
+                    // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
+                    if (!parseRecv(fds, i, buffer))
+                        parseSend(fds, i, buffer);
+                    // std::cout << " " << n << std::endl;
+                }
             }
         }
-		close(clientsocket);
     }
     return 0;
 }
+
+int parseSend(std::vector<pollfd> &fds, int pos, char *buffer)
+{
+    std::string response = getResponse(buffer, "guarder-html", "/index.html");
+    // std::cout << response << std::endl;
+
+    // std::cout << response.size();
+    ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
+    if (n < 0)
+    {
+        std::cerr << "Error writing to socket" << std::endl;
+        return 1;
+    }
+    if ((unsigned long)n != response.size())
+    {
+        std::cout << "bad response sent" << std::endl;
+        return 1;
+    }
+    close(fds[pos].fd);
+    fds.erase(fds.begin() + pos);
+    return n;
+}
+
+
+std::string getResponse(char *buffer, std::string path, std::string index)
+{
+    std::string filePath;
+    std::string mimeType;
+    std::string responseHeaders;
+
+    filePath = getURL(buffer);
+    mimeType = getMimeType(filePath);
+    responseHeaders = "HTTP/1.1 200 OK\r\n";
+    responseHeaders += "Content-Type: " + getMimeType(filePath) + "\r\n\r\n";
+    if (filePath.empty() || filePath == "/")
+        return responseHeaders + readFile(path + index);
+    else
+    {
+        std::string response = readFile(path + filePath);
+        if (response == "" || response.empty())
+            response = readFile(path + "/404.html");
+        return responseHeaders + response;//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
+    }
+}
+
+int GetbyUser(std::string buffer)
+{
+    size_t user = buffer.find("Sec-Fetch-User:");
+    if (user != std::string::npos)
+        return 1;
+    return 0;
+}
+
+int checkAllowGet(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_get;
+}
+
+int checkAllowPost(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_post;
+}
+int checkAllowDelete(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_delete;
+}
+
+int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
+{
+    ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
+
+    std::string findbuffer(buffer);
+    // std::cout << findbuffer << std::endl;
+    // std::cout << GetbyUser(findbuffer) << std::endl;
+    // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
+    // {
+    //     if (checkAllowGet(getURL(buffer), 0))
+    // }
+    if (n <= 0)
+    {
+        if (n == 0)
+        {
+            // Connection closed by the client
+            close(fds[pos].fd);
+            fds.erase(fds.begin() + pos);
+            return 1;
+        }
+        std::cerr << "Error reading from poll" << std::endl;
+        perror("read");
+        return 1;
+    }
+    size_t ok = findbuffer.find("\r\n\r\n");
+    if (ok == std::string::npos)
+    {
+        std::cout << "bad request received" << std::endl;
+        std::cout << buffer << n << std::endl;
+    }
+    return 0;
+}
+
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd)
 {
@@ -120,4 +229,35 @@ void	ctrlc(int signum)
 void	printlog(std::string msg, int arg)
 {
 	std::cout << "server log [8-9-23] " << msg << " " << arg << std::endl; 
+}
+
+int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
+{
+    // Accept incoming connection and add the client socket to the fds array
+    int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);
+    // std::cout << clientsocket << std::endl;
+    if (clientsocket != -1)
+    {
+        pollfd client_pollfd;
+        client_pollfd.fd = clientsocket;
+        client_pollfd.events = POLLIN | POLLOUT; // Monitor for read and write
+        fds->push_back(client_pollfd);
+    }
+    else if (clientsocket < 0)
+    {
+        // No incoming connections, continue with the loop
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 1;
+        }
+        else if (errno == ECONNABORTED) {
+            // Handle client disconnect gracefully
+            // You can log the disconnection and continue with the loop
+        std::cerr << "Client disconnected" << std::endl;
+            return 1;
+        }
+        std::cerr << "Error: client connection failed" << std::endl;
+        // close(socketfd);
+            return 1;
+    }
+    return 0;
 }

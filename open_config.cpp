@@ -8,8 +8,7 @@ std::string readFile( std::string filePath ) {
     std::ifstream file(filePath.c_str());
 
     if (!file) {
-        std::cerr << "Error opening file." << std::endl;
-        return "";
+        return "";//readFile("404.html");
     }
 
     // Get the size of the file

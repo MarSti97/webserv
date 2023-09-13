@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <iostream>
 #include <cstring>
 #include <string>
@@ -21,7 +22,17 @@
 #include <sstream>
 #include <string>
 #include "Config.hpp"
+#include <vector>
+#include <poll.h>
 
+struct Location
+{
+	bool allow_get;
+	bool allow_post;
+	bool allow_delete;
+	std::string root;
+	std::string index;
+};
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
 std::string	readFile( std::string filePath );
@@ -32,5 +43,13 @@ void	printlog(std::string msg, int arg);
 void	validate_config(void);
 void	print_server_config(std::vector<Config> config_array);
 bool 	check_new_attribute(std::string token);
+int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
+int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer);
+int parseSend(std::vector<pollfd> &fds, int pos, char *buffer);
+std::string getResponse(char *buffer, std::string path, std::string index);
+int GetbyUser(std::string buffer);
+int checkAllowGet(std::string folder, std::vector<Location> Location);
+int checkAllowPost(std::string folder, std::vector<Location> Location);
+int checkAllowDelete(std::string folder, std::vector<Location> Location);
 
 #endif
