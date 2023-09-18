@@ -18,11 +18,7 @@ void	validate_config()
 				while (iss >> token) 
 				{
 					if (token == "listen")
-					{
-						iss >> token;
-						if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.port = token.substr(0, token.size() - 1);
-					}
+						temp_config.port = parse_attribute(iss, token);
 					else if (token == "server_name")
 					{
 						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
@@ -34,23 +30,11 @@ void	validate_config()
 						}
 					}
 					else if (token == "root")
-					{
-						iss >> token;
-						if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.root = token.substr(0, token.size() - 1);;
-					}
+						temp_config.root = parse_attribute(iss, token);
 					else if (token == "index")
-					{
-						iss >> token;
-						if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.index = token.substr(0, token.size() - 1);;
-					}
+						temp_config.index = parse_attribute(iss, token);
 					else if (token == "client_max_body_size")
-					{
-						iss >> token;
-						if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.max_body_size = token.substr(0, token.size() - 1);;
-					}
+						temp_config.max_body_size = parse_attribute(iss, token);
 					else if (token == "allow")
 					{
 						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
@@ -64,11 +48,7 @@ void	validate_config()
 						}
 					}
 					else if (token == "autoindex")
-					{
-						iss >> token;
-						if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.autoindex = token.substr(0, token.size() - 1);;
-					}
+						temp_config.autoindex = parse_attribute(iss, token);
 					else if (token == "cgi")
 					{
 						iss >> token;
@@ -99,17 +79,9 @@ void	validate_config()
 									}
 								}
 								else if (token == "root")
-								{
-									iss >> token;
-									if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-										temp_location.root = token.substr(0, token.size() - 1);;
-								}
+									temp_location.root = parse_attribute(iss, token);
 								else if (token == "index")
-								{
-									iss >> token;
-									if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-										temp_location.index = token.substr(0, token.size() - 1);;
-								}
+									temp_location.index = parse_attribute(iss, token);
 								else if (token == "}")
 								{
 									temp_config.location.push_back(temp_location);
@@ -128,6 +100,16 @@ void	validate_config()
 		}
     }
 	print_server_config(config_array);
+}
+
+std::string	parse_attribute(std::istringstream &iss, std::string token)
+{
+	std::string parsed;
+	
+	iss >> token;
+	if (*(token.end() - 1) == ';' && !check_new_attribute(token))
+		parsed = token.substr(0, token.size() - 1);
+	return (parsed);
 }
 
 void	print_server_config(std::vector<Config> config_array)
@@ -169,7 +151,7 @@ void	print_server_config(std::vector<Config> config_array)
 
 bool check_new_attribute(std::string token)
 {	
-	std::string attributes[] = {"listen", "server_name", "root", "client_max_body_size", "autoindex", "cgi", "index", "location"};
+	std::string attributes[] = {"listen", "server_name", "root", "client_max_body_size", "autoindex", "cgi", "index", "location", "allow"};
 	
 	for (size_t i = 0; i < 6; i++)
 	{
