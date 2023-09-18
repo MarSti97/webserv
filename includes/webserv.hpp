@@ -25,15 +25,6 @@
 #include <vector>
 #include <poll.h>
 
-struct Location
-{
-	bool allow_get;
-	bool allow_post;
-	bool allow_delete;
-	std::string root;
-	std::string index;
-};
-
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
 std::string	readFile( std::string filePath );
 std::string getMimeType(const std::string& filePath);
@@ -51,5 +42,6 @@ int GetbyUser(std::string buffer);
 int checkAllowGet(std::string folder, std::vector<Location> Location);
 int checkAllowPost(std::string folder, std::vector<Location> Location);
 int checkAllowDelete(std::string folder, std::vector<Location> Location);
+std::string	parse_attribute(std::istringstream &iss, std::string token);
 
 #endif
