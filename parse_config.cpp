@@ -55,11 +55,20 @@ void	validate_config()
 						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
 							temp_config.cgi_extension = token;
 						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.cgi_directory = token.substr(0, token.size() - 1);;						
+							temp_config.cgi_directory = token.substr(0, token.size() - 1);						
+					}
+					else if (token == "error_page")
+					{
+						iss >> token;
+						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+							temp_config.error_pages[token] = "";
+						std::string oldtoken = token;
+						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+							temp_config.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
 					}
 					else if (token == "location")
 					{
-						Location temp_location = {0, 0, 0, "", "", ""};
+						Location temp_location;
 						iss >> token;
 						temp_location.path = token;
 						if (!check_new_attribute(token) && iss >> token && token == "{")
@@ -82,6 +91,15 @@ void	validate_config()
 									temp_location.root = parse_attribute(iss, token);
 								else if (token == "index")
 									temp_location.index = parse_attribute(iss, token);
+								else if (token == "error_page")
+								{
+									iss >> token;
+									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+										temp_location.error_pages[token] = "";
+									std::string oldtoken = token;
+									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+										temp_location.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
+								}
 								else if (token == "}")
 								{
 									temp_config.location.push_back(temp_location);
@@ -133,6 +151,11 @@ void	print_server_config(std::vector<Config> config_array)
 		std::cout << "autoindex: " << config_array[i].autoindex << std::endl;
 		std::cout << "cgi_extension: " << config_array[i].cgi_extension << std::endl;
 		std::cout << "cgi_directory: " << config_array[i].cgi_directory << std::endl;
+		std::map<std::string, std::string>::iterator it2;
+		for (it2 = config_array[i].error_pages.begin(); it2 != config_array[i].error_pages.end(); it2++)
+		{
+			std::cout << "error_page " << it2->first << ": " << it2->second << std::endl;
+		}
 		std::vector<Location>::iterator it;
 		for (it = config_array[i].location.begin(); it != config_array[i].location.end(); it++)
 		{
@@ -143,6 +166,14 @@ void	print_server_config(std::vector<Config> config_array)
 			std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
 			std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
 			std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
+			if (!(it->error_pages.empty()))
+			{
+				std::map<std::string, std::string>::iterator it3;
+				for (it3 = it->error_pages.begin(); it3 != it->error_pages.end(); it3++)
+				{
+					std::cout << "error_page " << it3->first << ": " << it3->second << std::endl;
+				}
+			}
 		}
 		
 	}

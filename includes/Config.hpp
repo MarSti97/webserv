@@ -11,6 +11,9 @@ struct Location
 	std::string	root;
 	std::string index;
 	std::string path;
+	std::map<std::string, std::string> error_pages;
+
+	Location(): allow_get(false), allow_post(false), allow_delete(false), root(""), index(""), path(""), error_pages(){}
 };
 
 class Config
@@ -28,9 +31,7 @@ class Config
 		std::string cgi_extension;
 		std::string cgi_directory;
 		std::vector<Location> location;
-
-
-		std::string error_pages;
+		std::map<std::string, std::string> error_pages;
 };
 
 #endif
