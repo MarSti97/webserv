@@ -52,6 +52,7 @@ void initializeMimeTypes(std::map<std::string, std::string> &mimeTypes) {
     mimeTypes[".jpg"] = "image/jpeg";
     mimeTypes[".jpeg"] = "image/jpeg";
     mimeTypes[".png"] = "image/png";
+    mimeTypes[".php"] = "application/x-httpd-php";
     mimeTypes[".svg"] = "image/svg+xml";
     mimeTypes[".ico"] = "image/vnd.microsoft.icon";
     // Add more mappings as needed
@@ -86,8 +87,76 @@ std::string getURL(char *buffer)
     size_t end2 = buf.find("?", start + 4);
 	if (end2 < end)
 		end = end2;
-    if (start == std::string::npos)
-        return "";
+
 
     return buf.substr(start + 4, end - start - 4);
+}
+
+std::string postURL(char *buffer, char **env)
+{
+    std::string buf(buffer);
+
+    size_t start = buf.find("POST ");
+    if (start == std::string::npos)
+        return "";
+    
+    size_t end = buf.find(" ", start + 5);
+    size_t end2 = buf.find("?", start + 5);
+	if (end2 < end)
+		end = end2;
+    // std::cout <<  buf.substr(start + 5, end - start - 5) << std::endl;
+
+    execute_command(findcommand("/php"), buf.substr(start + 5, end - start - 5), env);
+    return refererURL(buffer);
+}
+
+std::string refererURL(char *buffer)
+{
+    std::string buf(buffer);
+
+    size_t start = buf.find("Referer: ");
+    if (start == std::string::npos)
+        return "";
+    
+    size_t end = buf.find(":", start + 9);
+    size_t end2 = buf.find(":", end + 1);
+    size_t end3 = buf.find("/", end2);
+    size_t end4 = buf.find("\n", end3);
+    std::cout << buf.substr(end3, end4 - end3) << std::endl;
+
+    return buf.substr(end3, end4 - end3);
+}
+
+int	execute_command(std::string pathcmd, std::string pathfile, char **env)
+{
+	int		output_fd[2];
+	pid_t	pid;
+    int status = 0;
+
+	if (pipe(output_fd) == -1)
+		perror("pipe");
+	pid = fork();
+	if (pid == -1)
+		perror("fork");
+	if (pid == 0)
+	{
+        char *argv[2];
+        argv[0] = const_cast<char *const>((pathfile).c_str());
+        argv[1] = NULL;
+		close(output_fd[0]);
+        int fd = open("/dev/null", O_RDWR);
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+		if (execve(pathcmd.c_str(), argv, env) == -1)
+            perror("execve");
+	}
+	else
+	{
+		close(output_fd[0]);
+		close(output_fd[1]);
+		wait(&status);
+	}
+	return (status);
 }
