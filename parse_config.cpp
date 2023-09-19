@@ -100,6 +100,14 @@ void	validate_config()
 									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
 										temp_location.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
 								}
+								else if (token == "return")
+								{
+									iss >> token;
+									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+										temp_location.redirect_status = token;
+									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+										temp_location.redirect_path = token.substr(0, token.size() - 1);						
+								}
 								else if (token == "}")
 								{
 									temp_config.location.push_back(temp_location);
@@ -118,6 +126,7 @@ void	validate_config()
 		}
     }
 	print_server_config(config_array);
+	check_requirements(config_array);
 }
 
 std::string	parse_attribute(std::istringstream &iss, std::string token)
@@ -134,6 +143,7 @@ void	print_server_config(std::vector<Config> config_array)
 {
 	for (size_t i = 0; i < config_array.size(); i++)
 	{
+		std::cout << std::endl;
 		std::cout << "Server Configuration " << i << std::endl;
 		std::cout << "port: " << config_array[i].port << std::endl;
 		std::cout << "root: " << config_array[i].root << std::endl;
@@ -166,6 +176,8 @@ void	print_server_config(std::vector<Config> config_array)
 			std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
 			std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
 			std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
+			std::cout << "redirect_status: " << it->redirect_status << std::endl;
+			std::cout << "redirect_path: " << it->redirect_path << std::endl;			
 			if (!(it->error_pages.empty()))
 			{
 				std::map<std::string, std::string>::iterator it3;
@@ -175,9 +187,7 @@ void	print_server_config(std::vector<Config> config_array)
 				}
 			}
 		}
-		
 	}
-	
 }
 
 bool check_new_attribute(std::string token)
@@ -190,4 +200,17 @@ bool check_new_attribute(std::string token)
 			return true;
 	}
 	return false;
+}
+
+void	check_requirements(std::vector<Config> config_array)
+{
+	std::vector<Config>::iterator it;
+	for (it = config_array.begin(); it != config_array.end(); it++)
+	{
+		int i = 0;
+		if (it->port.empty() || it->server_name.empty())
+			std::cerr << "Error: Insufficient information on server configuration " << i << ".\nYou need at least a listen port and a server address." << std::endl;
+		i++;
+	}
+	
 }

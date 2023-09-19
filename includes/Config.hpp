@@ -12,6 +12,8 @@ struct Location
 	std::string index;
 	std::string path;
 	std::map<std::string, std::string> error_pages;
+	std::string redirect_path;
+	std::string redirect_status;
 
 	Location(): allow_get(false), allow_post(false), allow_delete(false), root(""), index(""), path(""), error_pages(){}
 };

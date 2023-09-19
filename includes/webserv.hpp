@@ -43,5 +43,6 @@ int checkAllowGet(std::string folder, std::vector<Location> Location);
 int checkAllowPost(std::string folder, std::vector<Location> Location);
 int checkAllowDelete(std::string folder, std::vector<Location> Location);
 std::string	parse_attribute(std::istringstream &iss, std::string token);
+void	check_requirements(std::vector<Config> config_array);
 
 #endif
