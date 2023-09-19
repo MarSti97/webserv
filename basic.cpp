@@ -3,7 +3,7 @@
 int glob_fd;
 int cli_glob;
 
-int main(int ac, char **av)
+int main(int ac, char **av, char **env)
 {
     if (ac != 2)
         return 1;
@@ -77,7 +77,7 @@ int main(int ac, char **av)
                 {
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
                     if (!parseRecv(fds, i, buffer))
-                        parseSend(fds, i, buffer);
+                        parseSend(fds, i, buffer, env);
                     // std::cout << " " << n << std::endl;
                 }
             }
@@ -86,36 +86,45 @@ int main(int ac, char **av)
     return 0;
 }
 
-int parseSend(std::vector<pollfd> &fds, int pos, char *buffer)
+int parseSend(std::vector<pollfd> &fds, int pos, char *buffer, char **env)
 {
-    std::string response = getResponse(buffer, "guarder-html", "/index.html");
+    std::string response = getResponse(buffer, "guarder-html", "/index.html", env);
     // std::cout << response << std::endl;
 
     // std::cout << response.size();
-    ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
-    if (n < 0)
+    if (!response.empty())
     {
-        std::cerr << "Error writing to socket" << std::endl;
-        return 1;
-    }
-    if ((unsigned long)n != response.size())
-    {
-        std::cout << "bad response sent" << std::endl;
-        return 1;
+        ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
+        if (n < 0)
+        {
+            std::cerr << "Error writing to socket" << std::endl;
+            return 1;
+        }
+        if ((unsigned long)n != response.size())
+        {
+            std::cout << "bad response sent" << std::endl;
+            return 1;
+        }
+        close(fds[pos].fd);
+        fds.erase(fds.begin() + pos);
+        return n;
     }
     close(fds[pos].fd);
     fds.erase(fds.begin() + pos);
-    return n;
+    return 0;
 }
 
 
-std::string getResponse(char *buffer, std::string path, std::string index)
+std::string getResponse(char *buffer, std::string path, std::string index, char **env)
 {
     std::string filePath;
     std::string mimeType;
     std::string responseHeaders;
 
     filePath = getURL(buffer);
+    if (filePath.empty())
+        filePath = postURL(buffer, env);
+    // std::cout << path << std::endl;
     mimeType = getMimeType(filePath);
     responseHeaders = "HTTP/1.1 200 OK\r\n";
     responseHeaders += "Content-Type: " + getMimeType(filePath) + "\r\n\r\n";
@@ -124,6 +133,11 @@ std::string getResponse(char *buffer, std::string path, std::string index)
     else
     {
         std::string response = readFile(path + filePath);
+        // std::cout << path << " " << filePath << std::endl;
+        // std::cout +<< response << std::endl;
+        // char buf[1024];
+        // getcwd(buf, 1023);
+        // std::cout << buf << std::endl;
         if (response == "" || response.empty())
             response = readFile(path + "/404.html");
         return responseHeaders + response;//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
@@ -161,6 +175,7 @@ int checkAllowPost(std::string folder, std::vector<Location> Locations)
     }
     return it->allow_post;
 }
+
 int checkAllowDelete(std::string folder, std::vector<Location> Locations)
 {
     std::vector<Location>::iterator it;
@@ -178,8 +193,8 @@ int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
     ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
 
     std::string findbuffer(buffer);
-    // std::cout << findbuffer << std::endl;
-    // std::cout << GetbyUser(findbuffer) << std::endl;
+    std::cout << findbuffer << std::endl;
+    //std::cout << GetbyUser(findbuffer) << std::endl;
     // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
     // {
     //     if (checkAllowGet(getURL(buffer), 0))
@@ -202,6 +217,7 @@ int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
     {
         std::cout << "bad request received" << std::endl;
         std::cout << buffer << n << std::endl;
+        return 1;
     }
     return 0;
 }
@@ -260,4 +276,36 @@ int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &si
             return 1;
     }
     return 0;
+}
+
+std::string findcommand(std::string command)
+{
+	const char* pathEnv = std::getenv("PATH");
+    
+    if (!pathEnv)
+        return NULL;
+    std::string pathStr(pathEnv);
+    
+    // Tokenize the PATH variable using ':' (Unix-like systems) or ';' (Windows)
+    char delimiter = ':';
+    
+    std::vector<std::string> pathDirs;
+    size_t start = 0;
+    size_t end = pathStr.find(delimiter);
+    
+    while (end != std::string::npos) {
+        std::string dir = pathStr.substr(start, end - start);
+        pathDirs.push_back(dir);
+        start = end + 1;
+        end = pathStr.find(delimiter, start);
+    }
+    std::string lastDir = pathStr.substr(start);
+    pathDirs.push_back(lastDir);
+    std::vector<std::string>::iterator it;
+    for (it = pathDirs.begin(); it != pathDirs.end(); it++)
+    {
+        if (access((*it + command).c_str(), F_OK) == 0)
+            break ;
+    }
+	return (*it + command);
 }
