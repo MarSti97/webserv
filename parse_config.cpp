@@ -1,6 +1,8 @@
 #include "./includes/webserv.hpp"
 #include "./includes/Config.hpp"
 
+
+
 void	validate_config()
 {
 	std::string	config = readFile("example.config");
