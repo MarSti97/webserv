@@ -108,7 +108,7 @@ std::string postURL(char *buffer, char **env)
 	// std::cout << "POST URL" << std::endl;
     // std::cout <<  buf.substr(start + 5, end - start - 5) << std::endl;
 
-   	execute_command(findcommand("/php"), buf.substr(start + 5, end - start - 5), env);
+   	execute_command(findcommand("/bash"), buf.substr(start + 5, end - start - 5), env);
     return refererURL(buffer);
 }
 
@@ -145,8 +145,10 @@ int	execute_command(std::string pathcmd, std::string pathfile, char **env)
 	if (pid == 0)
 	{
         char *argv[2];
-        argv[0] = const_cast<char *>((pathfile).c_str());
-        argv[1] = NULL;
+        argv[0] = const_cast<char *>((pathcmd).c_str());
+		// temporary fix just to test, replace with cgi-path of the config file
+		pathfile = "guarder-html" + pathfile;
+        argv[1] = const_cast<char *>((pathfile).c_str());
 		close(output_fd[0]);
         int fd = open("/dev/null", O_RDWR);
         dup2(fd, STDIN_FILENO);
