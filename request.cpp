@@ -186,26 +186,26 @@ Request::Request( char *buffer )
     {
         //post here.
     }
-    post;
-    host;
-    useragent;
-    accept;
-    acceptencoding;
-    acceptlanguage;
-    xrequestedwith;
-    connection;
-    referer;
-    upgradeinsecurerequests;
-    secfetchdest;
-    secfetchmode;
-    secfetchsite;
-    secfetchuser;
-    contenttype;
-    contentlength;
-    contentdisposition;
-    origin;
-    boundary;
-    EOF;
+    // post;
+    // host;
+    // useragent;
+    // accept;
+    // acceptencoding;
+    // acceptlanguage;
+    // xrequestedwith;
+    // connection;
+    // referer;
+    // upgradeinsecurerequests;
+    // secfetchdest;
+    // secfetchmode;
+    // secfetchsite;
+    // secfetchuser;
+    // contenttype;
+    // contentlength;
+    // contentdisposition;
+    // origin;
+    // boundary;
+    // EOF;
 }
 
 #endif
