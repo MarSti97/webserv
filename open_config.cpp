@@ -104,9 +104,11 @@ std::string postURL(char *buffer, char **env)
     size_t end2 = buf.find("?", start + 5);
 	if (end2 < end)
 		end = end2;
+	
+	// std::cout << "POST URL" << std::endl;
     // std::cout <<  buf.substr(start + 5, end - start - 5) << std::endl;
 
-    execute_command(findcommand("/php"), buf.substr(start + 5, end - start - 5), env);
+   	execute_command(findcommand("/php"), buf.substr(start + 5, end - start - 5), env);
     return refererURL(buffer);
 }
 
@@ -121,8 +123,10 @@ std::string refererURL(char *buffer)
     size_t end = buf.find(":", start + 9);
     size_t end2 = buf.find(":", end + 1);
     size_t end3 = buf.find("/", end2);
-    size_t end4 = buf.find("\n", end3);
-    std::cout << buf.substr(end3, end4 - end3) << std::endl;
+    size_t end4 = buf.find("\r", end3);
+	
+	// std::cout << "Referer URL" << std::endl;
+    // std::cout << buf.substr(end3, end4 - end3) << std::endl;
 
     return buf.substr(end3, end4 - end3);
 }
@@ -141,7 +145,7 @@ int	execute_command(std::string pathcmd, std::string pathfile, char **env)
 	if (pid == 0)
 	{
         char *argv[2];
-        argv[0] = const_cast<char *const>((pathfile).c_str());
+        argv[0] = const_cast<char *>((pathfile).c_str());
         argv[1] = NULL;
 		close(output_fd[0]);
         int fd = open("/dev/null", O_RDWR);

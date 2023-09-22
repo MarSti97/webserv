@@ -46,11 +46,8 @@ int checkAllowGet(std::string folder, std::vector<Location> Location);
 int checkAllowPost(std::string folder, std::vector<Location> Location);
 int checkAllowDelete(std::string folder, std::vector<Location> Location);
 std::string	parse_attribute(std::istringstream &iss, std::string token);
-<<<<<<< HEAD
 std::string findcommand(std::string command);
 int	execute_command(std::string pathcmd, std::string pathfile, char **env);
-=======
 void	check_requirements(std::vector<Config> config_array);
->>>>>>> 84eecdeec053558e8989d7f5db9ef26969a10add
 
 #endif

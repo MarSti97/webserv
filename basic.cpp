@@ -123,7 +123,13 @@ std::string getResponse(char *buffer, std::string path, std::string index, char 
 
     filePath = getURL(buffer);
     if (filePath.empty())
+	{
         filePath = postURL(buffer, env);
+ 		std::string response = readFile(path + filePath);
+ 		responseHeaders = "HTTP/1.1 302 Found\r\n";
+   	 	responseHeaders += "Location: " + filePath + "\r\n\r\n";
+		return responseHeaders + response;		
+	}
     // std::cout << path << std::endl;
     mimeType = getMimeType(filePath);
     responseHeaders = "HTTP/1.1 200 OK\r\n";
@@ -280,11 +286,10 @@ int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &si
 
 std::string findcommand(std::string command)
 {
-	const char* pathEnv = std::getenv("PATH");
+	std::string pathStr = std::getenv("PATH");
     
-    if (!pathEnv)
+    if (pathStr.empty())
         return NULL;
-    std::string pathStr(pathEnv);
     
     // Tokenize the PATH variable using ':' (Unix-like systems) or ';' (Windows)
     char delimiter = ':';
