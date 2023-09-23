@@ -24,6 +24,7 @@ class Config
 		bool allow_get;
 		bool allow_post;
 		bool allow_delete;
+		std::string host;
 		std::string port;
 		std::string	root;
 		std::string index;
