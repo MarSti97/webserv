@@ -152,7 +152,7 @@ std::string getResponse(char *buffer, std::string path, std::string index, char 
 
 int GetbyUser(std::string buffer)
 {
-    size_t user = buffer.find("Sec-Fetch-User:");
+    size_t user = buffer.find("Sec-Fetch-User: ");
     if (user != std::string::npos)
         return 1;
     return 0;
@@ -198,13 +198,7 @@ int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
 {
     ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
 
-    std::string findbuffer(buffer);
-    std::cout << findbuffer << std::endl;
-    //std::cout << GetbyUser(findbuffer) << std::endl;
-    // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
-    // {
-    //     if (checkAllowGet(getURL(buffer), 0))
-    // }
+
     if (n <= 0)
     {
         if (n == 0)
@@ -218,12 +212,26 @@ int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
         perror("read");
         return 1;
     }
-    size_t ok = findbuffer.find("\r\n\r\n");
-    if (ok == std::string::npos)
+    else
     {
-        std::cout << "bad request received" << std::endl;
-        std::cout << buffer << n << std::endl;
-        return 1;
+        Request req(buffer);
+        std::string findbuffer(buffer);
+        std::cout << req.request() << " request" << std::endl;
+        std::cout << req.Get() << " get" << std::endl;
+        std::cout << req.Post() << " post"  << std::endl;
+        std::cout << req.Host() << " host"  << std::endl;
+        //std::cout << GetbyUser(findbuffer) << std::endl;
+        // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
+        // {
+        //     if (checkAllowGet(getURL(buffer), 0))
+        // }
+        size_t ok = findbuffer.find("\r\n\r\n");
+        if (ok == std::string::npos)
+        {
+            std::cout << "bad request received" << std::endl;
+            std::cout << buffer << n << std::endl;
+            return 1;
+        }
     }
     return 0;
 }
