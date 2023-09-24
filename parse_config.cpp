@@ -2,6 +2,8 @@
 #include "./includes/Config.hpp"
 
 
+
+
 Configfile::Configfile(std::string file)
 {
 	if (!correctfile(std::string(file)))
@@ -25,6 +27,8 @@ void	Configfile::validate_config()
 				{
 					if (token == "listen")
 						temp_config.port = parse_attribute(iss, token);
+					else if (token == "host")
+						temp_config.host = parse_attribute(iss, token);
 					else if (token == "server_name")
 					{
 						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
@@ -150,6 +154,7 @@ void	Configfile::print()
 	{
 		std::cout << std::endl;
 		std::cout << "Server Configuration " << i << std::endl;
+		std::cout << "host: " << config_array[i].host << std::endl;	
 		std::cout << "port: " << config_array[i].port << std::endl;
 		std::cout << "root: " << config_array[i].root << std::endl;
 		std::cout << "index: " << config_array[i].index << std::endl;

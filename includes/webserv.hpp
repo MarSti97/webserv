@@ -25,6 +25,7 @@
 #include <vector>
 #include <poll.h>
 #include <sys/wait.h>
+#include "request.hpp"
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
 std::string	readFile( std::string filePath );
