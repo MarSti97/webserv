@@ -1,9 +1,6 @@
 #include "./includes/webserv.hpp"
 #include "./includes/Config.hpp"
 
-
-
-
 Configfile::Configfile(std::string file)
 {
 	if (!correctfile(std::string(file)))
