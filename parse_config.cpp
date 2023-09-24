@@ -1,11 +1,17 @@
 #include "./includes/webserv.hpp"
 #include "./includes/Config.hpp"
 
-void	validate_config()
+
+Configfile::Configfile(std::string file)
 {
-	std::string	config = readFile("example.config");
+	if (!correctfile(std::string(file)))
+		throw NotConfigFile();
+	config = readFile(file);
+}
+
+void	Configfile::validate_config()
+{
 	std::istringstream iss(config);
-	std::vector<Config> config_array;
 
 	std::string token;
     while (iss >> token) 
@@ -125,8 +131,7 @@ void	validate_config()
 			}
 		}
     }
-	print_server_config(config_array);
-	check_requirements(config_array);
+	check_requirements();
 }
 
 std::string	parse_attribute(std::istringstream &iss, std::string token)
@@ -139,7 +144,7 @@ std::string	parse_attribute(std::istringstream &iss, std::string token)
 	return (parsed);
 }
 
-void	print_server_config(std::vector<Config> config_array)
+void	Configfile::print()
 {
 	for (size_t i = 0; i < config_array.size(); i++)
 	{
@@ -202,15 +207,26 @@ bool check_new_attribute(std::string token)
 	return false;
 }
 
-void	check_requirements(std::vector<Config> config_array)
+void	Configfile::check_requirements()
 {
 	std::vector<Config>::iterator it;
 	for (it = config_array.begin(); it != config_array.end(); it++)
 	{
 		int i = 0;
-		if (it->port.empty() || it->server_name.empty())
-			std::cerr << "Error: Insufficient information on server configuration " << i << ".\nYou need at least a listen port and a server address." << std::endl;
+		if (it->port.empty() || it->server_name.empty()) {
+			std::cerr << "Error: Insufficient information on server configuration " << i << ".\nYou need at least a listen port and a server address.";
+			throw InsufficientInformation();
+		}
 		i++;
 	}
 	
+}
+
+bool correctfile(std::string file)
+{
+	size_t point = file.find(".");
+	if (point != std::string::npos)
+		if (file.substr(point) != ".config")
+			return false;
+	return true;
 }
