@@ -25,7 +25,7 @@ class Content
 
     private:
         std::string content_type;
-        std::string content;
+        std::string _content;
     
     public:
         Content( void );

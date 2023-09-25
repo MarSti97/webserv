@@ -30,7 +30,6 @@ int main(int ac, char **av, char **env)
 	int opt = 1;
 	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
 		return failToStart("Error: socket optimise", addr, socketfd);
-	// printlog("socket created", socketfd);
 	glob_fd = socketfd;
 	signal(SIGINT, ctrlc);
     int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
@@ -77,10 +76,13 @@ int main(int ac, char **av, char **env)
                 }
                 else if (fds[i].revents & POLLOUT)
                 {
+                    try {
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
                     if (!parseRecv(fds, i, buffer))
                         parseSend(fds, i, buffer, env);
                     // std::cout << " " << n << std::endl;
+                    }
+                    catch (const std::exception& e) {}
                 }
             }
         }
@@ -148,7 +150,7 @@ std::string getResponse(char *buffer, std::string path, std::string index, char 
         // std::cout << buf << std::endl;
         if (response == "" || response.empty())
             response = readFile(path + "/404.html");
-        return responseHeaders + response;//"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
+        return responseHeaders + response; //"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
     }
 }
 
@@ -200,7 +202,6 @@ int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
 {
     ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
 
-
     if (n <= 0)
     {
         if (n == 0)
@@ -222,7 +223,7 @@ int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
         std::cout << req.Get() << " get" << std::endl;
         std::cout << req.Post() << " post"  << std::endl;
         std::cout << req.Host() << " host"  << std::endl;
-        //std::cout << GetbyUser(findbuffer) << std::endl;
+        // std::cout << GetbyUser(findbuffer) << std::endl;
         // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
         // {
         //     if (checkAllowGet(getURL(buffer), 0))

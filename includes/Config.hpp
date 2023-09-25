@@ -46,7 +46,7 @@ class Configfile
 	public : 
 		Configfile() {}
 		Configfile(std::string file);
-		~Configfile() {}
+		virtual ~Configfile() {}
 
 		void validate_config();
 		void check_requirements();

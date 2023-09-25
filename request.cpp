@@ -42,33 +42,33 @@ std::string Disposition::getcontentdisposition( void ) const
     return contentdisposition;
 }
 
-Content::Content(std::string Content, std::string boundary)
+Content::Content(std::string content, std::string boundary)
 {
-    if (!Content.empty() && !boundary.empty())
+    if (!content.empty() && !boundary.empty())
     {
         // std::cerr << "HERE1" << std::endl;
 
-        size_t dispositionStart = Content.find("Content-Disposition: ") + 20;
-        size_t dispositionEnd = Content.find("\r", dispositionStart);
+        size_t dispositionStart = content.find("Content-Disposition: ") + 20;
+        size_t dispositionEnd = content.find("\r", dispositionStart);
         if (dispositionStart != std::string::npos)
-            filename = Disposition(Content.substr(dispositionStart, dispositionEnd - dispositionStart));
+            filename = Disposition(content.substr(dispositionStart, dispositionEnd - dispositionStart));
 
-        size_t typeStart = Content.find("Content-Type: ") + 13;
-        size_t typeEnd = Content.find("\r", typeStart + 1);
+        size_t typeStart = content.find("Content-Type: ") + 13;
+        size_t typeEnd = content.find("\r", typeStart + 1);
         if (typeStart != std::string::npos)
-            content_type = Content.substr(typeStart, typeEnd - typeStart);
+            content_type = content.substr(typeStart, typeEnd - typeStart);
 
-        size_t fileStart = Content.find("\r\n\r\n") + 4;
-        size_t fileEnd = Content.find(boundary, fileStart);
+        size_t fileStart = content.find("\r\n\r\n") + 4;
+        size_t fileEnd = content.find(boundary, fileStart);
         if (fileStart != std::string::npos)
-            content = Content.substr(fileStart, fileEnd - fileStart);
+            _content = content.substr(fileStart, fileEnd - fileStart);
 
     }
 }
 
 std::string Content::getContent( void ) const
 {
-    return content;
+    return _content;
 }
 
 std::string Content::getContentType( void ) const
@@ -193,11 +193,10 @@ Request::Request( char *buffer )
     std::string req(buffer);
     this->_request = req;
 
-    size_t getStart = _request.find("GET ") + 4;
+    size_t getStart = _request.find("GET ");
     if (getStart != std::string::npos)
     {
-        // std::cerr << "1" << std::endl;
-        
+        getStart += 4;
         size_t getEnd = _request.find(" ", getStart);
         size_t getEnd2 = _request.find("?", getStart);
         if (getEnd2 < getEnd)
@@ -205,10 +204,10 @@ Request::Request( char *buffer )
         this->get = _request.substr(getStart, getEnd - getStart);
     }
 
-    size_t postStart = _request.find("POST ") + 5;
+    size_t postStart = _request.find("POST ");
     if (postStart != std::string::npos)
     {
-        // std::cerr << "2" << std::endl;
+        postStart += 5;
         size_t postEnd = _request.find(" ", postStart);
         size_t postEnd2 = _request.find("?", postStart);
         if (postEnd2 < postEnd)
@@ -216,65 +215,73 @@ Request::Request( char *buffer )
         this->post = _request.substr(postStart, postEnd - postStart);
     }
 
-    size_t hostStart = _request.find("Host: ") + 6;
+    size_t hostStart = _request.find("Host: ");
     if (hostStart != std::string::npos)
     {
+        hostStart += 6;
         // std::cerr << "3" << std::endl;
         size_t hostEnd = _request.find("\r", hostStart);
         this->host = _request.substr(hostStart, hostEnd - hostStart);
     }
     
-    size_t agentStart = _request.find("User-Agent: ") + 12;
+    size_t agentStart = _request.find("User-Agent: ");
     if (agentStart != std::string::npos)
     {
+        agentStart += 12;
         // std::cerr << "4" << std::endl;
         size_t agentEnd = _request.find("\r", agentStart);
         this->useragent = _request.substr(agentStart, agentEnd - agentStart);
     }
 
-    size_t acceptStart = _request.find("Accept: ") + 8;
+    size_t acceptStart = _request.find("Accept: ");
     if (acceptStart != std::string::npos)
     {
+        acceptStart += 8;
         // std::cerr << "5" << std::endl;
         size_t acceptEnd = _request.find("\r", acceptStart);
         this->accept = _request.substr(acceptStart, acceptEnd - acceptStart);
     }
 
-    size_t languageStart = _request.find("Accept-Language: ") + 17;
+    size_t languageStart = _request.find("Accept-Language: ");
     if (languageStart != std::string::npos)
     {
+        languageStart += 17;
         // std::cerr << "6" << std::endl;
         size_t languageEnd = _request.find("\r", languageStart);
         this->acceptlanguage = _request.substr(languageStart, languageEnd - languageStart);
     }
 
-    size_t encodingStart = _request.find("Accept-Encoding: ") + 17;
+    size_t encodingStart = _request.find("Accept-Encoding: ");
     if (encodingStart != std::string::npos)
     {
+        encodingStart += 17;
         // std::cerr << "7" << std::endl;
         size_t encodingEnd = _request.find("\r", encodingStart);
         this->acceptencoding = _request.substr(encodingStart, encodingEnd - encodingStart);
     }
 
-    size_t xrequestStart = _request.find("X-Requested-With: ") + 18;
+    size_t xrequestStart = _request.find("X-Requested-With: ");
     if (xrequestStart != std::string::npos)
     {
+        xrequestStart += 18;
         // std::cerr << "8" << std::endl;
         size_t xrequestEnd = _request.find("\r", xrequestStart);
         this->xrequestedwith = _request.substr(xrequestStart, xrequestEnd - xrequestStart);
     }
 
-    size_t connectionStart = _request.find("Connection: ") + 12;
+    size_t connectionStart = _request.find("Connection: ");
     if (connectionStart != std::string::npos)
     {
+        connectionStart += 12;
         // std::cerr << "9" << std::endl;
         size_t connectionEnd = _request.find("\r", connectionStart);
         this->connection = _request.substr(connectionStart, connectionEnd - connectionStart);
     }
 
-    size_t refererStart = _request.find("Referer: ") + 9;
+    size_t refererStart = _request.find("Referer: ");
     if (refererStart != std::string::npos)
     {
+        refererStart += 9;
         // std::cerr << "10" << std::endl;
         size_t refererend = _request.find(":", refererStart);
         size_t refererend2 = _request.find(":", refererend + 1);
@@ -283,49 +290,54 @@ Request::Request( char *buffer )
         this->referer = _request.substr(refererend3, refererend4 - refererend3);
     }
 
-    size_t upStart = _request.find("Upgrade-Insecure-Requests: ") + 30;
+    size_t upStart = _request.find("Upgrade-Insecure-Requests: ");
     if (upStart != std::string::npos)
     {
+        upStart += 30;
         // std::cerr << "11" << std::endl;
         size_t upEnd = _request.find("\r", upStart);
         this->upgradeinsecurerequests = _request.substr(upStart, upEnd - upStart);
     }
 
-    size_t usrStart = _request.find("Sec-Fetch-User: ") + 16;
+    size_t usrStart = _request.find("Sec-Fetch-User: ");
     if (usrStart != std::string::npos)
     {
+        usrStart += 16;
         // std::cerr << "12" << std::endl;
         size_t usrEnd = _request.find("\r", usrStart);
         this->secfetchuser = _request.substr(usrStart, usrEnd - usrStart);
     }
 
-    size_t destStart = _request.find("Sec-Fetch-Dest: ") + 16;
+    size_t destStart = _request.find("Sec-Fetch-Dest: ");
     if (destStart != std::string::npos)
     {
+        destStart += 16;
         // std::cerr << "13" << std::endl;
         size_t destEnd = _request.find("\r", destStart);
         this->secfetchdest = _request.substr(destStart, destEnd - destStart);
     }
 
-    size_t modeStart = _request.find("Sec-Fetch-Mode: ") + 16;
+    size_t modeStart = _request.find("Sec-Fetch-Mode: ");
     if (modeStart != std::string::npos)
     {
+        modeStart += 16;
         // std::cerr << "14" << std::endl;
         size_t modeEnd = _request.find("\r", modeStart);
         this->secfetchmode = _request.substr(modeStart, modeEnd - modeStart);
     }
 
-    size_t siteStart = _request.find("Sec-Fetch-Site: ") + 16;
+    size_t siteStart = _request.find("Sec-Fetch-Site: ");
     if (siteStart != std::string::npos)
     {
-        // std::cerr << "15" << std::endl;
+        siteStart += 16;
         size_t siteEnd = _request.find("\r", siteStart);
         this->secfetchsite = _request.substr(siteStart, siteEnd - siteStart);
     }
 
-    size_t cont_typeStart = _request.find("Content-Type: ") + 14;
+    size_t cont_typeStart = _request.find("Content-Type: ") ;
     if (cont_typeStart != std::string::npos)
     {
+        cont_typeStart += 14;
         // std::cerr << "16" << std::endl;
         size_t cont_typeEnd = _request.find(";", cont_typeStart);
         size_t cont_typeEnd2 = _request.find("\r", cont_typeStart);
@@ -334,39 +346,39 @@ Request::Request( char *buffer )
         this->contenttype = _request.substr(cont_typeStart, cont_typeEnd - cont_typeStart);
     }
 
-    size_t boundaryStart = _request.find("boundary=") + 9;
+    size_t boundaryStart = _request.find("boundary=");
     if (boundaryStart != std::string::npos)
     {
+        boundaryStart += 9;
         // std::cerr << "17" << std::endl;
         size_t boundaryEnd = _request.find("\r", boundaryStart);
         this->boundary = _request.substr(boundaryStart, boundaryEnd - boundaryStart);
     }
 
-    size_t cont_lengthStart = _request.find("Content-Length: ") + 16;
+    size_t cont_lengthStart = _request.find("Content-Length: ");
     if (cont_lengthStart != std::string::npos)
     {
-        // std::cerr << "18" << std::endl;
+        cont_lengthStart += 16;
         size_t cont_lengthEnd = _request.find("\r", cont_lengthStart);
         this->contentlength = _request.substr(cont_lengthStart, cont_lengthEnd - cont_lengthStart);
     }
 
-    size_t originStart = _request.find("Origin: ") + 8;
+    size_t originStart = _request.find("Origin: ");
     if (originStart != std::string::npos)
     {
-        // std::cerr << "19" << std::endl;
+        originStart += 8;
         size_t originEnd = _request.find("\r", originStart);
         this->origin = _request.substr(originStart, originEnd - originStart);
     }
 
-    size_t dispositionStart = _request.find("\r\n" + boundary) + boundary.size() + 2;
+    size_t dispositionStart = _request.find("\r\n" + boundary);
     if (dispositionStart != std::string::npos)
     {
-        // std::cerr << "20" << std::endl;
+        dispositionStart += boundary.size() + 2;
         size_t dispositionEnd = _request.find(boundary + "--", dispositionStart);
         this->contentdisposition = _request.substr(dispositionStart, dispositionEnd - dispositionStart);
     }
 
-        // std::cerr << "21" << std::endl;
 
     if (!get.empty())
     {
@@ -431,7 +443,7 @@ Content::Content(const Content &other)
 Content &Content::operator=(const Content &other)
 {
     this->content_type = other.content_type;
-    this->content = other.content;
+    this->_content = other._content;
     this->filename = other.filename;
     return *this;
 }
