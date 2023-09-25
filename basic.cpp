@@ -7,19 +7,21 @@ int main(int ac, char **av, char **env)
 {
     if (ac != 2)
         return 1;
-    Configfile configInfo;
+    Servers servs;
     try {
-        configInfo = Configfile(std::string(av[1]));
-        configInfo.validate_config();
+        if (!correctfile(std::string(av[1])))
+		    throw NotConfigFile();
+        servs = Servers(std::string(av[1]));
+        servs.init();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 0;
     }
-	configInfo.print();
+	servs.print();
   
     struct addrinfo *addr;
-    if (getaddrinfo(configInfo.getName(), configInfo.getPort(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
+    if (getaddrinfo(servs.getName(), servs.getPort(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }

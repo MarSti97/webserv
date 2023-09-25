@@ -37,16 +37,51 @@ class Config
 		std::map<std::string, std::string> error_pages;
 };
 
-class Configfile
+/* class Server
 {
 	private :
-		std::vector<Config> config_array;
+		std::vector<Config> servs;
 		std::string config;
 	
 	public : 
-		Configfile() {}
-		Configfile(std::string file);
-		virtual ~Configfile() {}
+		Server() {}
+		Server(std::string file);
+		virtual ~Server() {}
+
+		void validate_config();
+		void check_requirements();
+		void print();
+		const char* getPort() {return servs[0].port.c_str();} // these need fixing! 
+		const char* getName() {return servs[0].server_name[0].c_str();} // figure out how to work with multipe names
+
+	// Exceptions 
+	class NotConfigFile : public std::exception {
+		public :
+			NotConfigFile() {}
+			virtual const char* what() const throw() {
+				return "Error: argument not a config file.";
+			}
+	};
+
+	class InsufficientInformation : public std::exception {
+		public :
+			InsufficientInformation() {}
+			virtual const char* what() const throw() {
+				return "";
+			}
+	};
+};
+
+class Server
+{
+	private :
+		Config serv_info;
+		int socketfd;
+		struct sockaddr_in clientinfo;
+	
+	public : 
+		Server() {}
+		virtual ~Server() {}
 
 		void validate_config();
 		void check_requirements();
@@ -70,6 +105,6 @@ class Configfile
 				return "";
 			}
 	};
-};
+}; */
 
 #endif

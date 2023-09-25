@@ -1,9 +1,10 @@
 #include "./includes/webserv.hpp"
-#include "./includes/Config.hpp"
-#include "./includes/Servers.hpp"
 
+Servers::Servers(std::string file) {
+	config = readFile(file);
+}
 
-void	Configfile::validate_config()
+void	Servers::validate_config()
 {
 	std::istringstream iss(config);
 
@@ -120,103 +121,49 @@ void	Configfile::validate_config()
 					}
 					else if (token == "}")
 					{
-						config_array.push_back(temp_config);
+	                    check_requirements(temp_config);
+						servs.push_back(Serv(temp_config));
 						break ;
 					}
 				}
 			}
 		}
     }
-	check_requirements();
 }
 
-std::string	parse_attribute(std::istringstream &iss, std::string token)
+void Servers::init()
 {
-	std::string parsed;
-	
-	iss >> token;
-	if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-		parsed = token.substr(0, token.size() - 1);
-	return (parsed);
+    validate_config();
+
+    std::vector<Serv>::iterator it;
+    for (it = servs.begin(); it != servs.end(); ++it)
+        it->establish_connection(); // FIX:: should program exit if one fails or continue with non failed ones
 }
 
-void	Servers::print()
+int Serv::establish_connection()
 {
-	for (size_t i = 0; i < servs.size(); i++)
-	{
-		std::cout << std::endl;
-		std::cout << "Server Configuration " << i << std::endl;
-		std::cout << "host: " << servs[i].host << std::endl;	
-		std::cout << "port: " << servs[i].port << std::endl;
-		std::cout << "root: " << servs[i].root << std::endl;
-		std::cout << "index: " << servs[i].index << std::endl;
-		std::cout << "server_name: ";
-		for (size_t j = 0; j < servs[i].server_name.size(); j++)
-		{
-			std::cout << servs[i].server_name[j] << " ";
-		}
-		std::cout << std::endl;
-		std::cout << "max_body_size: " << servs[i].max_body_size << std::endl;
-		std::cout << (servs[i].allow_get ? "GET: allowed" : "GET: denied") << std::endl;
-		std::cout << (servs[i].allow_post ? "POST: allowed" : "POST: denied") << std::endl;
-		std::cout << (servs[i].allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
-		std::cout << "autoindex: " << servs[i].autoindex << std::endl;
-		std::cout << "cgi_extension: " << servs[i].cgi_extension << std::endl;
-		std::cout << "cgi_directory: " << servs[i].cgi_directory << std::endl;
-		std::map<std::string, std::string>::iterator it2;
-		for (it2 = servs[i].error_pages.begin(); it2 != servs[i].error_pages.end(); it2++)
-		{
-			std::cout << "error_page " << it2->first << ": " << it2->second << std::endl;
-		}
-		std::vector<Location>::iterator it;
-		for (it = servs[i].location.begin(); it != servs[i].location.end(); it++)
-		{
-			std::cout << std::endl;
-			std::cout << "Location " << it->path << std::endl;
-			std::cout << "root: " << it->root << std::endl;
-			std::cout << "index: " << it->index << std::endl;
-			std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
-			std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
-			std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
-			std::cout << "redirect_status: " << it->redirect_status << std::endl;
-			std::cout << "redirect_path: " << it->redirect_path << std::endl;			
-			if (!(it->error_pages.empty()))
-			{
-				std::map<std::string, std::string>::iterator it3;
-				for (it3 = it->error_pages.begin(); it3 != it->error_pages.end(); it3++)
-				{
-					std::cout << "error_page " << it3->first << ": " << it3->second << std::endl;
-				}
-			}
-		}
+    struct addrinfo *addr;
+    if (getaddrinfo(serv_info.server_name[0].c_str(), serv_info.port.c_str(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
+        std::cerr << "Error: couldn't get address" << std::endl;
+        return 1;
+    }
+    socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    if (socketfd < 0) {
+        return failToStart("Error: socket creation", addr, socketfd);
 	}
-}
-
-bool check_new_attribute(std::string token)
-{	
-	std::string attributes[] = {"listen", "server_name", "root", "client_max_body_size", "autoindex", "cgi", "index", "location", "allow"};
-	
-	for (size_t i = 0; i < 6; i++)
-	{
-		if (token == attributes[i])
-			return true;
+	int opt = 1;
+	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
+		return failToStart("Error: socket optimise", addr, socketfd);
+	//glob_fd = socketfd;
+	signal(SIGINT, ctrlc);
+    int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
+    if (flags == -1)
+        return failToStart("Error getting socket flags", addr, socketfd);
+    if (fcntl(socketfd, F_SETFL, flags | O_NONBLOCK) == -1)
+        return failToStart("Error setting socket to non-blocking", addr, socketfd);
+    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
+        return failToStart("Error: bind unsuccesful", addr, socketfd);
+    if (listen(socketfd, 2) == -1) {
+        return failToStart("Error: listen unsuccesful", addr, socketfd);
 	}
-	return false;
-}
-
-void	check_requirements(Config temp)
-{
-	if (temp.port.empty() || temp.server_name.empty()) {
-		std::cerr << "Error: Insufficient information on server configuration " << i << ".\nYou need at least a listen port and a server address.";
-		throw InsufficientInformation();
-	}
-}
-
-bool correctfile(std::string file)
-{
-	size_t point = file.find(".");
-	if (point != std::string::npos)
-		if (file.substr(point) != ".config")
-			return false;
-	return true;
 }

@@ -26,6 +26,7 @@
 #include <poll.h>
 #include <sys/wait.h>
 #include "request.hpp"
+#include "Servers.hpp"
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
 std::string	readFile( std::string filePath );
@@ -50,5 +51,7 @@ std::string	parse_attribute(std::istringstream &iss, std::string token);
 std::string findcommand(std::string command);
 int	execute_command(std::string pathcmd, std::string pathfile, char **env);
 bool    correctfile(std::string file);
+void	check_requirements(Config temp)
+
 
 #endif
