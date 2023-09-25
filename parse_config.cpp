@@ -3,133 +3,6 @@
 #include "./includes/Servers.hpp"
 
 
-void	Configfile::validate_config()
-{
-	std::istringstream iss(config);
-
-	std::string token;
-    while (iss >> token) 
-	{
-		if (token == "server")
-		{
-			Config temp_config;
-			if (iss >> token && token == "{")
-			{
-				while (iss >> token) 
-				{
-					if (token == "listen")
-						temp_config.port = parse_attribute(iss, token);
-					else if (token == "host")
-						temp_config.host = parse_attribute(iss, token);
-					else if (token == "server_name")
-					{
-						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-						{
-							if (*(token.end() - 1) == ';')
-								temp_config.server_name.push_back(token.substr(0, token.size() - 1));
-							else
-								temp_config.server_name.push_back(token);
-						}
-					}
-					else if (token == "root")
-						temp_config.root = parse_attribute(iss, token);
-					else if (token == "index")
-						temp_config.index = parse_attribute(iss, token);
-					else if (token == "client_max_body_size")
-						temp_config.max_body_size = parse_attribute(iss, token);
-					else if (token == "allow")
-					{
-						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-						{
-							if (token == "GET" || token == "GET;")
-								temp_config.allow_get = true;
-							else if (token == "POST" || token == "POST;")
-								temp_config.allow_post = true;
-							else if (token == "DELETE" || token == "DELETE;")
-								temp_config.allow_delete = true;
-						}
-					}
-					else if (token == "autoindex")
-						temp_config.autoindex = parse_attribute(iss, token);
-					else if (token == "cgi")
-					{
-						iss >> token;
-						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-							temp_config.cgi_extension = token;
-						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.cgi_directory = token.substr(0, token.size() - 1);						
-					}
-					else if (token == "error_page")
-					{
-						iss >> token;
-						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-							temp_config.error_pages[token] = "";
-						std::string oldtoken = token;
-						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
-					}
-					else if (token == "location")
-					{
-						Location temp_location;
-						iss >> token;
-						temp_location.path = token;
-						if (!check_new_attribute(token) && iss >> token && token == "{")
-						{
-							while (iss >> token)
-							{
-								if (token == "allow")
-								{
-									while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-									{
-										if (token == "GET" || token == "GET;")
-											temp_location.allow_get = true;
-										else if (token == "POST" || token == "POST;")
-											temp_location.allow_post = true;
-										else if (token == "DELETE" || token == "DELETE;")
-											temp_location.allow_delete = true;
-									}
-								}
-								else if (token == "root")
-									temp_location.root = parse_attribute(iss, token);
-								else if (token == "index")
-									temp_location.index = parse_attribute(iss, token);
-								else if (token == "error_page")
-								{
-									iss >> token;
-									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-										temp_location.error_pages[token] = "";
-									std::string oldtoken = token;
-									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-										temp_location.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
-								}
-								else if (token == "return")
-								{
-									iss >> token;
-									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-										temp_location.redirect_status = token;
-									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-										temp_location.redirect_path = token.substr(0, token.size() - 1);						
-								}
-								else if (token == "}")
-								{
-									temp_config.location.push_back(temp_location);
-									break ;
-								}
-							}
-						}
-					}
-					else if (token == "}")
-					{
-						config_array.push_back(temp_config);
-						break ;
-					}
-				}
-			}
-		}
-    }
-	check_requirements();
-}
-
 std::string	parse_attribute(std::istringstream &iss, std::string token)
 {
 	std::string parsed;
@@ -140,53 +13,50 @@ std::string	parse_attribute(std::istringstream &iss, std::string token)
 	return (parsed);
 }
 
-void	Servers::print()
+void	Serv::print(int counter) const
 {
-	for (size_t i = 0; i < servs.size(); i++)
+	std::cout << std::endl;
+	std::cout << "Server Configuration " << counter << std::endl;
+	std::cout << "host: " << serv_info.host << std::endl;	
+	std::cout << "port: " << serv_info.port << std::endl;
+	std::cout << "root: " << serv_info.root << std::endl;
+	std::cout << "index: " << serv_info.index << std::endl;
+	std::cout << "server_name: ";
+	for (size_t j = 0; j < serv_info.server_name.size(); j++)
+	{
+		std::cout << serv_info.server_name[j] << " ";
+	}
+	std::cout << std::endl;
+	std::cout << "max_body_size: " << serv_info.max_body_size << std::endl;
+	std::cout << (serv_info.allow_get ? "GET: allowed" : "GET: denied") << std::endl;
+	std::cout << (serv_info.allow_post ? "POST: allowed" : "POST: denied") << std::endl;
+	std::cout << (serv_info.allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
+	std::cout << "autoindex: " << serv_info.autoindex << std::endl;
+	std::cout << "cgi_extension: " << serv_info.cgi_extension << std::endl;
+	std::cout << "cgi_directory: " << serv_info.cgi_directory << std::endl;
+	std::map<std::string, std::string>::const_iterator it2;
+	for (it2 = serv_info.error_pages.begin(); it2 != serv_info.error_pages.end(); it2++)
+	{
+		std::cout << "error_page " << it2->first << ": " << it2->second << std::endl;
+	}
+	std::vector<Location>::const_iterator it;
+	for (it = serv_info.location.begin(); it != serv_info.location.end(); it++)
 	{
 		std::cout << std::endl;
-		std::cout << "Server Configuration " << i << std::endl;
-		std::cout << "host: " << servs[i].host << std::endl;	
-		std::cout << "port: " << servs[i].port << std::endl;
-		std::cout << "root: " << servs[i].root << std::endl;
-		std::cout << "index: " << servs[i].index << std::endl;
-		std::cout << "server_name: ";
-		for (size_t j = 0; j < servs[i].server_name.size(); j++)
+		std::cout << "Location " << it->path << std::endl;
+		std::cout << "root: " << it->root << std::endl;
+		std::cout << "index: " << it->index << std::endl;
+		std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
+		std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
+		std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
+		std::cout << "redirect_status: " << it->redirect_status << std::endl;
+		std::cout << "redirect_path: " << it->redirect_path << std::endl;			
+		if (!(it->error_pages.empty()))
 		{
-			std::cout << servs[i].server_name[j] << " ";
-		}
-		std::cout << std::endl;
-		std::cout << "max_body_size: " << servs[i].max_body_size << std::endl;
-		std::cout << (servs[i].allow_get ? "GET: allowed" : "GET: denied") << std::endl;
-		std::cout << (servs[i].allow_post ? "POST: allowed" : "POST: denied") << std::endl;
-		std::cout << (servs[i].allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
-		std::cout << "autoindex: " << servs[i].autoindex << std::endl;
-		std::cout << "cgi_extension: " << servs[i].cgi_extension << std::endl;
-		std::cout << "cgi_directory: " << servs[i].cgi_directory << std::endl;
-		std::map<std::string, std::string>::iterator it2;
-		for (it2 = servs[i].error_pages.begin(); it2 != servs[i].error_pages.end(); it2++)
-		{
-			std::cout << "error_page " << it2->first << ": " << it2->second << std::endl;
-		}
-		std::vector<Location>::iterator it;
-		for (it = servs[i].location.begin(); it != servs[i].location.end(); it++)
-		{
-			std::cout << std::endl;
-			std::cout << "Location " << it->path << std::endl;
-			std::cout << "root: " << it->root << std::endl;
-			std::cout << "index: " << it->index << std::endl;
-			std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
-			std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
-			std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
-			std::cout << "redirect_status: " << it->redirect_status << std::endl;
-			std::cout << "redirect_path: " << it->redirect_path << std::endl;			
-			if (!(it->error_pages.empty()))
+			std::map<std::string, std::string>::const_iterator it3;
+			for (it3 = it->error_pages.begin(); it3 != it->error_pages.end(); it3++)
 			{
-				std::map<std::string, std::string>::iterator it3;
-				for (it3 = it->error_pages.begin(); it3 != it->error_pages.end(); it3++)
-				{
-					std::cout << "error_page " << it3->first << ": " << it3->second << std::endl;
-				}
+				std::cout << "error_page " << it3->first << ": " << it3->second << std::endl;
 			}
 		}
 	}
@@ -204,7 +74,7 @@ bool check_new_attribute(std::string token)
 	return false;
 }
 
-void	check_requirements(Config temp)
+void	check_requirements(Config temp, int i)
 {
 	if (temp.port.empty() || temp.server_name.empty()) {
 		std::cerr << "Error: Insufficient information on server configuration " << i << ".\nYou need at least a listen port and a server address.";

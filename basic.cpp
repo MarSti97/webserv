@@ -18,42 +18,16 @@ int main(int ac, char **av, char **env)
         std::cerr << e.what() << std::endl;
         return 0;
     }
-	servs.print();
+	servs.printAll();
   
-    struct addrinfo *addr;
-    if (getaddrinfo(servs.getName(), servs.getPort(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
-        std::cerr << "Error: couldn't get address" << std::endl;
-        return 1;
-    }
-    int socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-    if (socketfd < 0) {
-        return failToStart("Error: socket creation", addr, socketfd);
-	}
-	int opt = 1;
-	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
-		return failToStart("Error: socket optimise", addr, socketfd);
-	glob_fd = socketfd;
-	signal(SIGINT, ctrlc);
-    int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
-    if (flags == -1)
-        return failToStart("Error getting socket flags", addr, socketfd);
-    if (fcntl(socketfd, F_SETFL, flags | O_NONBLOCK) == -1)
-        return failToStart("Error setting socket to non-blocking", addr, socketfd);
-    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
-        return failToStart("Error: bind unsuccesful", addr, socketfd);
-    if (listen(socketfd, 2) == -1) {
-        return failToStart("Error: listen unsuccesful", addr, socketfd);
-	}
     struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
     char buffer[1024];
-
-
-    freeaddrinfo(addr);
+    int socket = servs.getSockets();
 
     std::vector<pollfd> fds;
     fds.push_back(pollfd());
-    fds[0].fd = socketfd;
+    fds[0].fd = socket;
     fds[0].events = POLLIN; // Monitor server socket for incoming connections
 
     while (1)
@@ -71,9 +45,9 @@ int main(int ac, char **av, char **env)
         {
             if (fds[i].revents & POLLIN)
             {
-                if (fds[i].fd == socketfd)
+                if (fds[i].fd == socket)
                 {
-                    if (acceptConnection(socketfd, &clientinfo, size, &fds))
+                    if (acceptConnection(socket, &clientinfo, size, &fds))
                         continue;
                 }
                 else if (fds[i].revents & POLLOUT)

@@ -1,14 +1,15 @@
 #include "./includes/webserv.hpp"
 
-Servers::Servers(std::string file) {
+Servers::Servers(std::string file)
+{
 	config = readFile(file);
 }
 
 void	Servers::validate_config()
 {
 	std::istringstream iss(config);
-
 	std::string token;
+	int i = 0;
     while (iss >> token) 
 	{
 		if (token == "server")
@@ -121,7 +122,7 @@ void	Servers::validate_config()
 					}
 					else if (token == "}")
 					{
-	                    check_requirements(temp_config);
+	                    check_requirements(temp_config, ++i);
 						servs.push_back(Serv(temp_config));
 						break ;
 					}
@@ -131,6 +132,12 @@ void	Servers::validate_config()
     }
 }
 
+void	Servers::printAll() const
+{
+	for (size_t i = 0; i < servs.size(); i++)
+		servs[i].print(i);
+}
+
 void Servers::init()
 {
     validate_config();
@@ -138,6 +145,11 @@ void Servers::init()
     std::vector<Serv>::iterator it;
     for (it = servs.begin(); it != servs.end(); ++it)
         it->establish_connection(); // FIX:: should program exit if one fails or continue with non failed ones
+}
+
+int Servers::getSockets() // FIX:: to get all the sockets for pollfds n shit
+{
+	return servs[0].getSocket();
 }
 
 int Serv::establish_connection()
@@ -166,4 +178,11 @@ int Serv::establish_connection()
     if (listen(socketfd, 2) == -1) {
         return failToStart("Error: listen unsuccesful", addr, socketfd);
 	}
+    freeaddrinfo(addr);
+	return 0; //fix returns and also figure out if exceptions are better
+}
+
+int Serv::getSocket()
+{
+	return socketfd;
 }

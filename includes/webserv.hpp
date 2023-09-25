@@ -36,7 +36,6 @@ std::string	postURL(char *buffer, char **env);
 std::string refererURL(char *buffer);
 void	ctrlc(int signum);
 void	printlog(std::string msg, int arg);
-void	validate_config(void);
 void	print_server_config(std::vector<Config> config_array);
 bool 	check_new_attribute(std::string token);
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
@@ -51,7 +50,6 @@ std::string	parse_attribute(std::istringstream &iss, std::string token);
 std::string findcommand(std::string command);
 int	execute_command(std::string pathcmd, std::string pathfile, char **env);
 bool    correctfile(std::string file);
-void	check_requirements(Config temp)
-
+void	check_requirements(Config temp, int i);
 
 #endif
