@@ -7,19 +7,25 @@ Disposition::Disposition(std::string disposition)
     {
         // std::cerr << "HERE2" << std::endl;
 
-        size_t typeStart = disposition.find("name=") + 6;
+        size_t typeStart = disposition.find("name=");
         size_t typeEnd = disposition.find("\"", typeStart);
         if (typeEnd != 0)
             typeEnd = disposition.find("\r", typeStart);
         if (typeStart != std::string::npos)
+        {
+            typeStart += 6;
             type = disposition.substr(typeStart, typeEnd - typeStart);
+        }
 
-        size_t nameStart = disposition.find("filename=") + 10;
+        size_t nameStart = disposition.find("filename=");
         size_t nameEnd = disposition.find("\"", nameStart);\
         if (nameEnd != 0)
             nameEnd = disposition.find("\r", nameStart);
         if (nameStart != std::string::npos)
+        {
+            nameStart += 10;
             filename = disposition.substr(nameStart, nameEnd - nameStart);
+        }
 
         size_t contentEnd = disposition.find(";", 0);
         if (contentEnd != std::string::npos)
@@ -48,20 +54,29 @@ Content::Content(std::string content, std::string boundary)
     {
         // std::cerr << "HERE1" << std::endl;
 
-        size_t dispositionStart = content.find("Content-Disposition: ") + 20;
+        size_t dispositionStart = content.find("Content-Disposition: ");
         size_t dispositionEnd = content.find("\r", dispositionStart);
         if (dispositionStart != std::string::npos)
+        {
+            dispositionStart += 20;
             filename = Disposition(content.substr(dispositionStart, dispositionEnd - dispositionStart));
+        }
 
-        size_t typeStart = content.find("Content-Type: ") + 13;
+        size_t typeStart = content.find("Content-Type: ");
         size_t typeEnd = content.find("\r", typeStart + 1);
         if (typeStart != std::string::npos)
+        {
+            typeStart += 13;
             content_type = content.substr(typeStart, typeEnd - typeStart);
+        }
 
-        size_t fileStart = content.find("\r\n\r\n") + 4;
+        size_t fileStart = content.find("\r\n\r\n");
         size_t fileEnd = content.find(boundary, fileStart);
         if (fileStart != std::string::npos)
+        {
+            fileStart += 4;
             _content = content.substr(fileStart, fileEnd - fileStart);
+        }
 
     }
 }
@@ -378,7 +393,6 @@ Request::Request( char *buffer )
         size_t dispositionEnd = _request.find(boundary + "--", dispositionStart);
         this->contentdisposition = _request.substr(dispositionStart, dispositionEnd - dispositionStart);
     }
-
 
     if (!get.empty())
     {
