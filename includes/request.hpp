@@ -66,7 +66,7 @@ class Request
     
     public:
         Request();
-        Request( char *buffer );
+        Request( std::string buffer );
         Request( const Request &other );
         Request &operator=( const Request &other);
         Content content;

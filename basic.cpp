@@ -44,7 +44,7 @@ int main(int ac, char **av, char **env)
 	}
     struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
-    char buffer[1024];
+    // char buffer[10];
 
 
     freeaddrinfo(addr);
@@ -56,7 +56,7 @@ int main(int ac, char **av, char **env)
 
     while (1)
     {
-        bzero(buffer, 1024);
+        // bzero(buffer, sizeof(buffer));
         // std::cout << fds.size() << std::endl;
         int ret = poll(&fds[0], fds.size(), -1);
         if (ret == -1)
@@ -78,9 +78,12 @@ int main(int ac, char **av, char **env)
                 {
                     try {
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
-                    if (!parseRecv(fds, i, buffer))
-                        parseSend(fds, i, buffer, env);
+                    std::string buffer(parseRecv(fds, i));
+                    Request *req = new Request(buffer);
+                    if (!buffer.empty())
+                        parseSend(fds, i, *req, env);
                     // std::cout << " " << n << std::endl;
+                    delete req;
                     }
                     catch (const std::exception& e) {}
                 }
@@ -90,9 +93,9 @@ int main(int ac, char **av, char **env)
     return 0;
 }
 
-int parseSend(std::vector<pollfd> &fds, int pos, char *buffer, char **env)
+int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env)
 {
-    std::string response = getResponse(buffer, "guarder-html", "/index.html", env);
+    std::string response = getResponse(req, "guarder-html", "/index.html", env);
     // std::cout << response << std::endl;
 
     // std::cout << response.size();
@@ -113,31 +116,51 @@ int parseSend(std::vector<pollfd> &fds, int pos, char *buffer, char **env)
         fds.erase(fds.begin() + pos);
         return n;
     }
-    close(fds[pos].fd);
-    fds.erase(fds.begin() + pos);
+    else
+    {
+        std::cout << "post chuncked" << std::endl;
+        // std::string checkfile = readFile("./chuncked.txt");
+        // if (checkfile.find())
+    }
     return 0;
 }
 
 
-std::string getResponse(char *buffer, std::string path, std::string index, char **env)
+std::string getResponse(Request req, std::string path, std::string index, char **env)
 {
     std::string filePath;
     std::string mimeType;
     std::string responseHeaders;
+    // std::cout << req.request() << std::endl;
+    // std::cout << req.Get() << std::endl;
 
-    filePath = getURL(buffer);
+    filePath = req.Get();
+    (void)env;
     if (filePath.empty())
 	{
-        filePath = postURL(buffer, env);
- 		std::string response = readFile(path + filePath);
- 		responseHeaders = "HTTP/1.1 302 Found\r\n";
-   	 	responseHeaders += "Location: " + filePath + "\r\n\r\n";
-		return responseHeaders + response;		
+        std::cout << "here" << std::endl;
+        if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
+        {
+            std::cout << "here11" << std::endl;
+            return "";
+        }
+        else
+        {
+            std::cout << "here22" << std::endl;
+            std::string response = readFile(path + req.Referer());
+            responseHeaders = "HTTP/1.1 302 Found\r\n";
+            responseHeaders += "Location: " + filePath + "\r\n\r\n";
+            return responseHeaders + response;		
+        }
 	}
-    // std::cout << path << std::endl;
+    std::cout << "here44" << std::endl;
+
     mimeType = getMimeType(filePath);
+    // std::cout << filePath << std::endl;
+
+    // std::cout << mimeType << std::endl;
     responseHeaders = "HTTP/1.1 200 OK\r\n";
-    responseHeaders += "Content-Type: " + getMimeType(filePath) + "\r\n\r\n";
+    responseHeaders += "Content-Type: " + mimeType + "\r\n\r\n";
     if (filePath.empty() || filePath == "/")
         return responseHeaders + readFile(path + index);
     else
@@ -198,45 +221,53 @@ int checkAllowDelete(std::string folder, std::vector<Location> Locations)
     return it->allow_delete;
 }
 
-int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
+std::string parseRecv(std::vector<pollfd> &fds, int pos)
 {
-    ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
-
-    if (n <= 0)
+    char buffer[2048];
+    std::string findbuffer;
+    ssize_t n;
+    int counter = 0;
+    while (1)
     {
-        if (n == 0)
+        bzero(buffer, sizeof(buffer));
+        n = recv(fds[pos].fd, buffer, 2047, 0);
+        if (n <= 0)
         {
-            // Connection closed by the client
-            close(fds[pos].fd);
-            fds.erase(fds.begin() + pos);
-            return 1;
+            if (n == 0)
+            {
+                if (!counter)
+                {
+                    // Connection closed by the client
+                    close(fds[pos].fd);
+                    fds.erase(fds.begin() + pos);
+                    return "";
+                }
+                break;
+            }
+            std::cerr << "Error reading from poll" << std::endl;
+            perror("read");
+            return "";
         }
-        std::cerr << "Error reading from poll" << std::endl;
-        perror("read");
-        return 1;
+        else
+        {
+            if (findbuffer.empty())
+                findbuffer = std::string(buffer);
+            else
+                findbuffer.append(buffer);
+            if (n < 2047)
+                break;
+        }
+        counter++;
     }
-    else
+    // std::cout << findbuffer << std::endl;
+    size_t ok = findbuffer.find("\r\n\r\n");
+    if (ok == std::string::npos)
     {
-        Request req(buffer);
-        std::string findbuffer(buffer);
-        std::cout << req.request() << " request" << std::endl;
-        std::cout << req.Get() << " get" << std::endl;
-        std::cout << req.Post() << " post"  << std::endl;
-        std::cout << req.Host() << " host"  << std::endl;
-        // std::cout << GetbyUser(findbuffer) << std::endl;
-        // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
-        // {
-        //     if (checkAllowGet(getURL(buffer), 0))
-        // }
-        size_t ok = findbuffer.find("\r\n\r\n");
-        if (ok == std::string::npos)
-        {
-            std::cout << "bad request received" << std::endl;
-            std::cout << buffer << n << std::endl;
-            return 1;
-        }
+        std::cout << "bad request received" << std::endl;
+        std::cout << buffer << n << std::endl;
+        return "";
     }
-    return 0;
+    return findbuffer;
 }
 
 
