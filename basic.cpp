@@ -17,12 +17,17 @@ int main(int ac, char **av, char **env)
         return 0;
     }
 	configInfo.print();
+
+    struct addrinfo hints, *addr;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET; // Use IPv4
+    hints.ai_socktype = SOCK_STREAM; // Use TCP
   
-    struct addrinfo *addr;
-    if (getaddrinfo(configInfo.getName(), configInfo.getPort(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
+    if (getaddrinfo(configInfo.getName(), configInfo.getPort(), &hints, &addr) < 0){
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }
+    std::cout << addr->ai_family << " " << addr->ai_socktype << " " << addr->ai_addr << std::endl;
     int socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
     if (socketfd < 0) {
         return failToStart("Error: socket creation", addr, socketfd);
@@ -39,7 +44,7 @@ int main(int ac, char **av, char **env)
         return failToStart("Error setting socket to non-blocking", addr, socketfd);
     if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
         return failToStart("Error: bind unsuccesful", addr, socketfd);
-    if (listen(socketfd, 2) == -1) {
+    if (listen(socketfd, SOMAXCONN) == -1) {
         return failToStart("Error: listen unsuccesful", addr, socketfd);
 	}
     struct sockaddr_in clientinfo;
@@ -86,6 +91,8 @@ int main(int ac, char **av, char **env)
                     delete req;
                     }
                     catch (const std::exception& e) {}
+                    fds[i].events &= ~POLLOUT;
+                    fds[i].events &= ~POLLIN;
                 }
             }
         }
@@ -101,19 +108,22 @@ int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env)
     // std::cout << response.size();
     if (!response.empty())
     {
-        ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
+        ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), MSG_DONTWAIT);
         if (n < 0)
         {
             std::cerr << "Error writing to socket" << std::endl;
             return 1;
+        }
+        if (n == 0)
+        {
+            close(fds[pos].fd);
+            fds.erase(fds.begin() + pos);
         }
         if ((unsigned long)n != response.size())
         {
             std::cout << "bad response sent" << std::endl;
             return 1;
         }
-        close(fds[pos].fd);
-        fds.erase(fds.begin() + pos);
         return n;
     }
     else
@@ -131,7 +141,7 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     std::string filePath;
     std::string mimeType;
     std::string responseHeaders;
-    // std::cout << req.request() << std::endl;
+    std::cout << req.request() << std::endl;
     // std::cout << req.Get() << std::endl;
 
     filePath = req.Get();
@@ -177,50 +187,6 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     }
 }
 
-int GetbyUser(std::string buffer)
-{
-    size_t user = buffer.find("Sec-Fetch-User: ");
-    if (user != std::string::npos)
-        return 1;
-    return 0;
-}
-
-int checkAllowGet(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_get;
-}
-
-int checkAllowPost(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_post;
-}
-
-int checkAllowDelete(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_delete;
-}
-
 std::string parseRecv(std::vector<pollfd> &fds, int pos)
 {
     char buffer[2048];
@@ -230,7 +196,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     while (1)
     {
         bzero(buffer, sizeof(buffer));
-        n = recv(fds[pos].fd, buffer, 2047, 0);
+        n = recv(fds[pos].fd, buffer, 2047, MSG_DONTWAIT);
         if (n <= 0)
         {
             if (n == 0)
@@ -244,9 +210,15 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 }
                 break;
             }
-            std::cerr << "Error reading from poll" << std::endl;
-            perror("read");
-            return "";
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // No data available for non-blocking receive
+                break;
+            } else {
+                // Handle other receive errors
+                std::cerr << "Error reading from poll" << std::endl;
+                perror("read");
+                return "";
+            }
         }
         else
         {
@@ -254,8 +226,8 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 findbuffer = std::string(buffer);
             else
                 findbuffer.append(buffer);
-            if (n < 2047)
-                break;
+            // if (n < 2047)
+                // break;
         }
         counter++;
     }
@@ -268,26 +240,6 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         return "";
     }
     return findbuffer;
-}
-
-
-int failToStart(std::string error, struct addrinfo *addr, int socketfd)
-{
-    std::cerr << error << std::endl;
-    freeaddrinfo(addr);
-    if (socketfd > 0)
-        close(socketfd);
-    return 1;
-}
-
-void	ctrlc(int signum)
-{
-	if (signum == SIGINT)
-	{
-		close(glob_fd);
-		close(cli_glob);
-		exit(EXIT_FAILURE);
-	}
 }
 
 void	printlog(std::string msg, int arg)
@@ -355,4 +307,68 @@ std::string findcommand(std::string command)
             break ;
     }
 	return (*it + command);
+}
+
+int GetbyUser(std::string buffer)
+{
+    size_t user = buffer.find("Sec-Fetch-User: ");
+    if (user != std::string::npos)
+        return 1;
+    return 0;
+}
+
+int checkAllowGet(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_get;
+}
+
+int checkAllowPost(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_post;
+}
+
+int checkAllowDelete(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_delete;
+}
+
+
+int failToStart(std::string error, struct addrinfo *addr, int socketfd)
+{
+    std::cerr << error << std::endl;
+    freeaddrinfo(addr);
+    if (socketfd > 0)
+        close(socketfd);
+    return 1;
+}
+
+void	ctrlc(int signum)
+{
+	if (signum == SIGINT)
+	{
+		close(glob_fd);
+		close(cli_glob);
+		exit(EXIT_FAILURE);
+	}
 }
