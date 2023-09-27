@@ -53,9 +53,10 @@ int	execute_command(std::string pathcmd, std::string pathfile, char **env);
 bool    correctfile(std::string file);
 void	check_requirements(Config temp, int i);
 
-void	cgi_request(Request &req, Config &conf);
+void	cgi_request(Request &req, Config &conf, std::string path_info, std::string script_extension);
 void	filter_request(Request &req, Config &conf);
 void	init_cgi_meta_vars(Request &req, Config &conf, std::vector<std::string> *meta_vars);
 char	**create_cgi_env(std::vector<std::string> meta_vars);
+int		execute_script(std::string cmd_path, std::string path_info, char **env);
 
 #endif
