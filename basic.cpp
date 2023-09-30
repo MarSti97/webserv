@@ -35,6 +35,10 @@ int main(int ac, char **av, char **env)
 	int opt = 1;
 	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
 		return failToStart("Error: socket optimise", addr, socketfd);
+    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
+        return failToStart("Error: bind unsuccesful", addr, socketfd);
+    if (listen(socketfd, SOMAXCONN) == -1) {
+        return failToStart("Error: listen unsuccesful", addr, socketfd);
 	glob_fd = socketfd;
 	signal(SIGINT, ctrlc);
     int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
@@ -42,10 +46,6 @@ int main(int ac, char **av, char **env)
         return failToStart("Error getting socket flags", addr, socketfd);
     if (fcntl(socketfd, F_SETFL, flags | O_NONBLOCK) == -1)
         return failToStart("Error setting socket to non-blocking", addr, socketfd);
-    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
-        return failToStart("Error: bind unsuccesful", addr, socketfd);
-    if (listen(socketfd, SOMAXCONN) == -1) {
-        return failToStart("Error: listen unsuccesful", addr, socketfd);
 	}
     struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
@@ -53,6 +53,27 @@ int main(int ac, char **av, char **env)
 
 
     freeaddrinfo(addr);
+
+    // int epoll_fd = epoll_create1(0);
+    // if (epoll_fd == -1) {
+    //     perror("epoll_create1");
+    //     return 1;
+    // }
+
+    // struct epoll_event event;
+    // event.events = EPOLLIN;
+    // event.data.fd = socketfd;
+    // if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socketfd, &event) == -1) {
+    //     perror("epoll_ctl");
+    //     return 1;
+    // }
+
+    // std::vector<struct epoll_event> events(10);
+
+    // std::vector<epoll_event> fds;
+    // fds.push_back(event);
+    // event.data.fd = socketfd;
+    // fds[0].events = POLLIN;
 
     std::vector<pollfd> fds;
     fds.push_back(pollfd());
@@ -63,36 +84,31 @@ int main(int ac, char **av, char **env)
     {
         // bzero(buffer, sizeof(buffer));
         // std::cout << fds.size() << std::endl;
-        int ret = poll(&fds[0], fds.size(), -1);
+        int ret = poll(&fds[0], fds.size(), 0);
         if (ret == -1)
         {
             std::cerr << "Error in poll" << std::endl;
             continue;
         }
 
-        for (size_t i = 0; i < fds.size(); ++i)
+        for (size_t i = 0; i < fds.size(); i++)
         {
             if (fds[i].revents & POLLIN)
             {
                 if (fds[i].fd == socketfd)
                 {
                     if (acceptConnection(socketfd, &clientinfo, size, &fds))
-                        continue;
+                        fds[i].events &= ~POLLIN;
+                    continue;
                 }
                 else if (fds[i].revents & POLLOUT)
                 {
-                    try {
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
-                    std::string buffer(parseRecv(fds, i));
+                    std::string buffer = parseRecv(fds, i);
                     Request *req = new Request(buffer);
                     if (!buffer.empty())
                         parseSend(fds, i, *req, env);
-                    // std::cout << " " << n << std::endl;
                     delete req;
-                    }
-                    catch (const std::exception& e) {}
-                    fds[i].events &= ~POLLOUT;
-                    fds[i].events &= ~POLLIN;
                 }
             }
         }
@@ -108,30 +124,23 @@ int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env)
     // std::cout << response.size();
     if (!response.empty())
     {
-        ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), MSG_DONTWAIT);
+        ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
         if (n < 0)
         {
             std::cerr << "Error writing to socket" << std::endl;
             return 1;
-        }
-        if (n == 0)
-        {
-            close(fds[pos].fd);
-            fds.erase(fds.begin() + pos);
         }
         if ((unsigned long)n != response.size())
         {
             std::cout << "bad response sent" << std::endl;
             return 1;
         }
+        // close(fds[pos].fd);
+        // fds.erase(fds.begin() + pos);
         return n;
     }
     else
-    {
         std::cout << "post chuncked" << std::endl;
-        // std::string checkfile = readFile("./chuncked.txt");
-        // if (checkfile.find())
-    }
     return 0;
 }
 
@@ -141,7 +150,7 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     std::string filePath;
     std::string mimeType;
     std::string responseHeaders;
-    std::cout << req.request() << std::endl;
+    // std::cout << req.request() << std::endl;
     // std::cout << req.Get() << std::endl;
 
     filePath = req.Get();
@@ -170,14 +179,18 @@ std::string getResponse(Request req, std::string path, std::string index, char *
 
     // std::cout << mimeType << std::endl;
     responseHeaders = "HTTP/1.1 200 OK\r\n";
-    responseHeaders += "Content-Type: " + mimeType + "\r\n\r\n";
+    responseHeaders += "Content-Type: " + mimeType + "\r\n";
+    responseHeaders += "Connection: keep-alive\r\n";
     if (filePath.empty() || filePath == "/")
         return responseHeaders + readFile(path + index);
     else
     {
         std::string response = readFile(path + filePath);
         // std::cout << path << " " << filePath << std::endl;
-        // std::cout +<< response << std::endl;
+        std::stringstream ss;
+        ss << response.length();
+        responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
+        // std::cout << responseHeaders << std::endl;
         // char buf[1024];
         // getcwd(buf, 1023);
         // std::cout << buf << std::endl;
@@ -189,14 +202,16 @@ std::string getResponse(Request req, std::string path, std::string index, char *
 
 std::string parseRecv(std::vector<pollfd> &fds, int pos)
 {
-    char buffer[2048];
+    char buffer[4096];
     std::string findbuffer;
     ssize_t n;
     int counter = 0;
+    int buf_size = 0;
     while (1)
     {
         bzero(buffer, sizeof(buffer));
-        n = recv(fds[pos].fd, buffer, 2047, MSG_DONTWAIT);
+        n = recv(fds[pos].fd, buffer, 4096, 0);
+        std::cout << n << " recv"<< std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -212,6 +227,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
             }
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
             // No data available for non-blocking receive
+                std::cout << "all recv" << std::endl;
                 break;
             } else {
                 // Handle other receive errors
@@ -226,12 +242,14 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 findbuffer = std::string(buffer);
             else
                 findbuffer.append(buffer);
-            // if (n < 2047)
-                // break;
+            if (n < (ssize_t)sizeof(buffer))
+                break;
         }
         counter++;
+        buf_size += sizeof(buffer);
+        std::cout << findbuffer.size() << " " << buf_size << std::endl;
+        std::cout << buffer << std::endl;
     }
-    // std::cout << findbuffer << std::endl;
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
     {
