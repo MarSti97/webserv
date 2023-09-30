@@ -2,7 +2,7 @@
 
 void	filter_request(Request &req, Config &conf)
 {
-	int	has_query_strings = 0;
+	// int	has_query_strings = 0;
 	int	has_script_extension = 0;
 	std::string	path_info;
 	std::string extension_string;
@@ -12,9 +12,9 @@ void	filter_request(Request &req, Config &conf)
 	else if (!(req.Post().empty()))
 		path_info = req.Post();
 
-	size_t	query_start = path_info.rfind('?');
-	if (query_start != std::string::npos)
-		has_query_strings = 1;
+	// size_t	query_start = path_info.rfind('?');
+	// if (query_start != std::string::npos)
+	// 	has_query_strings = 1;
 
 	size_t	extension_start = path_info.rfind('.');
 	//std::cout << conf.cgi_extension << std::endl;
@@ -29,7 +29,7 @@ void	filter_request(Request &req, Config &conf)
 			// throw error 403
 	}
 
-	if (has_script_extension == 1 || has_query_strings == 1)
+	if (has_script_extension == 1) // || has_query_strings == 1)
 		cgi_request(req, conf, path_info, extension_string);
 	// else
 		// respond to the non-cgi request
@@ -53,7 +53,7 @@ void	cgi_request(Request &req, Config &conf, std::string path_info, std::string 
 	if (script_extension == ".sh")
 		cmd_name = "bash";
 	else if (script_extension == ".py")
-		cmd_name = "python";
+		cmd_name = "python3";
 	else
 		cmd_name = script_extension.substr(1);
 	execute_script(findcommand("/" + cmd_name), path_info, cgi_env); 
@@ -97,7 +97,7 @@ int	execute_script(std::string cmd_path, std::string path_info, char **env)
 		char buffer[4096];
         ssize_t bytes_read;
 
-		while (bytes_read = read(pipe_fd[0], buffer, sizeof(buffer)) > 0)
+		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0)
 		{
 			// this is the output of the executed script, it should inclue a header as well
 			// will need to send the contents of buffer (should include a header)
@@ -177,6 +177,5 @@ char	**create_cgi_env(std::vector<std::string> meta_vars)
 		cgi_env[i++] = strdup((*it).c_str());
 	}
 	cgi_env[i] = NULL;
-	// don't forget to free at the end!
 	return cgi_env;
 }

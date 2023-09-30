@@ -115,7 +115,7 @@
           <div class="detail-box">
             <div class="heading_container ">
               <h2>
-                Pagination Example
+                Who Are We?
               </h2>
             </div>
             <p>
@@ -134,51 +134,8 @@
         </div>
       </div>
     </div>
-    <br>
-    <div class = "container" style="background-color: #db9595"><h1>#db9595</h1></div>
-    <div class = "container" style="background-color: #dba395"><h1>#dba395</h1></div>
-    <div class = "container" style="background-color: #dbb295"><h1>#dbb295</h1></div>
-    <div class = "container" style="background-color: #dbbe95"><h1>#dbbe95</h1></div>
-    <div class = "container" style="background-color: #dbd195"><h1>#dbd195</h1></div>
-    <div class = "container" style="background-color: #c8db95"><h1>#c8db95</h1></div>
-    <div class = "container" style="background-color: #a3db95"><h1>#a3db95</h1></div>
-    <div class = "container" style="background-color: #95dbb2"><h1>#95dbb2</h1></div>
-    <div class = "container" style="background-color: #95dbd4"><h1>#95dbd4</h1></div>
-    <div class = "container" style="background-color: #95cbdb"><h1>#95cbdb</h1></div>
-    <div class = "container" style="background-color: #95bcdb"><h1>#95bcdb</h1></div>
-    <div class = "container" style="background-color: #959edb"><h1>#959edb</h1></div>
-    <div class = "container" style="background-color: #a695db"><h1>#a695db</h1></div>
-    <div class = "container" style="background-color: #bc95db"><h1>#bc95db</h1></div>
-    <div class = "container" style="background-color: #d395db"><h1>#d395db</h1></div>
-    <nav class="container" aria-label="...">
-      <ul class="justify-content-center pagination pagination-lg">
-        <li class="page-item"><a class="page-link" href="about.html?page=1">1</a></li>
-        <li class="page-item"><a class="page-link" href="about.html?page=2">2</a></li>
-        <li class="page-item"><a class="page-link" href="about.html?page=3">3</a></li>
-      </ul>
-    </nav>
   </section>
 
-  <script>
-    function loadPage() {
-        // Get the query string from the current URL
-        var queryString = window.location.search;
-        
-        // Extract the 'page' query parameter
-        var page = new URLSearchParams(queryString).get('page');
-        
-        // If 'page' is not null, load the corresponding Python script
-        if (page) {
-            var script = document.createElement('script');
-            script.src = 'pagination.py' + queryString;
-            document.body.appendChild(script);
-        }
-    }
-
-    // Call the loadPage function when the page loads
-    window.onload = loadPage;
-</script>
-  
   <!-- end about section -->
 
   <!-- info section -->
