@@ -201,12 +201,12 @@ int Request::Eof( void )
     return eof;
 }
 
-Request::Request( char *buffer )
+Request::Request( std::string buffer )
 {
-    if (!buffer)
-        return;
-    std::string req(buffer);
-    this->_request = req;
+    // if (!buffer)
+    //     return;
+    // std::string req(buffer);
+    this->_request = buffer;
 
     size_t getStart = _request.find("GET ");
     if (getStart != std::string::npos)

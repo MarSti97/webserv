@@ -133,46 +133,46 @@ void init_cgi_meta_vars(Request &req, Config &conf, std::vector<std::string> *me
 		path_info = req.Post();
 		req_method = "POST";
 	}
-	// else if (!(req.Delete().empty()))
-	// {
-	// 	path_info = req.Delete();
-	// 	req_method = "DELETE";
-	// }
-	meta_vars->push_back("REQUEST_METHOD=" + req_method);
-	meta_vars->push_back("PATH_INFO=" + path_info);
+	else if (!(req.Delete().empty()))
+	{
+		path_info = req.Delete();
+		req_method = "DELETE";
+	}
+	env.push_back("REQUEST_METHOD=" + req_method);
+	env.push_back("PATH_INFO=" + path_info);
 	// Confirm with the tester
-	meta_vars->push_back("PATH_TRANSLATED=" + conf.root + "/" + path_info);
+	env.push_back("PATH_TRANSLATED=" + conf.root + "/" + path_info);
 	
 	// All of this to protect against substr out of bounds
 	std::string query_string = "";
-	size_t		query_start = path_info.rfind('?');
+	int			query_start = path_info.rfind('?');
 	if (query_start != std::string::npos && query_start != path_info.length() - 1)
 		query_string = path_info.substr(query_start + 1);
 	
-	meta_vars->push_back("QUERY_STRING=" + query_string);
-	meta_vars->push_back("REMOTE_ADDR=");
-	meta_vars->push_back("DOMAIN_NAME=");
-	meta_vars->push_back("REMOTE_IDENT=");
-	meta_vars->push_back("REMOTE_USER=");
-	meta_vars->push_back("SCRIPT_NAME=" + path_info.erase(path_info.rfind('?')));
-	meta_vars->push_back("SERVER_NAME=" + conf.host);
-	meta_vars->push_back("SERVER_PORT=" + conf.port);
-	meta_vars->push_back("SERVER_PROTOCOL=HTTP/1.1");
-	meta_vars->push_back("SERVER_SOFTWARE=");
+	env.push_back("QUERY_STRING=" + query_string);
+	env.push_back("REMOTE_ADDR=");
+	env.push_back("DOMAIN_NAME=");
+	env.push_back("REMOTE_IDENT=");
+	env.push_back("REMOTE_USER=");
+	env.push_back("SCRIPT_NAME=" + path_info.erase(path_info.rfind('?')));
+	env.push_back("SERVER_NAME=" + conf.host);
+	env.push_back("SERVER_PORT=" + conf.port);
+	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	env.push_back("SERVER_SOFTWARE=");
 }
 
-char	**create_cgi_env(std::vector<std::string> meta_vars)
+void	create_cgi_env(std::vector<std::string> env)
 {
 	char **cgi_env = (char **)malloc(sizeof(char*) * 17 + 1);
 	if (!cgi_env)
 	{
 		std::cerr << "Error allocating memory for the CGI env" << std::endl;
-		return NULL;
+		return ;
 	}
 
 	int i = 0;
 	std::vector<std::string>::iterator it;
-	for (it = meta_vars.begin(); it != meta_vars.end(); it++)
+	for (it = env.begin(); it != env.end(); it++)
 	{
 		cgi_env[i++] = strdup((*it).c_str());
 	}

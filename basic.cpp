@@ -17,12 +17,17 @@ int main(int ac, char **av, char **env)
         return 0;
     }
 	configInfo.print();
+
+    struct addrinfo hints, *addr;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET; // Use IPv4
+    hints.ai_socktype = SOCK_STREAM; // Use TCP
   
-    struct addrinfo *addr;
-    if (getaddrinfo(configInfo.getName(), configInfo.getPort(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
+    if (getaddrinfo(configInfo.getName(), configInfo.getPort(), &hints, &addr) < 0){
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }
+    std::cout << addr->ai_family << " " << addr->ai_socktype << " " << addr->ai_addr << std::endl;
     int socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
     if (socketfd < 0) {
         return failToStart("Error: socket creation", addr, socketfd);
@@ -30,6 +35,10 @@ int main(int ac, char **av, char **env)
 	int opt = 1;
 	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
 		return failToStart("Error: socket optimise", addr, socketfd);
+    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
+        return failToStart("Error: bind unsuccesful", addr, socketfd);
+    if (listen(socketfd, SOMAXCONN) == -1) {
+        return failToStart("Error: listen unsuccesful", addr, socketfd);
 	glob_fd = socketfd;
 	signal(SIGINT, ctrlc);
     int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
@@ -37,17 +46,34 @@ int main(int ac, char **av, char **env)
         return failToStart("Error getting socket flags", addr, socketfd);
     if (fcntl(socketfd, F_SETFL, flags | O_NONBLOCK) == -1)
         return failToStart("Error setting socket to non-blocking", addr, socketfd);
-    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
-        return failToStart("Error: bind unsuccesful", addr, socketfd);
-    if (listen(socketfd, 2) == -1) {
-        return failToStart("Error: listen unsuccesful", addr, socketfd);
 	}
     struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
-    char buffer[1024];
+    // char buffer[10];
 
 
     freeaddrinfo(addr);
+
+    // int epoll_fd = epoll_create1(0);
+    // if (epoll_fd == -1) {
+    //     perror("epoll_create1");
+    //     return 1;
+    // }
+
+    // struct epoll_event event;
+    // event.events = EPOLLIN;
+    // event.data.fd = socketfd;
+    // if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socketfd, &event) == -1) {
+    //     perror("epoll_ctl");
+    //     return 1;
+    // }
+
+    // std::vector<struct epoll_event> events(10);
+
+    // std::vector<epoll_event> fds;
+    // fds.push_back(event);
+    // event.data.fd = socketfd;
+    // fds[0].events = POLLIN;
 
     std::vector<pollfd> fds;
     fds.push_back(pollfd());
@@ -56,33 +82,33 @@ int main(int ac, char **av, char **env)
 
     while (1)
     {
-        bzero(buffer, 1024);
+        // bzero(buffer, sizeof(buffer));
         // std::cout << fds.size() << std::endl;
-        int ret = poll(&fds[0], fds.size(), -1);
+        int ret = poll(&fds[0], fds.size(), 0);
         if (ret == -1)
         {
             std::cerr << "Error in poll" << std::endl;
             continue;
         }
 
-        for (size_t i = 0; i < fds.size(); ++i)
+        for (size_t i = 0; i < fds.size(); i++)
         {
             if (fds[i].revents & POLLIN)
             {
                 if (fds[i].fd == socketfd)
                 {
                     if (acceptConnection(socketfd, &clientinfo, size, &fds))
-                        continue;
+                        fds[i].events &= ~POLLIN;
+                    continue;
                 }
                 else if (fds[i].revents & POLLOUT)
                 {
-                    try {
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
-                    if (!parseRecv(fds, i, buffer))
-                        parseSend(fds, i, buffer, env);
-                    // std::cout << " " << n << std::endl;
-                    }
-                    catch (const std::exception& e) {}
+                    std::string buffer = parseRecv(fds, i);
+                    Request *req = new Request(buffer);
+                    if (!buffer.empty())
+                        parseSend(fds, i, *req, env);
+                    delete req;
                 }
             }
         }
@@ -90,9 +116,9 @@ int main(int ac, char **av, char **env)
     return 0;
 }
 
-int parseSend(std::vector<pollfd> &fds, int pos, char *buffer, char **env)
+int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env)
 {
-    std::string response = getResponse(buffer, "guarder-html", "/index.html", env);
+    std::string response = getResponse(req, "guarder-html", "/index.html", env);
     // std::cout << response << std::endl;
 
     // std::cout << response.size();
@@ -109,42 +135,62 @@ int parseSend(std::vector<pollfd> &fds, int pos, char *buffer, char **env)
             std::cout << "bad response sent" << std::endl;
             return 1;
         }
-        close(fds[pos].fd);
-        fds.erase(fds.begin() + pos);
+        // close(fds[pos].fd);
+        // fds.erase(fds.begin() + pos);
         return n;
     }
-    close(fds[pos].fd);
-    fds.erase(fds.begin() + pos);
+    else
+        std::cout << "post chuncked" << std::endl;
     return 0;
 }
 
 
-std::string getResponse(char *buffer, std::string path, std::string index, char **env)
+std::string getResponse(Request req, std::string path, std::string index, char **env)
 {
     std::string filePath;
     std::string mimeType;
     std::string responseHeaders;
+    // std::cout << req.request() << std::endl;
+    // std::cout << req.Get() << std::endl;
 
-    filePath = getURL(buffer);
+    filePath = req.Get();
+    (void)env;
     if (filePath.empty())
 	{
-        filePath = postURL(buffer, env);
- 		std::string response = readFile(path + filePath);
- 		responseHeaders = "HTTP/1.1 302 Found\r\n";
-   	 	responseHeaders += "Location: " + filePath + "\r\n\r\n";
-		return responseHeaders + response;		
+        std::cout << "here" << std::endl;
+        if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
+        {
+            std::cout << "here11" << std::endl;
+            return "";
+        }
+        else
+        {
+            std::cout << "here22" << std::endl;
+            std::string response = readFile(path + req.Referer());
+            responseHeaders = "HTTP/1.1 302 Found\r\n";
+            responseHeaders += "Location: " + filePath + "\r\n\r\n";
+            return responseHeaders + response;		
+        }
 	}
-    // std::cout << path << std::endl;
+    std::cout << "here44" << std::endl;
+
     mimeType = getMimeType(filePath);
+    // std::cout << filePath << std::endl;
+
+    // std::cout << mimeType << std::endl;
     responseHeaders = "HTTP/1.1 200 OK\r\n";
-    responseHeaders += "Content-Type: " + getMimeType(filePath) + "\r\n\r\n";
+    responseHeaders += "Content-Type: " + mimeType + "\r\n";
+    responseHeaders += "Connection: keep-alive\r\n";
     if (filePath.empty() || filePath == "/")
         return responseHeaders + readFile(path + index);
     else
     {
         std::string response = readFile(path + filePath);
         // std::cout << path << " " << filePath << std::endl;
-        // std::cout +<< response << std::endl;
+        std::stringstream ss;
+        ss << response.length();
+        responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
+        // std::cout << responseHeaders << std::endl;
         // char buf[1024];
         // getcwd(buf, 1023);
         // std::cout << buf << std::endl;
@@ -154,109 +200,64 @@ std::string getResponse(char *buffer, std::string path, std::string index, char 
     }
 }
 
-int GetbyUser(std::string buffer)
+std::string parseRecv(std::vector<pollfd> &fds, int pos)
 {
-    size_t user = buffer.find("Sec-Fetch-User: ");
-    if (user != std::string::npos)
-        return 1;
-    return 0;
-}
-
-int checkAllowGet(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
+    char buffer[4096];
+    std::string findbuffer;
+    ssize_t n;
+    int counter = 0;
+    int buf_size = 0;
+    while (1)
     {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_get;
-}
-
-int checkAllowPost(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_post;
-}
-
-int checkAllowDelete(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_delete;
-}
-
-int parseRecv(std::vector<pollfd> &fds, int pos, char *buffer)
-{
-    ssize_t n = recv(fds[pos].fd, buffer, 1023, 0);
-
-    if (n <= 0)
-    {
-        if (n == 0)
+        bzero(buffer, sizeof(buffer));
+        n = recv(fds[pos].fd, buffer, 4096, 0);
+        std::cout << n << " recv"<< std::endl;
+        if (n <= 0)
         {
-            // Connection closed by the client
-            close(fds[pos].fd);
-            fds.erase(fds.begin() + pos);
-            return 1;
+            if (n == 0)
+            {
+                if (!counter)
+                {
+                    // Connection closed by the client
+                    close(fds[pos].fd);
+                    fds.erase(fds.begin() + pos);
+                    return "";
+                }
+                break;
+            }
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // No data available for non-blocking receive
+                std::cout << "all recv" << std::endl;
+                break;
+            } else {
+                // Handle other receive errors
+                std::cerr << "Error reading from poll" << std::endl;
+                perror("read");
+                return "";
+            }
         }
-        std::cerr << "Error reading from poll" << std::endl;
-        perror("read");
-        return 1;
-    }
-    else
-    {
-        Request req(buffer);
-        std::string findbuffer(buffer);
-        std::cout << req.request() << " request" << std::endl;
-        std::cout << req.Get() << " get" << std::endl;
-        std::cout << req.Post() << " post"  << std::endl;
-        std::cout << req.Host() << " host"  << std::endl;
-        // std::cout << GetbyUser(findbuffer) << std::endl;
-        // if (GetbyUser(findbuffer)) // check if USER can get the page that he wrote.
-        // {
-        //     if (checkAllowGet(getURL(buffer), 0))
-        // }
-        size_t ok = findbuffer.find("\r\n\r\n");
-        if (ok == std::string::npos)
+        else
         {
-            std::cout << "bad request received" << std::endl;
-            std::cout << buffer << n << std::endl;
-            return 1;
+            if (findbuffer.empty())
+                findbuffer = std::string(buffer);
+            else
+                findbuffer.append(buffer);
+            if (n < (ssize_t)sizeof(buffer))
+                break;
         }
+        counter++;
+        buf_size += sizeof(buffer);
+        std::cout << findbuffer.size() << " " << buf_size << std::endl;
+        std::cout << buffer << std::endl;
     }
-    return 0;
-}
-
-
-int failToStart(std::string error, struct addrinfo *addr, int socketfd)
-{
-    std::cerr << error << std::endl;
-    freeaddrinfo(addr);
-    if (socketfd > 0)
-        close(socketfd);
-    return 1;
-}
-
-void	ctrlc(int signum)
-{
-	if (signum == SIGINT)
-	{
-		close(glob_fd);
-		close(cli_glob);
-		exit(EXIT_FAILURE);
-	}
+    size_t ok = findbuffer.find("\r\n\r\n");
+    if (ok == std::string::npos)
+    {
+        std::cout << "bad request received" << std::endl;
+        std::cout << buffer << n << std::endl;
+        return "";
+    }
+    return findbuffer;
 }
 
 void	printlog(std::string msg, int arg)
@@ -324,4 +325,68 @@ std::string findcommand(std::string command)
             break ;
     }
 	return (*it + command);
+}
+
+int GetbyUser(std::string buffer)
+{
+    size_t user = buffer.find("Sec-Fetch-User: ");
+    if (user != std::string::npos)
+        return 1;
+    return 0;
+}
+
+int checkAllowGet(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_get;
+}
+
+int checkAllowPost(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_post;
+}
+
+int checkAllowDelete(std::string folder, std::vector<Location> Locations)
+{
+    std::vector<Location>::iterator it;
+
+    for (it = Locations.begin(); it != Locations.end(); ++it)
+    {
+        if (it->root == folder)
+            break;
+    }
+    return it->allow_delete;
+}
+
+
+int failToStart(std::string error, struct addrinfo *addr, int socketfd)
+{
+    std::cerr << error << std::endl;
+    freeaddrinfo(addr);
+    if (socketfd > 0)
+        close(socketfd);
+    return 1;
+}
+
+void	ctrlc(int signum)
+{
+	if (signum == SIGINT)
+	{
+		close(glob_fd);
+		close(cli_glob);
+		exit(EXIT_FAILURE);
+	}
 }
