@@ -43,6 +43,7 @@ class Request
     private:
         std::string _request;
         std::string get;
+        std::string query;
         std::string post;
         std::string host;
 		std::string port;
@@ -73,6 +74,7 @@ class Request
         Content content;
         std::string request( void ) const;
         std::string Get( void ) const;
+        std::string Query( void ) const;
         std::string Post( void ) const;
         std::string Host( void ) const;
         std::string Port( void ) const;

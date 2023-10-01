@@ -101,6 +101,11 @@ std::string Request::Get( void ) const
     return get;
 }
 
+std::string Request::Query( void ) const
+{
+    return query;
+}
+
 std::string Request::Post( void ) const
 {
     return post;
@@ -239,6 +244,16 @@ Request::Request( std::string buffer )
 {
     this->_request = buffer;
 	this->get = getINFOone(this->_request, "GET ", 4);
+    size_t queryStart = _request.find("GET ");
+    if (queryStart != std::string::npos)
+    {
+        queryStart += 4;
+		// std::cout << "CORRECT" << std::endl;
+        size_t queryEnd = _request.find(" ", queryStart);
+        size_t queryEnd2 = _request.find("?", queryStart);
+        if (queryEnd2 < queryEnd)
+            this->query = _request.substr(queryEnd2, queryEnd - queryEnd2);
+    }
 	this->post = getINFOone(this->_request, "POST ", 5);
 
 	this->host = getINFOtwo(this->_request, "Host: ", 6);
