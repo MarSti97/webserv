@@ -198,9 +198,8 @@ void Servers::run()
 
 						std::string buffer = parseRecv(fds, i);
 						Request *req = new Request(buffer);
-						std::cout << req->Query() << std::endl;
-						std::vector<Serv>::iterator theServ = getCorrectServ(req);
-						theServ->getSocket(); // change to joao function
+						getCorrectServ(req).filter_request(*req);
+						//servs[0].filter_request(*req);
 						if (!buffer.empty())
 							parseSend(fds, i, *req, env);
 						delete req;
@@ -223,15 +222,17 @@ int	Servers::checkSockets(int fd)
 	return 0;
 }
 
-std::vector<Serv>::iterator	Servers::getCorrectServ(Request *req)
+Serv	&Servers::getCorrectServ(Request *req)
 {
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
 		if (it->compareHostPort(req->Host(), req->Port()))
-			return it;
+		{
+			return *it;
+		}
 	}
-	return servs.end();
+	return *servs.end();
 }
 
 int Serv::establish_connection()

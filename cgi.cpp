@@ -11,7 +11,6 @@ void	Serv::filter_request(Request &req)
 	else if (!(req.Post().empty()))
 		path_info = req.Post();
 
-	std::cout << "---" << path_info << std::endl;
 	size_t	extension_start = path_info.rfind('.');
 	if (extension_start != std::string::npos)
 	{
@@ -20,7 +19,6 @@ void	Serv::filter_request(Request &req)
 			extension_string = path_info.substr(extension_start, query_start - extension_start);
 		else
 			extension_string = path_info.substr(extension_start);
-		std::cout << extension_string << std::endl;
 		if (extension_string == serv_info.cgi_extension)
 			has_script_extension = 1;
 		// else if the file is a script but cgi isn't enabled (we can check if the file isn't html, css or common image types)
@@ -29,7 +27,6 @@ void	Serv::filter_request(Request &req)
 
 	if (has_script_extension == 1) // || has_query_strings == 1)
 	{
-		std::cout << "HERE" << std::endl;
 		cgi_request(req, path_info, extension_string);
 	}
 	// else
@@ -143,20 +140,11 @@ void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
 	meta_vars->push_back("PATH_INFO=" + path_info);
 	// Confirm with the tester
 	meta_vars->push_back("PATH_TRANSLATED=" + serv_info.root + "/" + path_info);
-	
-	std::string query_string = "";
-	size_t			query_start = path_info.rfind('?');
-	std::cout << path_info.length() - 1 << "\t" << query_start << std::endl;
-	if (query_start != std::string::npos && query_start != (path_info.length() - 1))
-		query_string = path_info.substr(query_start + 1);
-	std::cout << query_string << std::endl;
-	meta_vars->push_back("QUERY_STRING=" + query_string);
+	meta_vars->push_back("QUERY_STRING=" + req.Query());
 	meta_vars->push_back("REMOTE_ADDR=");
 	meta_vars->push_back("DOMAIN_NAME=");
 	meta_vars->push_back("REMOTE_IDENT=");
 	meta_vars->push_back("REMOTE_USER=");
-	if (!query_string.empty())
-		path_info = path_info.erase(path_info.rfind('?'));
 	meta_vars->push_back("SCRIPT_NAME=" + path_info);
 	meta_vars->push_back("SERVER_NAME=" + serv_info.host);
 	meta_vars->push_back("SERVER_PORT=" + serv_info.port);

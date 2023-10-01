@@ -43,7 +43,7 @@ class Servers
 		void	init();
 		void	run();
 		int		checkSockets(int fd);
-		std::vector<Serv>::iterator		getCorrectServ(Request *req);
+		Serv	&getCorrectServ(Request *req);
 };
 
 
