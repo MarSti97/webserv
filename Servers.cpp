@@ -176,7 +176,7 @@ void Servers::run()
             {
                 if (int socketfd = checkSockets(fds[i].fd))
                 {
-					std::cout << "SOCKET WORK:: " << socketfd << std::endl;
+					// std::cout << "SOCKET WORK:: " << socketfd << std::endl;
                     if (acceptConnection(socketfd, &clientinfo, size, &fds))
                         fds[i].events &= ~POLLIN;
                     continue;
@@ -186,6 +186,8 @@ void Servers::run()
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
                     std::string buffer = parseRecv(fds, i);
                     Request *req = new Request(buffer);
+					std::vector<Serv>::iterator theServ = getCorrectServ(req);
+					theServ->getSocket(); // change to joao function
                     if (!buffer.empty())
                         parseSend(fds, i, *req, env);
                     delete req;
@@ -194,6 +196,8 @@ void Servers::run()
         }
     }
 }
+
+
 
 int	Servers::checkSockets(int fd)
 {
@@ -207,10 +211,16 @@ int	Servers::checkSockets(int fd)
 	return 0;
 }
 
-// int Servers::getSockets() // FIX:: to get all the sockets for pollfds n shit
-// {
-// 	return servs[0].getSocket();
-// }
+std::vector<Serv>::iterator	Servers::getCorrectServ(Request *req)
+{
+	std::vector<Serv>::iterator it;
+	for (it = servs.begin(); it != servs.end(); ++it)
+	{
+		if (it->compareHostPort(req->Host(), req->Port()))
+			return it;
+	}
+	return servs.end();
+}
 
 int Serv::establish_connection()
 {
@@ -290,6 +300,14 @@ void	Serv::print(int counter) const
 		}
 	}
 }
+
+bool Serv::compareHostPort(std::string host, std::string port)
+{
+	if (serv_info.host == host && serv_info.port == port)
+		return true;
+	return false;
+}
+
 
 int Serv::getSocket()
 {

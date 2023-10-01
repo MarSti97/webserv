@@ -45,6 +45,7 @@ class Request
         std::string get;
         std::string post;
         std::string host;
+		std::string port;
         std::string useragent;
         std::string accept;
         std::string acceptencoding;
@@ -74,6 +75,7 @@ class Request
         std::string Get( void ) const;
         std::string Post( void ) const;
         std::string Host( void ) const;
+        std::string Port( void ) const;
         std::string Useragent( void ) const;
         std::string Accept( void ) const;
         std::string Acceptencoding( void ) const;

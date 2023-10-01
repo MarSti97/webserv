@@ -3,6 +3,8 @@
 
 #include "webserv.hpp"
 
+class Request;
+
 class Serv
 {
 	private :
@@ -16,6 +18,7 @@ class Serv
 		int establish_connection();
 		void print(int i) const;
 		int	getSocket();
+		bool compareHostPort(std::string host, std::string port);
 };
 
 class Servers
@@ -36,6 +39,7 @@ class Servers
 		void	init();
 		void	run();
 		int		checkSockets(int fd);
+		std::vector<Serv>::iterator		getCorrectServ(Request *req);
 };
 
 
