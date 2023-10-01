@@ -65,20 +65,20 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     (void)env;
     if (filePath.empty())
 	{
-        std::cout << "here" << std::endl;
-        if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
-        {
-            std::cout << "here11" << std::endl;
-            return "";
-        }
-        else
-        {
-            std::cout << "here22" << std::endl;
-            std::string response = readFile(path + req.Referer());
-            responseHeaders = "HTTP/1.1 302 Found\r\n";
-            responseHeaders += "Location: " + filePath + "\r\n\r\n";
-            return responseHeaders + response;		
-        }
+        // std::cout << "here" << std::endl;
+        // if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
+        // {
+        //     std::cout << "here11" << std::endl;
+        //     return "";
+        // }
+        // else
+        // {
+        //     std::cout << "here22" << std::endl;
+        //     std::string response = readFile(path + req.Referer());
+        //     responseHeaders = "HTTP/1.1 302 Found\r\n";
+        //     responseHeaders += "Location: " + filePath + "\r\n\r\n";
+        //     return responseHeaders + response;		
+        // }
 	}
     std::cout << "here44" << std::endl;
 

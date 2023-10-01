@@ -75,38 +75,38 @@ std::string getMimeType(const std::string& filePath)
     return "text/html"; // Default MIME type
 }
 
-int	execute_command(std::string pathcmd, std::string pathfile, char **env)
-{
-	int		output_fd[2];
-	pid_t	pid;
-    int status = 0;
+// int	execute_command(std::string pathcmd, std::string pathfile, char **env)
+// {
+// 	int		output_fd[2];
+// 	pid_t	pid;
+//     int status = 0;
 
-	if (pipe(output_fd) == -1)
-		perror("pipe");
-	pid = fork();
-	if (pid == -1)
-		perror("fork");
-	if (pid == 0)
-	{
-        char *argv[2];
-        argv[0] = const_cast<char *>((pathcmd).c_str());
-		// temporary fix just to test, replace with cgi-path of the config file
-		pathfile = "guarder-html" + pathfile;
-        argv[1] = const_cast<char *>((pathfile).c_str());
-		close(output_fd[0]);
-        int fd = open("/dev/null", O_RDWR);
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        close(fd);
-		if (execve(pathcmd.c_str(), argv, env) == -1)
-            perror("execve");
-	}
-	else
-	{
-		close(output_fd[0]);
-		close(output_fd[1]);
-		wait(&status);
-	}
-	return (status);
-}
+// 	if (pipe(output_fd) == -1)
+// 		perror("pipe");
+// 	pid = fork();
+// 	if (pid == -1)
+// 		perror("fork");
+// 	if (pid == 0)
+// 	{
+//         char *argv[2];
+//         argv[0] = const_cast<char *>((pathcmd).c_str());
+// 		// temporary fix just to test, replace with cgi-path of the config file
+// 		pathfile = "guarder-html" + pathfile;
+//         argv[1] = const_cast<char *>((pathfile).c_str());
+// 		close(output_fd[0]);
+//         int fd = open("/dev/null", O_RDWR);
+//         dup2(fd, STDIN_FILENO);
+//         dup2(fd, STDOUT_FILENO);
+//         dup2(fd, STDERR_FILENO);
+//         close(fd);
+// 		if (execve(pathcmd.c_str(), argv, env) == -1)
+//             perror("execve");
+// 	}
+// 	else
+// 	{
+// 		close(output_fd[0]);
+// 		close(output_fd[1]);
+// 		wait(&status);
+// 	}
+// 	return (status);
+// }

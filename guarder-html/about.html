@@ -170,7 +170,7 @@
         // If 'page' is not null, load the corresponding Python script
         if (page) {
             var script = document.createElement('script');
-            script.src = 'pagination.py' + queryString;
+            script.src = '/cgi-bin/pagination.py' + queryString;
             document.body.appendChild(script);
         }
     }

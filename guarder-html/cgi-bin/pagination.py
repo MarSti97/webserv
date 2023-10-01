@@ -21,8 +21,8 @@ divs = ['''<div class = "container" style="background-color: #db9595"><h1>#db959
           '''<div class = "container" style="background-color: #d395db"><h1>#d395db</h1></div>''']
 
 
-#query_string = int(os.environ.get("QUERY_STRING"))
-query_string = "HELLO=1"
+query_string = int(os.environ.get("QUERY_STRING"))
+#query_string = "HELLO=1"
 key, page_number = query_string.split('=')
 page_number = int(page_number)
 # Set the content type to HTML

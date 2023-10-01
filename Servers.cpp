@@ -185,7 +185,10 @@ void Servers::run()
                 {
                     // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
                     std::string buffer = parseRecv(fds, i);
-                    Request *req = new Request(buffer);
+					std::cout << buffer << std::endl;
+					Request *req = new Request(buffer);
+                    servs[0].filter_request(*req);
+
                     if (!buffer.empty())
                         parseSend(fds, i, *req, env);
                     delete req;
