@@ -65,7 +65,7 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     (void)env;
     if (filePath.empty())
 	{
-        std::cout << "here" << std::endl;
+        // std::cout << "here" << std::endl;
         if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
         {
             std::cout << "here11" << std::endl;
@@ -73,14 +73,14 @@ std::string getResponse(Request req, std::string path, std::string index, char *
         }
         else
         {
-            std::cout << "here22" << std::endl;
+            // std::cout << "here22" << std::endl;
             std::string response = readFile(path + req.Referer());
             responseHeaders = "HTTP/1.1 302 Found\r\n";
             responseHeaders += "Location: " + filePath + "\r\n\r\n";
             return responseHeaders + response;		
         }
 	}
-    std::cout << "here44" << std::endl;
+    // std::cout << "here44" << std::endl;
 
     mimeType = getMimeType(filePath);
     // std::cout << filePath << std::endl;
@@ -119,7 +119,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fds[pos].fd, buffer, 4096, 0);
-        std::cout << n << " recv"<< std::endl;
+        // std::cout << n << " recv"<< std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -127,6 +127,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 if (!counter)
                 {
                     // Connection closed by the client
+                    printlog("LOST CLIENT", fds[pos].fd, RED);
                     close(fds[pos].fd);
                     fds.erase(fds.begin() + pos);
                     return "";
@@ -155,8 +156,8 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         }
         counter++;
         buf_size += sizeof(buffer);
-        std::cout << findbuffer.size() << " " << buf_size << std::endl;
-        std::cout << buffer << std::endl;
+        // std::cout << findbuffer.size() << " " << buf_size << std::endl;
+        // std::cout << buffer << std::endl;
     }
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
@@ -168,9 +169,33 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     return findbuffer;
 }
 
-void	printlog(std::string msg, int arg)
+void	printlog(std::string msg, int arg, std::string color)
 {
-	std::cout << "server log [8-9-23] " << msg << " " << arg << std::endl; 
+	std::cout << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl; 
+}
+
+std::string makeStamp( void )
+{
+    time_t currentTime;
+    struct tm *localTimeInfo;
+
+    // Get the current time
+    time(&currentTime);
+
+    // Convert the current time to a local time structure
+    localTimeInfo = localtime(&currentTime);
+    std::stringstream hours, minutes, day, month, year;
+    // ss << length;
+    std::string lengthStr = hours.str();
+    // Extract the individual components of the time
+    hours << localTimeInfo->tm_hour;
+    minutes << localTimeInfo->tm_min;
+    day << localTimeInfo->tm_mday;
+    month << localTimeInfo->tm_mon + 1; // Months are 0-based
+    year << localTimeInfo->tm_year + 1900; // Years are counted from 1900
+
+    // Print the formatted timestamp
+    return hours.str() + ':' + minutes.str() + '/' + day.str() + '-' + month.str() + '-' + year.str();
 }
 
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
@@ -180,6 +205,7 @@ int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &si
     // std::cout << clientsocket << std::endl;
     if (clientsocket != -1)
     {
+        printlog("NEW CLIENT", clientsocket - 2, GREEN);
         pollfd client_pollfd;
         client_pollfd.fd = clientsocket;
         client_pollfd.events = POLLIN | POLLOUT; // Monitor for read and write

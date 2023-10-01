@@ -158,39 +158,50 @@ void Servers::run()
 {
 	struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
+	int timeout = 0;
 
 	while (true)
     {
-        // bzero(buffer, sizeof(buffer));
-        // std::cout << fds.size() << std::endl;
-        int ret = poll(&fds[0], fds.size(), 0);
-        if (ret == -1)
+        for (size_t i = 0; i < fds.size(); ++i)
         {
-            std::cerr << "Error in poll" << std::endl;
-            continue;
-        }
+			timeout = 0;
+			if (i >= servs.size())
+				timeout = 10000;
+			int ret = poll(&fds[i], 1, timeout);
+			if (ret == -1)
+			{
+				std::cerr << "Error in poll" << std::endl;
+				continue;
+			}
+			if (ret == 0 && !checkSockets(fds[i].fd))
+			{
+				printlog("TIMEOUT CLIENT", fds[i].fd - 2, RED);
+				// close(fds[i].fd);
+        		// fds.erase(fds.begin() + i);
+			}
+			else
+			{
+				if (fds[i].revents & POLLIN)
+				{
+					if (int socketfd = checkSockets(fds[i].fd))
+					{
+						if (acceptConnection(socketfd, &clientinfo, size, &fds))
+							fds[i].events &= ~POLLIN;
+						continue;
+					}
+					else if (fds[i].revents & POLLOUT)
+					{
+						// std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
+						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
-        for (size_t i = 0; i < fds.size(); i++)
-        {
-            if (fds[i].revents & POLLIN)
-            {
-                if (int socketfd = checkSockets(fds[i].fd))
-                {
-					std::cout << "SOCKET WORK:: " << socketfd << std::endl;
-                    if (acceptConnection(socketfd, &clientinfo, size, &fds))
-                        fds[i].events &= ~POLLIN;
-                    continue;
-                }
-                else if (fds[i].revents & POLLOUT)
-                {
-                    // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
-                    std::string buffer = parseRecv(fds, i);
-                    Request *req = new Request(buffer);
-                    if (!buffer.empty())
-                        parseSend(fds, i, *req, env);
-                    delete req;
-                }
-            }
+						std::string buffer = parseRecv(fds, i);
+						Request *req = new Request(buffer);
+						if (!buffer.empty())
+							parseSend(fds, i, *req, env);
+						delete req;
+					}
+				}
+			}
         }
     }
 }
@@ -200,7 +211,7 @@ int	Servers::checkSockets(int fd)
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
-		std::cout << "COMP:: " << it->getSocket() << " " << fd << std::endl; 
+		// std::cout << "COMP:: " << it->getSocket() << " " << fd << std::endl; 
 		if (it->getSocket() == fd)
 			return fd;
 	}
