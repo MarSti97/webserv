@@ -198,6 +198,7 @@ void Servers::run()
 
 						std::string buffer = parseRecv(fds, i);
 						Request *req = new Request(buffer);
+						std::cout << req->Query() << std::endl;
 						std::vector<Serv>::iterator theServ = getCorrectServ(req);
 						theServ->getSocket(); // change to joao function
 						if (!buffer.empty())
