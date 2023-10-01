@@ -25,14 +25,23 @@
 #include <vector>
 #include <poll.h>
 #include <sys/wait.h>
+#include <ctime>
 #include "request.hpp"
 #include "Servers.hpp"
 
+#define RED "\033[0;91m"
+#define GREEN "\033[0;92m"
+#define YELLOW "\033[0;93m"
+#define NOCOLOR "\033[0m"
+
+class Request;
+
+std::string makeStamp( void );
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
 std::string	readFile( std::string filePath );
 std::string getMimeType(const std::string& filePath);
 void	ctrlc(int signum);
-void	printlog(std::string msg, int arg);
+void	printlog(std::string msg, int arg, std::string color);
 void	validate_config(void);
 void	print_server_config(std::vector<Config> config_array);
 bool 	check_new_attribute(std::string token);

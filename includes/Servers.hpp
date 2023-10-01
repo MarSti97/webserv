@@ -22,6 +22,7 @@ class Serv
 		void 	init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars);
 		char	**create_cgi_env(std::vector<std::string> meta_vars);
 		int	execute_script(std::string cmd_path, std::string path_info, char **env);
+		bool compareHostPort(std::string host, std::string port);
 };
 
 class Servers
@@ -42,6 +43,7 @@ class Servers
 		void	init();
 		void	run();
 		int		checkSockets(int fd);
+		std::vector<Serv>::iterator		getCorrectServ(Request *req);
 };
 
 
