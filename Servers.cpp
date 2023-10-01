@@ -164,13 +164,6 @@ void Servers::run()
     {
         // bzero(buffer, sizeof(buffer));
         // std::cout << fds.size() << std::endl;
-        int ret = poll(&fds[0], fds.size(), 0);
-        if (ret == -1)
-        {
-            std::cerr << "Error in poll" << std::endl;
-            continue;
-        }
-
         for (size_t i = 0; i < fds.size(); ++i)
         {
 			timeout = 0;
