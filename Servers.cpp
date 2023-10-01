@@ -162,6 +162,15 @@ void Servers::run()
 
 	while (true)
     {
+        // bzero(buffer, sizeof(buffer));
+        // std::cout << fds.size() << std::endl;
+        int ret = poll(&fds[0], fds.size(), 0);
+        if (ret == -1)
+        {
+            std::cerr << "Error in poll" << std::endl;
+            continue;
+        }
+
         for (size_t i = 0; i < fds.size(); ++i)
         {
 			timeout = 0;
@@ -196,6 +205,8 @@ void Servers::run()
 
 						std::string buffer = parseRecv(fds, i);
 						Request *req = new Request(buffer);
+						std::vector<Serv>::iterator theServ = getCorrectServ(req);
+						theServ->getSocket(); // change to joao function
 						if (!buffer.empty())
 							parseSend(fds, i, *req, env);
 						delete req;
@@ -218,10 +229,16 @@ int	Servers::checkSockets(int fd)
 	return 0;
 }
 
-// int Servers::getSockets() // FIX:: to get all the sockets for pollfds n shit
-// {
-// 	return servs[0].getSocket();
-// }
+std::vector<Serv>::iterator	Servers::getCorrectServ(Request *req)
+{
+	std::vector<Serv>::iterator it;
+	for (it = servs.begin(); it != servs.end(); ++it)
+	{
+		if (it->compareHostPort(req->Host(), req->Port()))
+			return it;
+	}
+	return servs.end();
+}
 
 int Serv::establish_connection()
 {
@@ -301,6 +318,14 @@ void	Serv::print(int counter) const
 		}
 	}
 }
+
+bool Serv::compareHostPort(std::string host, std::string port)
+{
+	if (serv_info.host == host && serv_info.port == port)
+		return true;
+	return false;
+}
+
 
 int Serv::getSocket()
 {

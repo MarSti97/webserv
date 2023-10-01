@@ -159,6 +159,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
         // std::cout << buffer << std::endl;
     }
+	// std::cout << findbuffer << std::endl;
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
     {
