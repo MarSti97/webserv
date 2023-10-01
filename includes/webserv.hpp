@@ -26,6 +26,7 @@
 #include <poll.h>
 #include <sys/wait.h>
 #include "request.hpp"
+#include "Servers.hpp"
 class Request;
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
@@ -49,7 +50,6 @@ std::string findcommand(std::string command);
 int	execute_command(std::string pathcmd, std::string pathfile, char **env);
 bool    correctfile(std::string file);
 void	check_requirements(Config temp, int i);
-
 void	cgi_request(Request &req, Config &conf, std::string path_info, std::string script_extension);
 void	filter_request(Request &req, Config &conf);
 void	init_cgi_meta_vars(Request &req, Config &conf, std::vector<std::string> *meta_vars);

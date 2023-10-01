@@ -37,39 +37,39 @@ class Config
 		std::map<std::string, std::string> error_pages;
 };
 
-class Configfile
-{
-	private :
-		std::vector<Config> config_array;
-		std::string config;
+// class Configfile
+// {
+// 	private :
+// 		std::vector<Config> config_array;
+// 		std::string config;
 	
-	public : 
-		Configfile() {}
-		Configfile(std::string file);
-		virtual ~Configfile() {}
+// 	public : 
+// 		Configfile() {}
+// 		Configfile(std::string file);
+// 		virtual ~Configfile() {}
 
-		void validate_config();
-		void check_requirements();
-		void print();
-		const char* getPort() {return config_array[0].port.c_str();} // these need fixing! 
-		const char* getName() {return config_array[0].server_name[0].c_str();} // figure out how to work with multipe names
+// 		void validate_config();
+// 		void check_requirements();
+// 		void print();
+// 		const char* getPort() {return config_array[0].port.c_str();} // these need fixing! 
+// 		const char* getName() {return config_array[0].server_name[0].c_str();} // figure out how to work with multipe names
 
-	// Exceptions 
-	class NotConfigFile : public std::exception {
-		public :
-			NotConfigFile() {}
-			virtual const char* what() const throw() {
-				return "Error: argument not a config file.";
-			}
-	};
+// 	// Exceptions 
+// 	class NotConfigFile : public std::exception {
+// 		public :
+// 			NotConfigFile() {}
+// 			virtual const char* what() const throw() {
+// 				return "Error: argument not a config file.";
+// 			}
+// 	};
 
-	class InsufficientInformation : public std::exception {
-		public :
-			InsufficientInformation() {}
-			virtual const char* what() const throw() {
-				return "";
-			}
-	};
-};
+// 	class InsufficientInformation : public std::exception {
+// 		public :
+// 			InsufficientInformation() {}
+// 			virtual const char* what() const throw() {
+// 				return "";
+// 			}
+// 	};
+// };
 
 #endif

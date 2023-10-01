@@ -5,114 +5,22 @@ int cli_glob;
 
 int main(int ac, char **av, char **env)
 {
-    if (ac != 2)
-        return 1;
-    Configfile configInfo;
+    if (ac != 2){
+    	return 1;
+	}
+	Servers servs;
     try {
-        configInfo = Configfile(std::string(av[1]));
-        configInfo.validate_config();
+        if (!correctfile(std::string(av[1])))
+		    throw NotConfigFile();
+        servs = Servers(std::string(av[1]), env);
+        servs.init();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 0;
     }
-	configInfo.print();
-
-    struct addrinfo hints, *addr;
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET; // Use IPv4
-    hints.ai_socktype = SOCK_STREAM; // Use TCP
-  
-    if (getaddrinfo(configInfo.getName(), configInfo.getPort(), &hints, &addr) < 0){
-        std::cerr << "Error: couldn't get address" << std::endl;
-        return 1;
-    }
-    std::cout << addr->ai_family << " " << addr->ai_socktype << " " << addr->ai_addr << std::endl;
-    int socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-    if (socketfd < 0) {
-        return failToStart("Error: socket creation", addr, socketfd);
-	}
-	int opt = 1;
-	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
-		return failToStart("Error: socket optimise", addr, socketfd);
-    if (bind(socketfd, addr->ai_addr, addr->ai_addrlen) == -1)
-        return failToStart("Error: bind unsuccesful", addr, socketfd);
-    if (listen(socketfd, SOMAXCONN) == -1) {
-        return failToStart("Error: listen unsuccesful", addr, socketfd);
-	glob_fd = socketfd;
-	signal(SIGINT, ctrlc);
-    int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
-    if (flags == -1)
-        return failToStart("Error getting socket flags", addr, socketfd);
-    if (fcntl(socketfd, F_SETFL, flags | O_NONBLOCK) == -1)
-        return failToStart("Error setting socket to non-blocking", addr, socketfd);
-	}
-    struct sockaddr_in clientinfo;
-    socklen_t size = sizeof(clientinfo);
-    // char buffer[10];
-
-
-    freeaddrinfo(addr);
-
-    // int epoll_fd = epoll_create1(0);
-    // if (epoll_fd == -1) {
-    //     perror("epoll_create1");
-    //     return 1;
-    // }
-
-    // struct epoll_event event;
-    // event.events = EPOLLIN;
-    // event.data.fd = socketfd;
-    // if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socketfd, &event) == -1) {
-    //     perror("epoll_ctl");
-    //     return 1;
-    // }
-
-    // std::vector<struct epoll_event> events(10);
-
-    // std::vector<epoll_event> fds;
-    // fds.push_back(event);
-    // event.data.fd = socketfd;
-    // fds[0].events = POLLIN;
-
-    std::vector<pollfd> fds;
-    fds.push_back(pollfd());
-    fds[0].fd = socketfd;
-    fds[0].events = POLLIN; // Monitor server socket for incoming connections
-
-    while (1)
-    {
-        // bzero(buffer, sizeof(buffer));
-        // std::cout << fds.size() << std::endl;
-        int ret = poll(&fds[0], fds.size(), 0);
-        if (ret == -1)
-        {
-            std::cerr << "Error in poll" << std::endl;
-            continue;
-        }
-
-        for (size_t i = 0; i < fds.size(); i++)
-        {
-            if (fds[i].revents & POLLIN)
-            {
-                if (fds[i].fd == socketfd)
-                {
-                    if (acceptConnection(socketfd, &clientinfo, size, &fds))
-                        fds[i].events &= ~POLLIN;
-                    continue;
-                }
-                else if (fds[i].revents & POLLOUT)
-                {
-                    // std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
-                    std::string buffer = parseRecv(fds, i);
-                    Request *req = new Request(buffer);
-                    if (!buffer.empty())
-                        parseSend(fds, i, *req, env);
-                    delete req;
-                }
-            }
-        }
-    }
+	servs.printAll();
+	servs.run();
     return 0;
 }
 
@@ -381,7 +289,7 @@ int failToStart(std::string error, struct addrinfo *addr, int socketfd)
     return 1;
 }
 
-void	ctrlc(int signum)
+void	ctrlc(int signum) // need to fix this
 {
 	if (signum == SIGINT)
 	{
