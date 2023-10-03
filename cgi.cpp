@@ -1,10 +1,11 @@
 #include "includes/webserv.hpp"
 
-void	Serv::filter_request(Request &req)
+int	Serv::filter_request(Request &req)
 {
 	int	has_script_extension = 0;
 	std::string	path_info;
 	std::string extension_string;
+	int	cgi_fd = 0;
 
 	if (!(req.Get().empty()))
 		path_info = req.Get();
@@ -27,13 +28,12 @@ void	Serv::filter_request(Request &req)
 
 	if (has_script_extension == 1) // || has_query_strings == 1)
 	{
-		cgi_request(req, path_info, extension_string);
+		cgi_fd = cgi_request(req, path_info, extension_string);
 	}
-	// else
-		// respond to the non-cgi request
+	return (cgi_fd);
 }
 
-void	Serv::cgi_request(Request &req, std::string path_info, std::string script_extension)
+int	Serv::cgi_request(Request &req, std::string path_info, std::string script_extension)
 {
 	std::vector<std::string> meta_vars;
 	char **cgi_env;
@@ -54,13 +54,13 @@ void	Serv::cgi_request(Request &req, std::string path_info, std::string script_e
 		cmd_name = "python3";
 	else
 		cmd_name = script_extension.substr(1);
-	execute_script(findcommand("/" + cmd_name), path_info, cgi_env); 
+	int	cgi_fd = execute_script(findcommand("/" + cmd_name), path_info, cgi_env); 
 
 	i = -1;
 	while (cgi_env[++i])
 		delete[] cgi_env[i];
 	delete[] cgi_env;
-
+	return (cgi_fd);
 }
 
 int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env)
@@ -91,19 +91,20 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 	else
 	{
 		close(pipe_fd[1]);
+		return (pipe_fd[0]);
 
-		char buffer[4096];
-        ssize_t bytes_read;
+		// char buffer[4096];
+        // ssize_t bytes_read;
 
-		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0)
-		{
-			// this is the output of the executed script, it should inclue a header as well
-			// will need to send the contents of buffer (should include a header)
-			// to the parseSend function, like the getResponse function does
-		}
+		// while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0)
+		// {
+		// 	// this is the output of the executed script, it should inclue a header as well
+		// 	// will need to send the contents of buffer (should include a header)
+		// 	// to the parseSend function, like the getResponse function does
+		// }
 
-		// if the script has no output, we should redirect to 
-		// the same page where the script was called ("Referer" attribute)
+		// // if the script has no output, we should redirect to 
+		// // the same page where the script was called ("Referer" attribute)
 
 		close(pipe_fd[0]);
 		wait(&status);
