@@ -24,9 +24,9 @@ int main(int ac, char **av, char **env)
     return 0;
 }
 
-int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
+int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env)
 {
-    std::string response = getResponse(req, "guarder-html", "/index.html", cgi_fd);
+    std::string response = getResponse(req, "guarder-html", "/index.html", env);
     // std::cout << response << std::endl;
 
     // std::cout << response.size();
@@ -53,7 +53,7 @@ int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
 }
 
 
-std::string getResponse(Request req, std::string path, std::string index, int cgi_fd)
+std::string getResponse(Request req, std::string path, std::string index, char **env)
 {
     std::string filePath;
     std::string mimeType;
@@ -61,78 +61,96 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
     // std::cout << req.request() << std::endl;
     // std::cout << req.Get() << std::endl;
 
-    if (cgi_fd > 0)
+    filePath = req.Get();
+    (void)env;
+    if (filePath.empty())
+	{
+        // // std::cout << "here" << std::endl;
+        // if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
+        // {
+        //     std::cout << "here11" << std::endl;
+            return "";
+        // }
+        // else
+        // {
+        //     // std::cout << "here22" << std::endl;
+        //     std::string response = readFile(path + req.Referer());
+        //     responseHeaders = "HTTP/1.1 302 Found\r\n";
+        //     responseHeaders += "Location: " + filePath + "\r\n\r\n";
+        //     return responseHeaders + response;		
+        // }
+	}
+    // std::cout << "here44" << std::endl;
+
+    mimeType = getMimeType(filePath);
+    // std::cout << filePath << std::endl;
+
+    // std::cout << mimeType << std::endl;
+    responseHeaders = "HTTP/1.1 200 OK\r\n";
+    responseHeaders += "Content-Type: " + mimeType + "\r\n";
+    responseHeaders += "Connection: keep-alive\r\n";
+    if (filePath.empty() || filePath == "/")
+        return responseHeaders + readFile(path + index);
+    else
     {
-        std::cout << "HEEREEEEEE!!!" << std::endl;
-        char    buffer[4096];
-        std::string response;
-        ssize_t bytesRead;
-
-   
-        while ((bytesRead = read(cgi_fd, buffer, sizeof(buffer))) > 0) {
-            response.append(buffer, bytesRead);
-        }
-
-        if (bytesRead < 0) {
-            perror("Error reading from file descriptor");
-            // Handle the error as needed
-        }
-        responseHeaders = "HTTP/1.1 200 OK\r\n";
-        responseHeaders += "Content-Type: text/html\r\n";
-        responseHeaders += "Connection: keep-alive\r\n";
+        std::string response = readFile(path + filePath);
+        // std::cout << path << " " << filePath << std::endl;
         std::stringstream ss;
         ss << response.length();
         responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-        std::cout << responseHeaders + response << std::endl;
-        return responseHeaders + response;
+        // std::cout << responseHeaders << std::endl;
+        // char buf[1024];
+        // getcwd(buf, 1023);
+        // std::cout << buf << std::endl;
+        if (response == "" || response.empty())
+            response = readFile(path + "/404.html");
+        return responseHeaders + response; //"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
+    }
+}
+
+int postCheck(int client)
+{
+    static int clientnbr[1024];
+
+}
+
+int    createPost(char *buf, int client, int checker)
+{
+    static int clientnbr[1024];
+    static char *file[1024];
+    std::string newstr;
+    int pos = -1;
+
+    for (int f = 0; f < 1024; ++f)
+    {
+        if (clientnbr[f] == client)
+        {
+            pos = f;
+            break;
+        }
+    }
+    if (checker == 1)
+        return pos;
+    if (pos == -1)
+    {
+        for (int i = 0; i < 1024; ++i)
+        {
+            if (clientnbr[i] == 0)
+            {
+                clientnbr[i] == client;
+                pos = i;
+            }
+        }
+        file[pos] = strdup(buf);
     }
     else
     {
-        filePath = req.Get();
-        // if (filePath.empty())
-        // {
-        //     // std::cout << "here" << std::endl;
-        //     if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
-        //     {
-        //         std::cout << "here11" << std::endl;
-        //         return "";
-        //     }
-        //     else
-        //     {
-        //         // std::cout << "here22" << std::endl;
-        //         std::string response = readFile(path + req.Referer());
-        //         responseHeaders = "HTTP/1.1 302 Found\r\n";
-        //         responseHeaders += "Location: " + filePath + "\r\n\r\n";
-        //         return responseHeaders + response;		
-        //     }
-        // }
-        // std::cout << "here44" << std::endl;
-
-        mimeType = getMimeType(filePath);
-        // std::cout << filePath << std::endl;
-
-        // std::cout << mimeType << std::endl;
-        responseHeaders = "HTTP/1.1 200 OK\r\n";
-        responseHeaders += "Content-Type: " + mimeType + "\r\n";
-        responseHeaders += "Connection: keep-alive\r\n";
-        if (filePath.empty() || filePath == "/")
-            return responseHeaders + readFile(path + index);
-        else
-        {
-            std::string response = readFile(path + filePath);
-            // std::cout << path << " " << filePath << std::endl;
-            std::stringstream ss;
-            ss << response.length();
-            responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-            // std::cout << responseHeaders << std::endl;
-            // char buf[1024];
-            // getcwd(buf, 1023);
-            // std::cout << buf << std::endl;
-            if (response == "" || response.empty())
-                response = readFile(path + "/404.html");
-            return responseHeaders + response;
-        }
+        newstr = file[pos];
+        newstr = newstr + buf;
+        free(file[pos]);
+        file[pos] = strdup(newstr.c_str());
     }
+    return 0;
 }
 
 std::string parseRecv(std::vector<pollfd> &fds, int pos)
@@ -146,7 +164,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fds[pos].fd, buffer, 4096, 0);
-        // std::cout << n << " recv"<< std::endl;
+        std::cout << n << " recv"<< std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -174,6 +192,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         }
         else
         {
+            std::cout << buffer << std::endl;
             if (findbuffer.empty())
                 findbuffer = std::string(buffer);
             else
@@ -184,14 +203,19 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         counter++;
         buf_size += sizeof(buffer);
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
-        // std::cout << buffer << std::endl;
     }
-	std::cout << findbuffer << std::endl;
+	// std::cout << findbuffer << std::endl;
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
     {
         std::cout << "bad request received" << std::endl;
         std::cout << buffer << n << std::endl;
+        return "";
+    }
+    size_t oi = findbuffer.find("POST ");
+    if (oi != std::string::npos || (createPost(NULL, 0, 1) > 0))
+    {
+        createPost(buffer, fds[pos].fd, 0);
         return "";
     }
     return findbuffer;

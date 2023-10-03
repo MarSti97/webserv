@@ -28,6 +28,7 @@
 #include <ctime>
 #include "request.hpp"
 #include "Servers.hpp"
+#include "download.hpp"
 
 #define RED "\033[0;91m"
 #define GREEN "\033[0;92m"
@@ -47,8 +48,8 @@ void	print_server_config(std::vector<Config> config_array);
 bool 	check_new_attribute(std::string token);
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
 std::string parseRecv(std::vector<pollfd> &fds, int pos);
-int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd);
-std::string getResponse(Request req, std::string path, std::string index, int cgi_fd);
+int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env);
+std::string getResponse(Request req, std::string path, std::string index, char **env);
 int GetbyUser(std::string buffer);
 int checkAllowGet(std::string folder, std::vector<Location> Location);
 int checkAllowPost(std::string folder, std::vector<Location> Location);
@@ -58,5 +59,6 @@ std::string findcommand(std::string command);
 int	execute_command(std::string pathcmd, std::string pathfile, char **env);
 bool    correctfile(std::string file);
 void	check_requirements(Config temp, int i);
+int     createPost(char *buf, int client, int checker);
 
 #endif
