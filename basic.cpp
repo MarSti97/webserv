@@ -126,9 +126,9 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
         char* Str = new char[size];
         memcpy(Str, buffer, size);
         Download &instance = Download::getInstance();
-        if (!flag)
+        if (oi != std::string::npos)
         {
-            std::cout << "YES: ITS TRUE" << std::endl;
+            std::cout << "COME HERE" << std::endl;
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
             instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
@@ -202,9 +202,11 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     // std::ofstream img("img", std::ios::trunc);
     // if (img.is_open())
     //     img << buf;
-    // std::cout << buf_size << std::endl;
+    std::cout << buf_size << std::endl;
     findbuffer = std::string(buffer);
 	// std::cout << findbuffer << std::endl;
+    if (postThings(findbuffer, buffer, fds[pos].fd, n))
+        return "";
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
     {
@@ -212,8 +214,6 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         std::cout << buffer << n << std::endl;
         return "";
     }
-    // if (postThings(findbuffer, buffer, fds[pos].fd, n))
-    //     return "";
     return findbuffer;
 }
 
