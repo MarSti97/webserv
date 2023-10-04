@@ -111,11 +111,7 @@ std::string getResponse(Request req, std::string path, std::string index, char *
 
 bool headcheck(std::string buf)
 {
-    size_t fnd = buf.find("POST ", 0, 5);
-    size_t fod = buf.find("GET ", 0, 4);
-    size_t fud = buf.find("DELETE ", 0, 7);
-    
-    if (fnd == std::string::npos || fod == std::string::npos || fud == std::string::npos)
+    if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
         return true;
     return false;
 }
@@ -127,12 +123,12 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
     bool flag = headcheck(findbuffer);
     if (oi != std::string::npos || !flag)
     {
-        std::cout << "YES: ITS TRUE" << std::endl;
         char* Str = new char[size];
         memcpy(Str, buffer, size);
         Download &instance = Download::getInstance();
         if (!flag)
         {
+            std::cout << "YES: ITS TRUE" << std::endl;
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
             instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
