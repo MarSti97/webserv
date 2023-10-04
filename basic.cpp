@@ -1,5 +1,6 @@
 #include "./includes/webserv.hpp"
 
+
 int glob_fd;
 int cli_glob;
 
@@ -108,49 +109,39 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     }
 }
 
-int postCheck(int client)
+bool headcheck(std::string buf)
 {
-    static int clientnbr[1024];
-
+    size_t fnd = buf.find("POST ", 0, 5);
+    size_t fod = buf.find("GET ", 0, 4);
+    size_t fud = buf.find("DELETE ", 0, 7);
+    
+    if (fnd == std::string::npos || fod == std::string::npos || fud == std::string::npos)
+        return true;
+    return false;
 }
 
-int    createPost(char *buf, int client, int checker)
-{
-    static int clientnbr[1024];
-    static char *file[1024];
-    std::string newstr;
-    int pos = -1;
 
-    for (int f = 0; f < 1024; ++f)
+bool postThings(std::string findbuffer, char *buffer, int fd, int size)
+{
+    size_t oi = findbuffer.find("POST ");
+    bool flag = headcheck(findbuffer);
+    if (oi != std::string::npos || !flag)
     {
-        if (clientnbr[f] == client)
+        std::cout << "YES: ITS TRUE" << std::endl;
+        char* Str = new char[size];
+        memcpy(Str, buffer, size);
+        Download &instance = Download::getInstance();
+        if (!flag)
         {
-            pos = f;
-            break;
+            std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
+	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
+            instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
+            return true;
         }
+        instance.append_map(fd, Str, size);
+        return true;
     }
-    if (checker == 1)
-        return pos;
-    if (pos == -1)
-    {
-        for (int i = 0; i < 1024; ++i)
-        {
-            if (clientnbr[i] == 0)
-            {
-                clientnbr[i] == client;
-                pos = i;
-            }
-        }
-        file[pos] = strdup(buf);
-    }
-    else
-    {
-        newstr = file[pos];
-        newstr = newstr + buf;
-        free(file[pos]);
-        file[pos] = strdup(newstr.c_str());
-    }
-    return 0;
+    return false;
 }
 
 std::string parseRecv(std::vector<pollfd> &fds, int pos)
@@ -201,7 +192,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 break;
         }
         counter++;
-        buf_size += sizeof(buffer);
+        buf_size += n;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
 	// std::cout << findbuffer << std::endl;
@@ -212,12 +203,8 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         std::cout << buffer << n << std::endl;
         return "";
     }
-    size_t oi = findbuffer.find("POST ");
-    if (oi != std::string::npos || (createPost(NULL, 0, 1) > 0))
-    {
-        createPost(buffer, fds[pos].fd, 0);
+    if (postThings(findbuffer, buffer, fds[pos].fd, n))
         return "";
-    }
     return findbuffer;
 }
 
