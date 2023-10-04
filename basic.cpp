@@ -61,9 +61,8 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
     // std::cout << req.request() << std::endl;
     // std::cout << req.Get() << std::endl;
 
-    if (cgi_fd > 0)
+    if (cgi_fd > 2)
     {
-        std::cout << "HEEREEEEEE!!!" << std::endl;
         char    buffer[4096];
         std::string response;
         ssize_t bytesRead;
@@ -83,7 +82,8 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
         std::stringstream ss;
         ss << response.length();
         responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-        std::cout << responseHeaders + response << std::endl;
+        //std::cout << responseHeaders + response << std::endl;
+		close(cgi_fd);
         return responseHeaders + response;
     }
     else

@@ -2,7 +2,6 @@
 
 int	Serv::filter_request(Request &req)
 {
-	int	has_script_extension = 0;
 	std::string	path_info;
 	std::string extension_string;
 	int	cgi_fd = 0;
@@ -11,6 +10,9 @@ int	Serv::filter_request(Request &req)
 		path_info = req.Get();
 	else if (!(req.Post().empty()))
 		path_info = req.Post();
+
+	// Important: Throw error during config parsing if the cgi is set
+	// to use a static file extension (.html, .jpg, etc)
 
 	size_t	extension_start = path_info.rfind('.');
 	if (extension_start != std::string::npos)
@@ -21,14 +23,8 @@ int	Serv::filter_request(Request &req)
 		else
 			extension_string = path_info.substr(extension_start);
 		if (extension_string == serv_info.cgi_extension)
-			has_script_extension = 1;
-		// else if the file is a script but cgi isn't enabled (we can check if the file isn't html, css or common image types)
-			// throw error 403
-	}
+			cgi_fd = cgi_request(req, path_info, extension_string);
 
-	if (has_script_extension == 1) // || has_query_strings == 1)
-	{
-		cgi_fd = cgi_request(req, path_info, extension_string);
 	}
 	return (cgi_fd);
 }
@@ -76,15 +72,21 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		perror("fork");
 	if (pid == 0)
 	{
-        char *argv[2];
+		std::string script_name = path_info.substr(path_info.rfind("/") + 1);
+		path_info = serv_info.root + path_info;
+		if (chdir((serv_info.root + "/" + serv_info.cgi_directory).c_str()) == -1)
+			std::cout << "Error changing to cgi dir: " << serv_info.root + "/" + serv_info.cgi_directory << std::endl;
+        // char buffer[1000];
+		// getcwd(buffer, sizeof(buffer));
+		// std::cout << buffer << std::endl;
+		char *argv[3];
         argv[0] = const_cast<char *>((cmd_path).c_str());
-		// temporary fix just to test, replace with cgi-path of the config file
-		path_info = "guarder-html" + path_info;
-        argv[1] = const_cast<char *>((path_info).c_str());
+		argv[1] = const_cast<char *>((script_name).c_str());
+		argv[2] = NULL;
+		std::cout << argv[1] << std::endl;
 		dup2(pipe_fd[1], STDOUT_FILENO);
 		close(pipe_fd[1]);
 		close(pipe_fd[0]);
-
 		if (execve(cmd_path.c_str(), argv, env) == -1)
             perror("execve");
 	}
@@ -140,7 +142,7 @@ void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
 	meta_vars->push_back("REQUEST_METHOD=" + req_method);
 	meta_vars->push_back("PATH_INFO=" + path_info);
 	// Confirm with the tester
-	meta_vars->push_back("PATH_TRANSLATED=" + serv_info.root + "/" + path_info);
+	meta_vars->push_back("PATH_TRANSLATED=" + serv_info.root + path_info);
 	meta_vars->push_back("QUERY_STRING=" + req.Query());
 	meta_vars->push_back("REMOTE_ADDR=");
 	meta_vars->push_back("DOMAIN_NAME=");
