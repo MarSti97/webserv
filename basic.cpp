@@ -143,6 +143,7 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
 std::string parseRecv(std::vector<pollfd> &fds, int pos)
 {
     char buffer[4096];
+    char *buf = NULL;
     std::string findbuffer;
     ssize_t n;
     int counter = 0;
@@ -151,7 +152,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fds[pos].fd, buffer, 4096, 0);
-        std::cout << n << " recv"<< std::endl;
+        // std::cout << n << " recv"<< std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -166,7 +167,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 }
                 break;
             }
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            else if (errno == EWOULDBLOCK || errno == EAGAIN) {
             // No data available for non-blocking receive
                 std::cout << "all recv" << std::endl;
                 break;
@@ -179,18 +180,30 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         }
         else
         {
-            std::cout << buffer << std::endl;
-            if (findbuffer.empty())
-                findbuffer = std::string(buffer);
+            if (!buf)
+                buf = new char[n];
             else
-                findbuffer.append(buffer);
-            if (n < (ssize_t)sizeof(buffer))
+            {
+                char *tmp;
+                tmp = buf;
+                buf = new char[buf_size + n];
+                memcpy(buf, tmp, buf_size);
+            }
+            memcpy(buf + buf_size, buffer, n);
+            if (n < 4096)
                 break;
         }
         counter++;
         buf_size += n;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
+    // for (int i = 0; i < buf_size; ++i)
+    //     write(2, &buf[i], 1);
+    // std::ofstream img("img", std::ios::trunc);
+    // if (img.is_open())
+    //     img << buf;
+    // std::cout << buf_size << std::endl;
+    findbuffer = std::string(buffer);
 	// std::cout << findbuffer << std::endl;
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
@@ -199,8 +212,8 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         std::cout << buffer << n << std::endl;
         return "";
     }
-    if (postThings(findbuffer, buffer, fds[pos].fd, n))
-        return "";
+    // if (postThings(findbuffer, buffer, fds[pos].fd, n))
+    //     return "";
     return findbuffer;
 }
 
