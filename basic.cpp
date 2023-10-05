@@ -62,17 +62,35 @@ std::string getResponse(Request req, std::string path, std::string index, char *
     // std::cout << req.request() << std::endl;
     // std::cout << req.Get() << std::endl;
 
-    filePath = req.Get();
-    (void)env;
-    if (filePath.empty())
-	{
-        // // std::cout << "here" << std::endl;
-        // if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
-        // {
-        //     std::cout << "here11" << std::endl;
-            return "";
-        // }
-        // else
+    if (cgi_fd > 2)
+    {
+        char    buffer[4096];
+        std::string response;
+        ssize_t bytesRead;
+
+   
+        while ((bytesRead = read(cgi_fd, buffer, sizeof(buffer))) > 0) {
+            response.append(buffer, bytesRead);
+        }
+
+        if (bytesRead < 0) {
+            perror("Error reading from file descriptor");
+            // Handle the error as needed
+        }
+        responseHeaders = "HTTP/1.1 200 OK\r\n";
+        responseHeaders += "Content-Type: text/html\r\n";
+        responseHeaders += "Connection: keep-alive\r\n";
+        std::stringstream ss;
+        ss << response.length();
+        responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
+        //std::cout << responseHeaders + response << std::endl;
+		close(cgi_fd);
+        return responseHeaders + response;
+    }
+    else
+    {
+        filePath = req.Get();
+        // if (filePath.empty())
         // {
         //     // std::cout << "here22" << std::endl;
         //     std::string response = readFile(path + req.Referer());

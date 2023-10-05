@@ -125,11 +125,19 @@
               nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
               in reprehenderit in voluptate velit
             </p>
-            <div class="btn-box">
-              <a href="">
-                Read More
-              </a>
-            </div>
+            <!-- <div class="btn-box">
+				<form action="/cgi-bin/printrequest.py" method="POST" enctype="multipart/form-data">
+					<a href="">Read More</a>
+				</form>
+            </div> -->
+			<form action="cgi-bin/printrequest.py" method="POST" enctype="text/plain">
+				<div class="mb-3">
+					<input type="text" id="text-input" name="user_input" maxlength="200">
+				</div>
+				<div class="contact_form-container btn-box">
+					<button type="submit" class="btn btn-primary">Generate POST request</button>
+				</div>
+			</form>
           </div>
         </div>
       </div>
@@ -140,16 +148,6 @@
     <div class = "container" style="background-color: #dbb295"><h1>#dbb295</h1></div>
     <div class = "container" style="background-color: #dbbe95"><h1>#dbbe95</h1></div>
     <div class = "container" style="background-color: #dbd195"><h1>#dbd195</h1></div>
-    <div class = "container" style="background-color: #c8db95"><h1>#c8db95</h1></div>
-    <div class = "container" style="background-color: #a3db95"><h1>#a3db95</h1></div>
-    <div class = "container" style="background-color: #95dbb2"><h1>#95dbb2</h1></div>
-    <div class = "container" style="background-color: #95dbd4"><h1>#95dbd4</h1></div>
-    <div class = "container" style="background-color: #95cbdb"><h1>#95cbdb</h1></div>
-    <div class = "container" style="background-color: #95bcdb"><h1>#95bcdb</h1></div>
-    <div class = "container" style="background-color: #959edb"><h1>#959edb</h1></div>
-    <div class = "container" style="background-color: #a695db"><h1>#a695db</h1></div>
-    <div class = "container" style="background-color: #bc95db"><h1>#bc95db</h1></div>
-    <div class = "container" style="background-color: #d395db"><h1>#d395db</h1></div>
     <nav class="container" aria-label="...">
       <ul class="justify-content-center pagination pagination-lg">
         <li class="page-item"><a class="page-link" href="about.html?page=1">1</a></li>
@@ -159,23 +157,27 @@
     </nav>
   </section>
 
-  <script>
-    function loadPage() {
-        // Get the query string from the current URL
-        var queryString = window.location.search;
-        
-        // Extract the 'page' query parameter
-        var page = new URLSearchParams(queryString).get('page');
-        
-        // If 'page' is not null, load the corresponding Python script
-        if (page) {
-            var script = document.createElement('script');
-            script.src = '/cgi-bin/pagination.py' + queryString;
-            document.body.appendChild(script);
-        }
-    }
-
-    // Call the loadPage function when the page loads
+<script>
+	function loadPage() {
+		// Get the query string from the current URL
+		var queryString = window.location.search;
+		
+		// Extract the 'page' query parameter
+		var page = new URLSearchParams(queryString).get('page');
+		
+		// If 'page' is not null, make an AJAX request to pagination.py
+		if (page) {
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', '/cgi-bin/pagination.py' + queryString, true);
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					// Replace the current page content with the response
+					document.documentElement.innerHTML = xhr.responseText;
+				}
+			};
+			xhr.send();
+		}
+	}
     window.onload = loadPage;
 </script>
   

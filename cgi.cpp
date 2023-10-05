@@ -1,15 +1,18 @@
 #include "includes/webserv.hpp"
 
-void	Serv::filter_request(Request &req)
+int	Serv::filter_request(Request &req)
 {
-	int	has_script_extension = 0;
 	std::string	path_info;
 	std::string extension_string;
+	int	cgi_fd = 0;
 
 	if (!(req.Get().empty()))
 		path_info = req.Get();
 	else if (!(req.Post().empty()))
 		path_info = req.Post();
+
+	// Important: Throw error during config parsing if the cgi is set
+	// to use a static file extension (.html, .jpg, etc)
 
 	size_t	extension_start = path_info.rfind('.');
 	if (extension_start != std::string::npos)
@@ -20,20 +23,13 @@ void	Serv::filter_request(Request &req)
 		else
 			extension_string = path_info.substr(extension_start);
 		if (extension_string == serv_info.cgi_extension)
-			has_script_extension = 1;
-		// else if the file is a script but cgi isn't enabled (we can check if the file isn't html, css or common image types)
-			// throw error 403
-	}
+			cgi_fd = cgi_request(req, path_info, extension_string);
 
-	if (has_script_extension == 1) // || has_query_strings == 1)
-	{
-		cgi_request(req, path_info, extension_string);
 	}
-	// else
-		// respond to the non-cgi request
+	return (cgi_fd);
 }
 
-void	Serv::cgi_request(Request &req, std::string path_info, std::string script_extension)
+int	Serv::cgi_request(Request &req, std::string path_info, std::string script_extension)
 {
 	std::vector<std::string> meta_vars;
 	char **cgi_env;
@@ -54,59 +50,98 @@ void	Serv::cgi_request(Request &req, std::string path_info, std::string script_e
 		cmd_name = "python3";
 	else
 		cmd_name = script_extension.substr(1);
-	execute_script(findcommand("/" + cmd_name), path_info, cgi_env); 
+	int	cgi_fd = execute_script(findcommand("/" + cmd_name), path_info, cgi_env, req); 
 
 	i = -1;
 	while (cgi_env[++i])
 		delete[] cgi_env[i];
 	delete[] cgi_env;
-
+	return (cgi_fd);
 }
 
-int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env)
+// int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request &req)
+// {
+// 	int		pipe_fd[2];
+// 	pid_t	pid;
+//     int status = 0;
+
+// 	if (pipe(pipe_fd) == -1)
+// 		perror("pipe");
+// 	pid = fork();
+// 	if (pid == -1)
+// 		perror("fork");
+// 	if (pid == 0)
+// 	{
+// 		std::string script_name = path_info.substr(path_info.rfind("/") + 1);
+// 		path_info = serv_info.root + path_info;
+// 		if (chdir((serv_info.root + "/" + serv_info.cgi_directory).c_str()) == -1)
+// 			std::cout << "Error changing to cgi dir: " << serv_info.root + "/" + serv_info.cgi_directory << std::endl;
+// 		char *argv[3];
+//         argv[0] = const_cast<char *>((cmd_path).c_str());
+// 		argv[1] = const_cast<char *>((script_name).c_str());
+// 		argv[2] = NULL;
+// 		std::cout << argv[1] << std::endl;
+// 		dup2(pipe_fd[1], STDOUT_FILENO);
+
+// 		close(pipe_fd[1]);
+// 		close(pipe_fd[0]);
+// 		if (execve(cmd_path.c_str(), argv, env) == -1)
+//             perror("execve");
+// 	}
+// 	else
+// 	{
+// 		close(pipe_fd[1]);
+// 		wait(&status);
+// 		return (pipe_fd[0]);
+// 	}
+// 	return (status);
+//}
+
+int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request &req)
 {
-	int		pipe_fd[2];
+	int		input_fd[2];
+	int		output_fd[2];
 	pid_t	pid;
     int status = 0;
 
-	if (pipe(pipe_fd) == -1)
-		perror("pipe");
+	if (pipe(input_fd) == -1)
+		perror("input pipe");
+	if (pipe(output_fd) == -1)
+		perror("output pipe");
 	pid = fork();
 	if (pid == -1)
 		perror("fork");
 	if (pid == 0)
 	{
-        char *argv[2];
+		std::string script_name = path_info.substr(path_info.rfind("/") + 1);
+		path_info = serv_info.root + path_info;
+		if (chdir((serv_info.root + "/" + serv_info.cgi_directory).c_str()) == -1)
+			std::cout << "Error changing to cgi dir: " << serv_info.root + "/" + serv_info.cgi_directory << std::endl;
+		char *argv[3];
         argv[0] = const_cast<char *>((cmd_path).c_str());
-		// temporary fix just to test, replace with cgi-path of the config file
-		path_info = "guarder-html" + path_info;
-        argv[1] = const_cast<char *>((path_info).c_str());
-		dup2(pipe_fd[1], STDOUT_FILENO);
-		close(pipe_fd[1]);
-		close(pipe_fd[0]);
+		argv[1] = const_cast<char *>((script_name).c_str());
+		argv[2] = NULL;
+
+		dup2(input_fd[0], STDIN_FILENO);
+		close(input_fd[1]);
+		close(input_fd[0]);		
+		
+		dup2(output_fd[1], STDOUT_FILENO);
+		close(output_fd[1]);
+		close(output_fd[0]);
 
 		if (execve(cmd_path.c_str(), argv, env) == -1)
             perror("execve");
 	}
 	else
 	{
-		close(pipe_fd[1]);
+		close(input_fd[0]);
+		close(output_fd[1]);
 
-		char buffer[4096];
-        ssize_t bytes_read;
-
-		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0)
-		{
-			// this is the output of the executed script, it should inclue a header as well
-			// will need to send the contents of buffer (should include a header)
-			// to the parseSend function, like the getResponse function does
-		}
-
-		// if the script has no output, we should redirect to 
-		// the same page where the script was called ("Referer" attribute)
-
-		close(pipe_fd[0]);
+		write(input_fd[1], req.request().c_str(), req.request().size());
+		close(input_fd[1]);
 		wait(&status);
+		return (output_fd[0]);
 	}
 	return (status);
 }
@@ -139,7 +174,7 @@ void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
 	meta_vars->push_back("REQUEST_METHOD=" + req_method);
 	meta_vars->push_back("PATH_INFO=" + path_info);
 	// Confirm with the tester
-	meta_vars->push_back("PATH_TRANSLATED=" + serv_info.root + "/" + path_info);
+	meta_vars->push_back("PATH_TRANSLATED=" + serv_info.root + path_info);
 	meta_vars->push_back("QUERY_STRING=" + req.Query());
 	meta_vars->push_back("REMOTE_ADDR=");
 	meta_vars->push_back("DOMAIN_NAME=");
