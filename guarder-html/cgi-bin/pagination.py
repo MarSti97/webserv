@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-#import cgi
+#import env
 import os
 
 # List of divs
@@ -22,13 +20,12 @@ divs = ['''<div class = "container" style="background-color: #db9595"><h1>#db959
 
 
 query_string = os.environ.get("QUERY_STRING")
-#query_string = "HELLO=1"
 key, page_number = query_string.split('=')
 page_number = int(page_number)
 # Set the content type to HTML
-print("Content-type: text/html\n")
+#print("Content-Type: text/html\r\n")
 
-# Calculate the start and end indices for the divs to display
+# Calculate the start and end index for the divs to display
 items_per_page = 5  # Adjust this to change the number of divs per page
 start_index = (page_number - 1) * items_per_page
 end_index = start_index + items_per_page

@@ -39,6 +39,7 @@ class Download
         void    append_map(int client, char *buf, int bufsize);
         void    isitFULL(int client);
         size_t  removeFinalBoundary( char *str, size_t len, Request req );
+        imgDown getStruct(int client);
 
 
         // std::string &filename() const;

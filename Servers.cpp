@@ -3,6 +3,7 @@
 Servers::Servers(std::string file, char **environment) : env(environment)
 {
 	config = readFile(file);
+	(void)env;
 }
 
 void	Servers::validate_config()
@@ -198,10 +199,9 @@ void Servers::run()
 
 						std::string buffer = parseRecv(fds, i);
 						Request *req = new Request(buffer);
-						// getCorrectServ(req).filter_request(*req);
-						//servs[0].filter_request(*req);
+						int cgi_fd = getCorrectServ(req).filter_request(*req);
 						if (!buffer.empty())
-							parseSend(fds, i, *req, env);
+							parseSend(fds, i, *req, cgi_fd);
 						delete req;
 					}
 				}

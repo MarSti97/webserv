@@ -33,6 +33,15 @@ void Download::append_map(int client, char *buf, int bufsize)
     }
 }
 
+imgDown Download::getStruct(int client)
+{
+    std::map<int, imgDown>::iterator it = fileMap.find(client);
+    if (it != fileMap.end())
+        return it->second;
+    imgDown ass(0,0,0, "");
+    return ass;
+}
+
 int removehead(char *file)
 {
     std::string str(file);
