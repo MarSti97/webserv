@@ -30,15 +30,6 @@ void Download::append_map(int client, char *buf, int bufsize)
         it->second.file = strjoin(it->second.file, buf, it->second.current_len, bufsize);
         it->second.current_len += bufsize;
         std::cout << "Full-len: " << it->second.content_len << " | Current-len: " << it->second.current_len << std::endl;
-        // if (it->second.content_len <= it->second.current_len)
-        // {
-        //     it->second.eof = true;
-        //     std::cout << "YES: ITS TRUE FUCKING FINALLY" << std::endl;
-        //     int i = -1;
-        //     while (++i < it->second.content_len)
-        //         write(1, &it->second.file[i], sizeof(it->second.file[i]));
-        //     // file downoad create that shit!
-        // }
     }
 }
 
@@ -52,11 +43,21 @@ int removehead(char *file)
         size_t j = str.find("\r\n\r\n", i + 1);
         std::cout << j << std::endl;
         if (j != std::string::npos) {
-            std::cout << "IS NEW LINE? " << std::string(file + j + i) << std::endl;
+            return j + 4;
         }
-        return j + 4;
     }
     return 0;
+}
+
+bool compare(const char *find, char* str)
+{
+    if (!strncmp(find, str, strlen(find)))
+    {
+        std::cout << "FOUND IT" << std::endl;
+        return true;
+    }
+    // std::cout << "DIDNT WHY?" << std::endl;file o
+    return false;
 }
 
 void Download::isitFULL(int client)
@@ -69,19 +70,29 @@ void Download::isitFULL(int client)
             std::cout << "YES: ITS TRUE FUCKING FINALLY" << std::endl;
             int headless = removehead(it->second.file);
             Request req(std::string(it->second.file));
-            // int newfd = open(, O_CREAT | O_TRUNC);
-            std::ofstream outfile("dickhead.jpg", std::ios::binary);
-            if (outfile.is_open())
+            int fd = open("dickhead.jpg", O_CREAT | O_RDWR | O_TRUNC);
+            char * startptr = it->second.file + headless;
+            int i = -1;
+            while (++i <= it->second.content_len)
             {
-                outfile.write(it->second.file + headless, it->second.content_len);
-                outfile.close();
-                std::cout << "SOMETHINGA: " << req.content.filename.getFilename() << std::endl;
+                if (startptr[i] == '-') {
+                    if (compare(("--" + req.Boundary()).c_str(), startptr + i))
+                        break ;
+                }
+                write(fd, &startptr[i], 1);
             }
-            // std::cout << "SOMETHINGA MORE: " << req.Boundary() << std::endl;
-            // int i = -1;
-            // while (++i < it->second.content_len)
-            //     write(newfd, &headless[i], sizeof(headless[i]));
-            // file downoad create that shit!
+            close(fd);
+            // std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
+            // if (outfile.is_open())
+            // {
+            //     outfile.write(it->second.file + headless, it->second.content_len - dif);
+            //     outfile.close();
+            //     std::cout << "SOMETHINGA: " << req.content.filename.getFilename()
+            //     << ", " << dif << std::endl;
+            // }
+            delete it->second.file;
+            fileMap.erase(it);
+            printlog("Successfully downloaded file", 0, GREEN);
         }
     }
 }

@@ -123,8 +123,6 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
     bool flag = headcheck(findbuffer);
     if (oi != std::string::npos || !flag)
     {
-        // char* Str = new char[size];
-        // memcpy(Str, buffer, size);
         Download &instance = Download::getInstance();
         if (oi != std::string::npos)
         {
@@ -132,12 +130,11 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
             instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
-            // return true;
         }
         else
             instance.append_map(fd, buffer, size);
         instance.isitFULL(fd);
-        // return true;
+        return true;
     }
     return false;
 }
