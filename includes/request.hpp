@@ -95,6 +95,7 @@ class Request
         std::string Contentdisposition( void ) const;
         std::string Origin( void ) const;
         std::string Boundary( void ) const;
+        int EndBoundary( char *str, size_t len, char *boundary );
         int Eof( void );
         ~Request();
 };

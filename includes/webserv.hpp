@@ -28,6 +28,7 @@
 #include <ctime>
 #include "request.hpp"
 #include "Servers.hpp"
+#include "Download.hpp"
 
 #define RED "\033[0;91m"
 #define GREEN "\033[0;92m"
@@ -35,6 +36,7 @@
 #define NOCOLOR "\033[0m"
 
 class Request;
+class Download;
 
 std::string makeStamp( void );
 int failToStart(std::string error, struct addrinfo *addr, int socketfd);
@@ -45,8 +47,8 @@ void	printlog(std::string msg, int arg, std::string color);
 bool 	check_new_attribute(std::string token);
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
 std::string parseRecv(std::vector<pollfd> &fds, int pos);
-int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd);
-std::string getResponse(Request req, std::string path, std::string index, int cgi_fd);
+int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env);
+std::string getResponse(Request req, std::string path, std::string index, char **env);
 int GetbyUser(std::string buffer);
 int checkAllowGet(std::string folder, std::vector<Location> Location);
 int checkAllowPost(std::string folder, std::vector<Location> Location);
@@ -55,5 +57,11 @@ std::string	parse_attribute(std::istringstream &iss, std::string token);
 std::string findcommand(std::string command);
 bool    correctfile(std::string file);
 void	check_requirements(Config temp, int i);
+void    createPost(char *buf, int client, int checker);
+std::string	getINFOone(std::string request, const char *what, int pos);
+std::string	getINFOtwo(std::string request, const char *what, int pos);
+bool    postThings(std::string findbuffer, char *buffer, int fd, int size);
+char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
+
 
 #endif

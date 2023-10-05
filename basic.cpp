@@ -1,5 +1,6 @@
 #include "./includes/webserv.hpp"
 
+
 int glob_fd;
 int cli_glob;
 
@@ -24,9 +25,9 @@ int main(int ac, char **av, char **env)
     return 0;
 }
 
-int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
+int parseSend(std::vector<pollfd> &fds, int pos, Request req, char **env)
 {
-    std::string response = getResponse(req, "guarder-html", "/index.html", cgi_fd);
+    std::string response = getResponse(req, "guarder-html", "/index.html", env);
     // std::cout << response << std::endl;
 
     // std::cout << response.size();
@@ -53,7 +54,7 @@ int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
 }
 
 
-std::string getResponse(Request req, std::string path, std::string index, int cgi_fd)
+std::string getResponse(Request req, std::string path, std::string index, char **env)
 {
     std::string filePath;
     std::string mimeType;
@@ -91,53 +92,75 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
         filePath = req.Get();
         // if (filePath.empty())
         // {
-        //     // std::cout << "here" << std::endl;
-        //     if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
-        //     {
-        //         std::cout << "here11" << std::endl;
-        //         return "";
-        //     }
-        //     else
-        //     {
-        //         // std::cout << "here22" << std::endl;
-        //         std::string response = readFile(path + req.Referer());
-        //         responseHeaders = "HTTP/1.1 302 Found\r\n";
-        //         responseHeaders += "Location: " + filePath + "\r\n\r\n";
-        //         return responseHeaders + response;		
-        //     }
+        //     // std::cout << "here22" << std::endl;
+        //     std::string response = readFile(path + req.Referer());
+        //     responseHeaders = "HTTP/1.1 302 Found\r\n";
+        //     responseHeaders += "Location: " + filePath + "\r\n\r\n";
+        //     return responseHeaders + response;		
         // }
-        // std::cout << "here44" << std::endl;
+	}
+    // std::cout << "here44" << std::endl;
 
-        mimeType = getMimeType(filePath);
-        // std::cout << filePath << std::endl;
+    mimeType = getMimeType(filePath);
+    // std::cout << filePath << std::endl;
 
-        // std::cout << mimeType << std::endl;
-        responseHeaders = "HTTP/1.1 200 OK\r\n";
-        responseHeaders += "Content-Type: " + mimeType + "\r\n";
-        responseHeaders += "Connection: keep-alive\r\n";
-        if (filePath.empty() || filePath == "/")
-            return responseHeaders + readFile(path + index);
-        else
-        {
-            std::string response = readFile(path + filePath);
-            // std::cout << path << " " << filePath << std::endl;
-            std::stringstream ss;
-            ss << response.length();
-            responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-            // std::cout << responseHeaders << std::endl;
-            // char buf[1024];
-            // getcwd(buf, 1023);
-            // std::cout << buf << std::endl;
-            if (response == "" || response.empty())
-                response = readFile(path + "/404.html");
-            return responseHeaders + response;
-        }
+    // std::cout << mimeType << std::endl;
+    responseHeaders = "HTTP/1.1 200 OK\r\n";
+    responseHeaders += "Content-Type: " + mimeType + "\r\n";
+    responseHeaders += "Connection: keep-alive\r\n";
+    if (filePath.empty() || filePath == "/")
+        return responseHeaders + readFile(path + index);
+    else
+    {
+        std::string response = readFile(path + filePath);
+        // std::cout << path << " " << filePath << std::endl;
+        std::stringstream ss;
+        ss << response.length();
+        responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
+        // std::cout << responseHeaders << std::endl;
+        // char buf[1024];
+        // getcwd(buf, 1023);
+        // std::cout << buf << std::endl;
+        if (response == "" || response.empty())
+            response = readFile(path + "/404.html");
+        return responseHeaders + response; //"HTTP/1.1 404 \r\nContent-Type: text/html\r\n\r\nError page, leave now!\r\n";
     }
+}
+
+bool headcheck(std::string buf)
+{
+    if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
+        return true;
+    return false;
+}
+
+
+bool postThings(std::string findbuffer, char *buffer, int fd, int size)
+{
+    size_t oi = findbuffer.find("POST ");
+    bool flag = headcheck(findbuffer);
+    if (oi != std::string::npos || !flag)
+    {
+        Download &instance = Download::getInstance();
+        if (oi != std::string::npos)
+        {
+            std::cout << "COME HERE" << std::endl;
+            std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
+	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
+            instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
+        }
+        else
+            instance.append_map(fd, buffer, size);
+        instance.isitFULL(fd);
+        return true;
+    }
+    return false;
 }
 
 std::string parseRecv(std::vector<pollfd> &fds, int pos)
 {
     char buffer[4096];
+    char *buf = NULL;
     std::string findbuffer;
     ssize_t n;
     int counter = 0;
@@ -146,7 +169,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fds[pos].fd, buffer, 4096, 0);
-        // std::cout << n << " recv"<< std::endl;
+        std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -161,11 +184,12 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 }
                 break;
             }
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            else if (errno == EWOULDBLOCK || errno == EAGAIN) {
             // No data available for non-blocking receive
                 std::cout << "all recv" << std::endl;
                 break;
-            } else {
+            }
+            else {
                 // Handle other receive errors
                 std::cerr << "Error reading from poll" << std::endl;
                 perror("read");
@@ -174,19 +198,34 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         }
         else
         {
-            if (findbuffer.empty())
-                findbuffer = std::string(buffer);
+            if (!buf)
+                buf = new char[n];
             else
-                findbuffer.append(buffer);
-            if (n < (ssize_t)sizeof(buffer))
-                break;
+            {
+                char *tmp;
+                tmp = buf;
+                buf = new char[buf_size + n];
+                memcpy(buf, tmp, buf_size);
+                delete tmp; // maybe
+            }
+            memcpy(buf + buf_size, buffer, n);
         }
         counter++;
-        buf_size += sizeof(buffer);
+        buf_size += n;
+        if (n < 4096)
+            break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
-        // std::cout << buffer << std::endl;
     }
-	std::cout << findbuffer << std::endl;
+    // for (int i = 0; i < buf_size; ++i)
+    //     write(2, &buf[i], 1);
+    // std::ofstream img("img", std::ios::trunc);
+    // if (img.is_open())
+    //     img << buf;
+    findbuffer = std::string(buf);
+    std::cout << "BUFSIZE: " << buf_size << std::endl;
+    std::cout << findbuffer << std::endl;
+    if (postThings(findbuffer, buf, fds[pos].fd, buf_size))
+        return "";
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)
     {

@@ -18,13 +18,12 @@ Disposition::Disposition(std::string disposition)
         }
 
         size_t nameStart = disposition.find("filename=");
-        size_t nameEnd = disposition.find("\"", nameStart);\
-        if (nameEnd != 0)
-            nameEnd = disposition.find("\r", nameStart);
+        size_t nameEnd = disposition.find("\"", nameStart + 10);\
         if (nameStart != std::string::npos)
         {
             nameStart += 10;
-            filename = disposition.substr(nameStart, nameEnd - nameStart);
+            if (nameEnd > 0)
+                filename = disposition.substr(nameStart, nameEnd - nameStart);
         }
 
         size_t contentEnd = disposition.find(";", 0);
@@ -308,12 +307,12 @@ Request::Request( std::string buffer )
 	this->contentlength = getINFOtwo(this->_request, "Content-Length: ", 16);
 	this->origin = getINFOtwo(this->_request, "Origin: ", 8);
 
-    size_t dispositionStart = _request.find("\r\n" + boundary);
+    size_t dispositionStart = _request.find(this->boundary, _request.find("\r\n\r\n", 4));
     if (dispositionStart != std::string::npos)
     {
         dispositionStart += boundary.size() + 2;
-        size_t dispositionEnd = _request.find(boundary + "--", dispositionStart);
-        this->contentdisposition = _request.substr(dispositionStart, dispositionEnd - dispositionStart);
+        // size_t dispositionEnd = _request.find("\r\n\r\n");
+        this->contentdisposition = _request.substr(dispositionStart);
     }
 
     if (!get.empty())
@@ -332,8 +331,20 @@ Request::Request( std::string buffer )
         else
             eof = 0;
     }
-    if (!contentdisposition.empty() && !boundary.empty())
+    if (!boundary.empty())
         this->content = Content(contentdisposition, boundary);
+}
+
+int Request::EndBoundary( char *str, size_t len, char *bound)
+{
+    size_t f = -1;
+    while (++f < len)
+    {
+        if (memcmp(str + f, bound, strlen(bound)))
+            return f;
+    }
+    std::cout << f << std::endl;
+    return 0;
 }
 
 Request::Request( const Request &other )
