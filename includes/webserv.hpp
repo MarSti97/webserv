@@ -54,5 +54,6 @@ int checkAllowDelete(std::string folder, std::vector<Location> Location);
 std::string	parse_attribute(std::istringstream &iss, std::string token);
 std::string findcommand(std::string command);
 bool    correctfile(std::string file);
+void	check_requirements(Config temp, int i);
 
 #endif
