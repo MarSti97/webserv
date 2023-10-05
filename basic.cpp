@@ -123,8 +123,8 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
     bool flag = headcheck(findbuffer);
     if (oi != std::string::npos || !flag)
     {
-        char* Str = new char[size];
-        memcpy(Str, buffer, size);
+        // char* Str = new char[size];
+        // memcpy(Str, buffer, size);
         Download &instance = Download::getInstance();
         if (oi != std::string::npos)
         {
@@ -132,10 +132,12 @@ bool postThings(std::string findbuffer, char *buffer, int fd, int size)
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
             instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
-            return true;
+            // return true;
         }
-        instance.append_map(fd, Str, size);
-        return true;
+        else
+            instance.append_map(fd, buffer, size);
+        instance.isitFULL(fd);
+        // return true;
     }
     return false;
 }
@@ -152,7 +154,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fds[pos].fd, buffer, 4096, 0);
-        // std::cout << n << " recv"<< std::endl;
+        std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -171,7 +173,8 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
             // No data available for non-blocking receive
                 std::cout << "all recv" << std::endl;
                 break;
-            } else {
+            }
+            else {
                 // Handle other receive errors
                 std::cerr << "Error reading from poll" << std::endl;
                 perror("read");
@@ -188,13 +191,14 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 tmp = buf;
                 buf = new char[buf_size + n];
                 memcpy(buf, tmp, buf_size);
+                delete tmp; // maybe
             }
             memcpy(buf + buf_size, buffer, n);
-            if (n < 4096)
-                break;
         }
         counter++;
         buf_size += n;
+        if (n < 4096)
+            break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
     // for (int i = 0; i < buf_size; ++i)
@@ -202,10 +206,10 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     // std::ofstream img("img", std::ios::trunc);
     // if (img.is_open())
     //     img << buf;
-    std::cout << buf_size << std::endl;
-    findbuffer = std::string(buffer);
-	// std::cout << findbuffer << std::endl;
-    if (postThings(findbuffer, buffer, fds[pos].fd, n))
+    findbuffer = std::string(buf);
+    std::cout << "BUFSIZE: " << buf_size << std::endl;
+    std::cout << findbuffer << std::endl;
+    if (postThings(findbuffer, buf, fds[pos].fd, buf_size))
         return "";
     size_t ok = findbuffer.find("\r\n\r\n");
     if (ok == std::string::npos)

@@ -36,6 +36,8 @@ class Download
         // void    map_manage(int client, char *buf, int bufsize);
         void    add_map(int client, imgDown content);
         void    append_map(int client, char *buf, int bufsize);
+        void    isitFULL(int client);
+
 
         // std::string &filename() const;
         // std::string &filelocation() const;

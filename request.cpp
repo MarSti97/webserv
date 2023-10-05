@@ -332,7 +332,7 @@ Request::Request( std::string buffer )
         else
             eof = 0;
     }
-    if (!contentdisposition.empty() && !boundary.empty())
+    if (!boundary.empty())
         this->content = Content(contentdisposition, boundary);
 }
 
