@@ -29,7 +29,7 @@ void Download::append_map(int client, char *buf, int bufsize)
     {
         it->second.file = strjoin(it->second.file, buf, it->second.current_len, bufsize);
         it->second.current_len += bufsize;
-        std::cout << "Full-len: " << it->second.content_len << " | Current-len: " << it->second.current_len << std::endl;
+        // std::cout << "Full-len: " << it->second.content_len << " | Current-len: " << it->second.current_len << std::endl;
     }
 }
 
@@ -53,11 +53,24 @@ bool compare(const char *find, char* str)
 {
     if (!strncmp(find, str, strlen(find)))
     {
-        std::cout << "FOUND IT" << std::endl;
+        // std::cout << "FOUND IT" << std::endl;
         return true;
     }
     // std::cout << "DIDNT WHY?" << std::endl;file o
     return false;
+}
+
+size_t  Download::removeFinalBoundary( char *str, size_t len, Request req )
+{
+    size_t i = -1;
+    while (++i <= len)
+    {
+        if (str[i] == '\r') {
+            if (compare(("\r\n--" + req.Boundary()).c_str(), str + i))
+                break ;
+        }
+    }
+    return i;
 }
 
 void Download::isitFULL(int client)
@@ -67,32 +80,25 @@ void Download::isitFULL(int client)
     {
         if (it->second.content_len <= it->second.current_len)
         {
-            std::cout << "YES: ITS TRUE FUCKING FINALLY" << std::endl;
+            // std::cout << "YES: ITS TRUE FUCKING FINALLY" << std::endl;
             int headless = removehead(it->second.file);
             Request req(std::string(it->second.file));
-            int fd = open("dickhead.jpg", O_CREAT | O_RDWR | O_TRUNC);
-            char * startptr = it->second.file + headless;
-            int i = -1;
-            while (++i <= it->second.content_len)
-            {
-                if (startptr[i] == '-') {
-                    if (compare(("--" + req.Boundary()).c_str(), startptr + i))
-                        break ;
-                }
-                write(fd, &startptr[i], 1);
-            }
-            close(fd);
+            // int fd = open("dickhead.jpg", O_CREAT | O_RDWR | O_TRUNC);
+            // char * startptr = it->second.file + headless;
+            // std::cout << it->second.content_len << " " << i << std::endl;
+            // write(fd, &startptr, i);
+            // close(fd);
+            size_t size = removeFinalBoundary(it->second.file + headless, it->second.content_len, req);
+            it->second.img = new char[size];
+            memcpy(it->second.img, it->second.file + headless, size);
             // std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
             // if (outfile.is_open())
             // {
-            //     outfile.write(it->second.file + headless, it->second.content_len - dif);
+            //     outfile.write(it->second.img, size);
             //     outfile.close();
-            //     std::cout << "SOMETHINGA: " << req.content.filename.getFilename()
-            //     << ", " << dif << std::endl;
             // }
-            delete it->second.file;
-            fileMap.erase(it);
-            printlog("Successfully downloaded file", 0, GREEN);
+            // delete it->second.file;
+            // printlog("Successfully downloaded file", 0, GREEN);
         }
     }
 }

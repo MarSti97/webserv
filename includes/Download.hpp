@@ -8,6 +8,7 @@ struct imgDown
     int content_len;
     int current_len;
     char *file;
+    char *img;
     std::string boundary;
     bool eof;
     // maybe find file type!
@@ -37,6 +38,7 @@ class Download
         void    add_map(int client, imgDown content);
         void    append_map(int client, char *buf, int bufsize);
         void    isitFULL(int client);
+        size_t  removeFinalBoundary( char *str, size_t len, Request req );
 
 
         // std::string &filename() const;
