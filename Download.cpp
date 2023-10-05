@@ -70,10 +70,12 @@ void Download::isitFULL(int client)
             int headless = removehead(it->second.file);
             Request req(std::string(it->second.file));
             // int newfd = open(, O_CREAT | O_TRUNC);
-            std::ofstream outfile("dickhead.jpg", std::ios::binary);
+            std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
             if (outfile.is_open())
             {
                 outfile.write(it->second.file + headless, it->second.content_len);
+                // std::cout << req.EndBoundary(it->second.file + headless, it->second.content_len, const_cast<char *>(req.Boundary().c_str())) << std::endl;
+                std::cout << req.content.getContentType() << std::endl;
                 outfile.close();
                 std::cout << "SOMETHINGA: " << req.content.filename.getFilename() << std::endl;
             }
