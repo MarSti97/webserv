@@ -165,7 +165,7 @@ Request &postThings(std::string findbuffer, char *buffer, int fd, int size)
     // size_t ok = findbuffer.find("GET ");
     // if (ok != std::string::npos)
     //     return true;
-    return instance.isitFULL(fd, buffer);
+    return instance.isitFULL(fd, buffer, size);
     //     return false;
     // return true;
 }
@@ -184,7 +184,7 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fds[pos].fd, buffer, 4095, 0);
-        std::cout << "THIS: recv " << n << std::endl;
+        // std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -201,7 +201,7 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
             }
             else if (errno == EWOULDBLOCK || errno == EAGAIN) {
             // No data available for non-blocking receive
-                std::cout << "all recv" << std::endl;
+                // std::cout << "all recv" << std::endl;
                 break;
             }
             else {
@@ -215,16 +215,17 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
         {
             if (!buf)
             {
-                buf = new char[n + 1];
-                buf[n] = '\0';
+                buf = new char[n];
+                // buf[n] = '\0';
             }    
             else
             {
-                char *tmp;
-                tmp = buf;
+                char tmp[buf_size];
+                memcpy(tmp, buf, buf_size);
+                delete[] buf;
                 buf = new char[buf_size + n];
                 memcpy(buf, tmp, buf_size);
-                delete tmp; // maybe
+                // delete[] tmp; // mismached free;
             }
             memcpy(buf + buf_size, buffer, n);
         }
@@ -234,14 +235,15 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
             break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
+    delete rek;
     // for (int i = 0; i < buf_size; ++i)
     //     write(2, &buf[i], 1);
     // std::ofstream img("img", std::ios::trunc);
     // if (img.is_open())
     //     img << buf;
-    findbuffer = std::string(buf);
-    std::cout << "BUFSIZE: " << buf_size << std::endl;
-    std::cout << findbuffer << std::endl;
+    findbuffer = std::string(buf, buf_size);
+    // std::cout << "BUFSIZE: " << buf_size << std::endl;
+    // std::cout << findbuffer << std::endl;
     Request &req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
     return req;
     // size_t ok = findbuffer.find("\r\n\r\n");

@@ -73,7 +73,7 @@ class Request
     
     public:
         Request();
-        Request( char *buffer );
+        Request( char *buffer, size_t size );
         Request( const Request &other );
         Request &operator=( const Request &other);
         Content content;

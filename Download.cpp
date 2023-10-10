@@ -22,8 +22,8 @@ void    Download::eraseClient( int client )
     std::map<int, imgDown>::iterator it = fileMap.find(client);
     if (it != fileMap.end())
     {
-        delete it->second.file;
-        delete it->second.img;
+        // delete it->second.file;
+        // delete it->second.img;
         fileMap.erase(client);
     }
 }
@@ -57,11 +57,11 @@ int removehead(char *file)
 {
     std::string str(file);
     size_t i = str.find("\r\n\r\n");
-    std::cout << i << std::endl;
+    // std::cout << i << std::endl;
     if (i != std::string::npos)
     {
         size_t j = str.find("\r\n\r\n", i + 1);
-        std::cout << j << std::endl;
+        // std::cout << j << std::endl;
         if (j != std::string::npos) {
             return j + 4;
         }
@@ -93,7 +93,7 @@ size_t  Download::removeFinalBoundary( char *str, size_t len, Request req )
     return i;
 }
 
-Request &Download::isitFULL(int client, char *file)
+Request &Download::isitFULL(int client, char *file, size_t filesize)
 {
     std::map<int, imgDown>::iterator it = fileMap.find(client);
     if (it != fileMap.end())
@@ -101,11 +101,20 @@ Request &Download::isitFULL(int client, char *file)
         if (it->second.content_len <= it->second.current_len)
         {
             int headless = removehead(it->second.file);
-            Request req(it->second.file);
+            Request req(it->second.file, it->second.current_len);
             size_t size = removeFinalBoundary(it->second.file + headless, it->second.content_len, req);
             it->second.img = new char[size];
             memcpy(it->second.img, it->second.file + headless, size);
-            Request *reo = new Request(it->second.file);
+            // std::cout << " FUCK THAT SHIIIIIIIT " << size << " " << headless << " " << it->second.content_len << std::endl;
+            std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
+            if (outfile.is_open())
+            {
+                outfile.write(it->second.img, size);
+                outfile.close();
+            }
+            // delete it->second.file;
+            printlog("Successfully downloaded file", 0, GREEN);
+            Request *reo = new Request(it->second.file, it->second.current_len);
             reo->content.setContent(it->second.img);
 			reo->content.setContentSize(size);
             eraseClient(client);
@@ -114,7 +123,7 @@ Request &Download::isitFULL(int client, char *file)
         Request *rel = new Request();
         return *rel;
     }
-    Request *rek = new Request(file);
+    Request *rek = new Request(file, filesize);
     return *rek;
 }
 

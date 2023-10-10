@@ -38,7 +38,7 @@ class Download
         void    eraseClient( int client );
         void    add_map(int client, imgDown content);
         void    append_map(int client, char *buf, int bufsize);
-        Request &isitFULL(int client, char *file);
+        Request &isitFULL(int client, char *file, size_t filesize);
         size_t  removeFinalBoundary( char *str, size_t len, Request req );
         imgDown getStruct(int client);
 

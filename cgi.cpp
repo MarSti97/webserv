@@ -52,9 +52,9 @@ int	Serv::cgi_request(Request &req, std::string path_info, std::string script_ex
 		cmd_name = script_extension.substr(1);
 	int	cgi_fd = execute_script(findcommand("/" + cmd_name), path_info, cgi_env, req); 
 
-	i = -1;
-	while (cgi_env[++i])
-		delete[] cgi_env[i];
+	// i = -1;
+	// while (cgi_env[++i])
+	// 	delete[] cgi_env[i];
 	delete[] cgi_env;
 	return (cgi_fd);
 }
@@ -99,8 +99,9 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 	{
 		close(input_fd[0]);
 		close(output_fd[1]);
-
-		write(input_fd[1], req.content.getContent(), req.content.getContentSize());
+		char *content = req.content.getContent();
+		for (size_t f = 0; f < req.content.getContentSize(); ++f)
+			write(input_fd[1], &content[f], 1);
 		close(input_fd[1]);
 		wait(&status);
 		return (output_fd[0]);
@@ -152,7 +153,7 @@ void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
 
 char	**Serv::create_cgi_env(std::vector<std::string> meta_vars)
 {
-	char **cgi_env = (char **)malloc(sizeof(char*) * 18 + 1);
+	char **cgi_env = new char*[18 + 1];
 	if (!cgi_env)
 	{
 		std::cerr << "Error allocating memory for the CGI env" << std::endl;
@@ -161,9 +162,11 @@ char	**Serv::create_cgi_env(std::vector<std::string> meta_vars)
 
 	int i = 0;
 	std::vector<std::string>::iterator it;
-	for (it = meta_vars.begin(); it != meta_vars.end(); it++)
+	for (it = meta_vars.begin(); it != meta_vars.end(); it++) // leaaaaaaaaaaaaaaaaks; need to fix line 167.
 	{
-		cgi_env[i++] = strdup((*it).c_str());
+		cgi_env[i] = new char[(*it).length() + 1];
+		cgi_env[i][(*it).length()] = '\0';
+		memcpy(cgi_env[i++], (*it).c_str(), (*it).length());
 	}
 	cgi_env[i] = NULL;
 	return cgi_env;

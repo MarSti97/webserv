@@ -35,6 +35,7 @@ class Config
 		std::string cgi_directory;
 		std::vector<Location> location;
 		std::map<std::string, std::string> error_pages;
+		Config() : allow_get(false), allow_post(false), allow_delete(false) {}
 };
 
 #endif
