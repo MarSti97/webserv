@@ -94,6 +94,12 @@ std::string Request::request( void ) const
     return _request;
 }
 
+
+char *Request::C_request( void )
+{
+    return c_request;
+}
+
 std::string Request::Get( void ) const
 {
     return get;
@@ -238,9 +244,10 @@ std::string	getINFOtwo(std::string request, const char *what, int pos)
 	return "";
 }
 
-Request::Request( std::string buffer )
+Request::Request( char *buffer )
 {
     this->_request = buffer;
+
 	this->get = getINFOone(this->_request, "GET ", 4);
     size_t queryStart = _request.find("GET ");
     if (queryStart != std::string::npos)
