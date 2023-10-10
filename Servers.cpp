@@ -198,11 +198,11 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request *req = &parseRecv(fds, i);
-						std::cout << req->content.getContent() << std::endl;
-						// int cgi_fd = getCorrectServ(req).filter_request(*req);
+						//std::cout << req->content.getContent() << std::endl;
+						int cgi_fd = getCorrectServ(req).filter_request(*req);
 						if (!(req->Get().empty() && req->Post().empty()))
-							parseSend(fds, i, *req, 0);
-						delete &req;
+							parseSend(fds, i, *req, cgi_fd);
+						delete req;
 					}
 				}
 			}

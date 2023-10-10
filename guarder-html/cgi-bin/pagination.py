@@ -45,20 +45,20 @@ print('''
   <meta name="keywords" content="" />
   <meta name="description" content="" />
   <meta name="author" content="" />
-  <link rel="shortcut icon" href="../images/favicon.png" type="image/x-icon">
+  <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
 
   <title>Guarder</title>
 
   <!-- bootstrap core css -->
-  <link rel="stylesheet" type="text/css" href="../css/bootstrap.css" />
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
 
   <!-- fonts style -->
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Poppins:400,600,700&display=swap" rel="stylesheet" />
 
   <!-- Custom styles for this template -->
-  <link href="../css/style.css" rel="stylesheet" />
+  <link href="css/style.css" rel="stylesheet" />
   <!-- responsive style -->
-  <link href="../css/responsive.css" rel="stylesheet" />
+  <link href="css/responsive.css" rel="stylesheet" />
 </head>
 
 <body class="sub_page">
@@ -66,7 +66,7 @@ print('''
     <!-- header section strats -->
     <div class="hero_bg_box">
       <div class="img-box">
-        <img src="../images/hero-bg.jpg" alt="">
+        <img src="images/hero-bg.jpg" alt="">
       </div>
     </div>
 
@@ -98,7 +98,7 @@ print('''
       <div class="header_bottom">
         <div class="container-fluid">
           <nav class="navbar navbar-expand-lg custom_nav-container">
-            <a class="navbar-brand" href="../index.html">
+            <a class="navbar-brand" href="index.html">
               <span>
                 Guarder
               </span>
@@ -110,19 +110,19 @@ print('''
             <div class="collapse navbar-collapse ml-auto" id="navbarSupportedContent">
               <ul class="navbar-nav  ">
                 <li class="nav-item ">
-                  <a class="nav-link" href="../index.html">Home <span class="sr-only">(current)</span></a>
+                  <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item active">
-                  <a class="nav-link" href="../about.html"> About</a>
+                  <a class="nav-link" href="about.html"> About</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="../service.html"> Services </a>
+                  <a class="nav-link" href="service.html"> Services </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="../guard.html"> Guards </a>
+                  <a class="nav-link" href="guard.html"> Guards </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="../contact.html">Contact us</a>
+                  <a class="nav-link" href="contact.html">Contact us</a>
                 </li>
               </ul>
             </div>
@@ -141,7 +141,7 @@ print('''
         <div class="col-md-6 px-0">
           <div class="img_container">
             <div class="img-box">
-              <img src="../images/about-img.jpg" alt="" />
+              <img src="images/about-img.jpg" alt="" />
             </div>
           </div>
         </div>
@@ -159,11 +159,19 @@ print('''
               nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
               in reprehenderit in voluptate velit
             </p>
-            <div class="btn-box">
-              <a href="">
-                Read More
-              </a>
-            </div>
+            <!-- <div class="btn-box">
+				<form action="/cgi-bin/printrequest.py" method="POST" enctype="multipart/form-data">
+					<a href="">Read More</a>
+				</form>
+            </div> -->
+			<form action="cgi-bin/printrequest.py" method="POST" enctype="text/plain">
+				<div class="mb-3">
+					<input type="text" id="text-input" name="user_input" maxlength="200">
+				</div>
+				<div class="contact_form-container btn-box">
+					<button type="submit" class="btn btn-primary">Generate POST request</button>
+				</div>
+			</form>
           </div>
         </div>
       </div>

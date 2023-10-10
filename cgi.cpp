@@ -59,44 +59,6 @@ int	Serv::cgi_request(Request &req, std::string path_info, std::string script_ex
 	return (cgi_fd);
 }
 
-// int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request &req)
-// {
-// 	int		pipe_fd[2];
-// 	pid_t	pid;
-//     int status = 0;
-
-// 	if (pipe(pipe_fd) == -1)
-// 		perror("pipe");
-// 	pid = fork();
-// 	if (pid == -1)
-// 		perror("fork");
-// 	if (pid == 0)
-// 	{
-// 		std::string script_name = path_info.substr(path_info.rfind("/") + 1);
-// 		path_info = serv_info.root + path_info;
-// 		if (chdir((serv_info.root + "/" + serv_info.cgi_directory).c_str()) == -1)
-// 			std::cout << "Error changing to cgi dir: " << serv_info.root + "/" + serv_info.cgi_directory << std::endl;
-// 		char *argv[3];
-//         argv[0] = const_cast<char *>((cmd_path).c_str());
-// 		argv[1] = const_cast<char *>((script_name).c_str());
-// 		argv[2] = NULL;
-// 		std::cout << argv[1] << std::endl;
-// 		dup2(pipe_fd[1], STDOUT_FILENO);
-
-// 		close(pipe_fd[1]);
-// 		close(pipe_fd[0]);
-// 		if (execve(cmd_path.c_str(), argv, env) == -1)
-//             perror("execve");
-// 	}
-// 	else
-// 	{
-// 		close(pipe_fd[1]);
-// 		wait(&status);
-// 		return (pipe_fd[0]);
-// 	}
-// 	return (status);
-//}
-
 int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request &req)
 {
 	int		input_fd[2];
@@ -138,7 +100,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		close(input_fd[0]);
 		close(output_fd[1]);
 
-		write(input_fd[1], req.request().c_str(), req.request().size());
+		write(input_fd[1], req.content.getContent(), req.content.content_size);
 		close(input_fd[1]);
 		wait(&status);
 		return (output_fd[0]);
@@ -185,11 +147,12 @@ void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
 	meta_vars->push_back("SERVER_PORT=" + serv_info.port);
 	meta_vars->push_back("SERVER_PROTOCOL=HTTP/1.1");
 	meta_vars->push_back("SERVER_SOFTWARE=");
+	meta_vars->push_back("BODY_FILENAME=" + req.content.filename.getFilename());
 }
 
 char	**Serv::create_cgi_env(std::vector<std::string> meta_vars)
 {
-	char **cgi_env = (char **)malloc(sizeof(char*) * 17 + 1);
+	char **cgi_env = (char **)malloc(sizeof(char*) * 18 + 1);
 	if (!cgi_env)
 	{
 		std::cerr << "Error allocating memory for the CGI env" << std::endl;

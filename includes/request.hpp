@@ -28,7 +28,8 @@ class Content
         char        *_content;
     
     public:
-        Content( void );
+        size_t	content_size;
+		Content( void );
         Content(const Content &other);
         Content(std::string content, std::string boundary);
         Content &operator=(const Content &other);

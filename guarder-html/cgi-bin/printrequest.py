@@ -4,10 +4,6 @@ import cgi
 import sys
 import re
 
-# Print the Content-Type header
-print("Content-Type: text/html\n")
-
-# Print the HTML page with the contents of the FieldStorage
 print("<html>")
 print("<head><title>POST Request</title></head>")
 print("<body>")

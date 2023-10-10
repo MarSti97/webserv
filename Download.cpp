@@ -96,6 +96,7 @@ Request &Download::isitFULL(int client, char *file)
             memcpy(it->second.img, it->second.file + headless, size);
             Request *reo = new Request(it->second.file);
             reo->content.setContent(it->second.img);
+			reo->content.content_size = size;
             return *reo;
         }
         Request *rel = new Request();
