@@ -46,7 +46,7 @@ void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);
 bool 	check_new_attribute(std::string token);
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
-std::string parseRecv(std::vector<pollfd> &fds, int pos);
+Request &parseRecv(std::vector<pollfd> &fds, int pos);
 int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd);
 std::string getResponse(Request req, std::string path, std::string index, int cgi_fd);
 int GetbyUser(std::string buffer);
@@ -60,7 +60,7 @@ void	check_requirements(Config temp, int i);
 void    createPost(char *buf, int client, int checker);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
-bool    postThings(std::string findbuffer, char *buffer, int fd, int size);
+Request &postThings(std::string findbuffer, char *buffer, int fd, int size);
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
 
 

@@ -144,40 +144,46 @@ bool headcheck(std::string buf)
 }
 
 
-bool postThings(std::string findbuffer, char *buffer, int fd, int size)
+Request &postThings(std::string findbuffer, char *buffer, int fd, int size)
 {
-    size_t oi = findbuffer.find("POST ");
+    Download &instance = Download::getInstance();
     bool flag = headcheck(findbuffer);
+    size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
-        Download &instance = Download::getInstance();
         if (oi != std::string::npos)
         {
-            std::cout << "COME HERE" << std::endl;
+            // std::cout << "COME HERE" << std::endl;
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
-            instance.add_map(fd, imgDown(atoi(contentlength.c_str()), size, buffer, boundary));
+	        size_t headerlength = findbuffer.find( "\r\n\r\n");
+            instance.add_map(fd, imgDown((atoi(contentlength.c_str()) + (headerlength + 4)), size, buffer, boundary));
         }
         else
             instance.append_map(fd, buffer, size);
-        instance.isitFULL(fd);
-        return true;
     }
-    return false;
+    // size_t ok = findbuffer.find("GET ");
+    // if (ok != std::string::npos)
+    //     return true;
+    return instance.isitFULL(fd, buffer);
+    //     return false;
+    // return true;
 }
 
-std::string parseRecv(std::vector<pollfd> &fds, int pos)
+Request &parseRecv(std::vector<pollfd> &fds, int pos)
 {
-    char buffer[4096];
+    char buffer[4097];
+    buffer[4096] = '\0';
     char *buf = NULL;
     std::string findbuffer;
     ssize_t n;
     int counter = 0;
     int buf_size = 0;
+    Request *rek = new Request();
     while (1)
     {
         bzero(buffer, sizeof(buffer));
-        n = recv(fds[pos].fd, buffer, 4096, 0);
+        n = recv(fds[pos].fd, buffer, 4095, 0);
         std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
@@ -189,7 +195,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                     printlog("LOST CLIENT", fds[pos].fd, RED);
                     close(fds[pos].fd);
                     fds.erase(fds.begin() + pos);
-                    return "";
+                    return *rek;
                 }
                 break;
             }
@@ -202,13 +208,16 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
                 // Handle other receive errors
                 std::cerr << "Error reading from poll" << std::endl;
                 perror("read");
-                return "";
+                return *rek;
             }
         }
         else
         {
             if (!buf)
-                buf = new char[n];
+            {
+                buf = new char[n + 1];
+                buf[n] = '\0';
+            }    
             else
             {
                 char *tmp;
@@ -221,7 +230,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
         }
         counter++;
         buf_size += n;
-        if (n < 4096)
+        if (n < 4095)
             break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
@@ -233,8 +242,8 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     findbuffer = std::string(buf);
     std::cout << "BUFSIZE: " << buf_size << std::endl;
     std::cout << findbuffer << std::endl;
-    if (postThings(findbuffer, buf, fds[pos].fd, buf_size))
-        return findbuffer;
+    Request &req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
+    return req;
     // size_t ok = findbuffer.find("\r\n\r\n");
     // if (ok == std::string::npos)
     // {
@@ -242,7 +251,7 @@ std::string parseRecv(std::vector<pollfd> &fds, int pos)
     //     std::cout << buffer << n << std::endl;
     //     return "";
     // }
-    return findbuffer;
+    // return findbuffer;
 }
 
 void	printlog(std::string msg, int arg, std::string color)

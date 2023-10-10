@@ -69,21 +69,20 @@ Content::Content(std::string content, std::string boundary)
             content_type = content.substr(typeStart, typeEnd - typeStart);
         }
 
-        size_t fileStart = content.find("\r\n\r\n");
-        size_t fileEnd = content.find(boundary, fileStart);
-        if (fileStart != std::string::npos)
-        {
-            fileStart += 4;
-            _content = content.substr(fileStart, fileEnd - fileStart);
-        }
-
+        _content = NULL;
     }
 }
 
-std::string Content::getContent( void ) const
+char *Content::getContent( void ) const
 {
     return _content;
 }
+
+void Content::setContent( char *newcontent )
+{
+    _content = newcontent;
+}
+
 
 std::string Content::getContentType( void ) const
 {

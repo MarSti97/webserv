@@ -197,12 +197,12 @@ void Servers::run()
 						// std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
-						std::string buffer = parseRecv(fds, i);
-						Request *req = new Request(buffer);
-						int cgi_fd = getCorrectServ(req).filter_request(*req);
-						if (!buffer.empty())
-							parseSend(fds, i, *req, cgi_fd);
-						delete req;
+						Request *req = &parseRecv(fds, i);
+						std::cout << req->content.getContent() << std::endl;
+						// int cgi_fd = getCorrectServ(req).filter_request(*req);
+						if (!(req->Get().empty() && req->Post().empty()))
+							parseSend(fds, i, *req, 0);
+						delete &req;
 					}
 				}
 			}

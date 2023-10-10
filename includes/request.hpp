@@ -25,7 +25,7 @@ class Content
 
     private:
         std::string content_type;
-        std::string _content;
+        char        *_content;
     
     public:
         Content( void );
@@ -33,7 +33,8 @@ class Content
         Content(std::string content, std::string boundary);
         Content &operator=(const Content &other);
         Disposition filename;
-        std::string getContent( void ) const;
+        char *getContent( void ) const;
+        void setContent( char *newcontent );
         std::string getContentType( void ) const;
         ~Content();
 };

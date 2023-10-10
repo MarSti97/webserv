@@ -82,34 +82,27 @@ size_t  Download::removeFinalBoundary( char *str, size_t len, Request req )
     return i;
 }
 
-void Download::isitFULL(int client)
+Request &Download::isitFULL(int client, char *file)
 {
     std::map<int, imgDown>::iterator it = fileMap.find(client);
     if (it != fileMap.end())
     {
         if (it->second.content_len <= it->second.current_len)
         {
-            // std::cout << "YES: ITS TRUE FUCKING FINALLY" << std::endl;
             int headless = removehead(it->second.file);
             Request req(std::string(it->second.file));
-            // int fd = open("dickhead.jpg", O_CREAT | O_RDWR | O_TRUNC);
-            // char * startptr = it->second.file + headless;
-            // std::cout << it->second.content_len << " " << i << std::endl;
-            // write(fd, &startptr, i);
-            // close(fd);
             size_t size = removeFinalBoundary(it->second.file + headless, it->second.content_len, req);
             it->second.img = new char[size];
             memcpy(it->second.img, it->second.file + headless, size);
-            // std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
-            // if (outfile.is_open())
-            // {
-            //     outfile.write(it->second.img, size);
-            //     outfile.close();
-            // }
-            // delete it->second.file;
-            // printlog("Successfully downloaded file", 0, GREEN);
+            Request *reo = new Request(it->second.file);
+            reo->content.setContent(it->second.img);
+            return *reo;
         }
+        Request *rel = new Request();
+        return *rel;
     }
+    Request *rek = new Request(file);
+    return *rek;
 }
 
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2)
