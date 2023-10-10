@@ -83,6 +83,16 @@ void Content::setContent( char *newcontent )
     _content = newcontent;
 }
 
+size_t Content::getContentSize( void ) const
+{
+    return content_size;
+}
+
+void Content::setContentSize( size_t size )
+{
+    content_size = size;
+}
+
 
 std::string Content::getContentType( void ) const
 {
@@ -247,21 +257,22 @@ std::string	getINFOtwo(std::string request, const char *what, int pos)
 Request::Request( char *buffer )
 {
     this->_request = buffer;
+    std::string __request(_request);
 
-	this->get = getINFOone(this->_request, "GET ", 4);
-    size_t queryStart = _request.find("GET ");
+	this->get = getINFOone(__request, "GET ", 4);
+    size_t queryStart = __request.find("GET ");
     if (queryStart != std::string::npos)
     {
         queryStart += 4;
 		// std::cout << "CORRECT" << std::endl;
-        size_t queryEnd = _request.find(" ", queryStart);
-        size_t queryEnd2 = _request.find("?", queryStart);
+        size_t queryEnd = __request.find(" ", queryStart);
+        size_t queryEnd2 = __request.find("?", queryStart);
         if (queryEnd2 < queryEnd)
-            this->query = _request.substr(queryEnd2, queryEnd - queryEnd2);
+            this->query = __request.substr(queryEnd2, queryEnd - queryEnd2);
     }
-	this->post = getINFOone(this->_request, "POST ", 5);
+	this->post = getINFOone(__request, "POST ", 5);
 
-	this->host = getINFOtwo(this->_request, "Host: ", 6);
+	this->host = getINFOtwo(__request, "Host: ", 6);
 	// std::cout << "THIS: " << this->host << std::endl;
 	size_t splitter = host.find(":");
 	if (splitter != std::string::npos)
@@ -272,58 +283,58 @@ Request::Request( char *buffer )
 		// std::cout << "THAT: " << this->host << " and " << this->port << std::endl;
 	}
 
-	this->useragent = getINFOtwo(this->_request, "User-Agent: ", 12);
-	this->accept = getINFOtwo(this->_request, "Accept: ", 8);
-	this->acceptlanguage = getINFOtwo(this->_request, "Accept-Language: ", 17);
-	this->acceptencoding = getINFOtwo(this->_request, "Accept-Encoding: ", 17);
-	this->xrequestedwith = getINFOtwo(this->_request, "X-Requested-With: ", 18);
-	this->connection = getINFOtwo(this->_request, "Connection: ", 12);
+	this->useragent = getINFOtwo(__request, "User-Agent: ", 12);
+	this->accept = getINFOtwo(__request, "Accept: ", 8);
+	this->acceptlanguage = getINFOtwo(__request, "Accept-Language: ", 17);
+	this->acceptencoding = getINFOtwo(__request, "Accept-Encoding: ", 17);
+	this->xrequestedwith = getINFOtwo(__request, "X-Requested-With: ", 18);
+	this->connection = getINFOtwo(__request, "Connection: ", 12);
 
-    size_t refererStart = _request.find("Referer: ");
+    size_t refererStart = __request.find("Referer: ");
     if (refererStart != std::string::npos)
     {
         refererStart += 9;
         // std::cerr << "10" << std::endl;
-        size_t refererend = _request.find(":", refererStart);
-        size_t refererend2 = _request.find(":", refererend + 1);
-        size_t refererend3 = _request.find("/", refererend2);
-        size_t refererend4 = _request.find("\r", refererend3);
-        this->referer = _request.substr(refererend3, refererend4 - refererend3);
+        size_t refererend = __request.find(":", refererStart);
+        size_t refererend2 = __request.find(":", refererend + 1);
+        size_t refererend3 = __request.find("/", refererend2);
+        size_t refererend4 = __request.find("\r", refererend3);
+        this->referer = __request.substr(refererend3, refererend4 - refererend3);
     }
 
-	this->upgradeinsecurerequests = getINFOtwo(this->_request, "Upgrade-Insecure-Requests: ", 30);
-	this->secfetchuser = getINFOtwo(this->_request, "Sec-Fetch-User: ", 16);
-	this->secfetchdest = getINFOtwo(this->_request, "Sec-Fetch-Dest: ", 16);
-	this->secfetchmode = getINFOtwo(this->_request, "Sec-Fetch-Mode: ", 16);
-	this->secfetchsite = getINFOtwo(this->_request, "Sec-Fetch-Site: ", 16);
+	this->upgradeinsecurerequests = getINFOtwo(__request, "Upgrade-Insecure-Requests: ", 30);
+	this->secfetchuser = getINFOtwo(__request, "Sec-Fetch-User: ", 16);
+	this->secfetchdest = getINFOtwo(__request, "Sec-Fetch-Dest: ", 16);
+	this->secfetchmode = getINFOtwo(__request, "Sec-Fetch-Mode: ", 16);
+	this->secfetchsite = getINFOtwo(__request, "Sec-Fetch-Site: ", 16);
 
-    size_t cont_typeStart = _request.find("Content-Type: ") ;
+    size_t cont_typeStart = __request.find("Content-Type: ") ;
     if (cont_typeStart != std::string::npos)
     {
         cont_typeStart += 14;
         // std::cerr << "16" << std::endl;
-        size_t cont_typeEnd = _request.find(";", cont_typeStart);
-        size_t cont_typeEnd2 = _request.find("\r", cont_typeStart);
+        size_t cont_typeEnd = __request.find(";", cont_typeStart);
+        size_t cont_typeEnd2 = __request.find("\r", cont_typeStart);
         if (cont_typeEnd2 < cont_typeEnd)
             cont_typeEnd = cont_typeEnd2;
-        this->contenttype = _request.substr(cont_typeStart, cont_typeEnd - cont_typeStart);
+        this->contenttype = __request.substr(cont_typeStart, cont_typeEnd - cont_typeStart);
     }
 
-	this->boundary = getINFOtwo(this->_request, "boundary=", 9);
-	this->contentlength = getINFOtwo(this->_request, "Content-Length: ", 16);
-	this->origin = getINFOtwo(this->_request, "Origin: ", 8);
+	this->boundary = getINFOtwo(__request, "boundary=", 9);
+	this->contentlength = getINFOtwo(__request, "Content-Length: ", 16);
+	this->origin = getINFOtwo(__request, "Origin: ", 8);
 
-    size_t dispositionStart = _request.find(this->boundary, _request.find("\r\n\r\n", 4));
+    size_t dispositionStart = __request.find(this->boundary, __request.find("\r\n\r\n", 4));
     if (dispositionStart != std::string::npos)
     {
         dispositionStart += boundary.size() + 2;
-        // size_t dispositionEnd = _request.find("\r\n\r\n");
-        this->contentdisposition = _request.substr(dispositionStart);
+        // size_t dispositionEnd = __request.find("\r\n\r\n");
+        this->contentdisposition = __request.substr(dispositionStart);
     }
 
     if (!get.empty())
     {
-        size_t eofgetStart = _request.find("\r\n\r\n");
+        size_t eofgetStart = __request.find("\r\n\r\n");
         if (eofgetStart != std::string::npos)
             eof = 1;
         else
@@ -331,7 +342,7 @@ Request::Request( char *buffer )
     }
     else
     {
-        size_t eofpostStart = _request.find(boundary + "--");
+        size_t eofpostStart = __request.find(boundary + "--");
         if (eofpostStart != std::string::npos)
             eof = 1;
         else

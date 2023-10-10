@@ -17,6 +17,17 @@ void    Download::clean()
     delete instance;
 }
 
+void    Download::eraseClient( int client )
+{
+    std::map<int, imgDown>::iterator it = fileMap.find(client);
+    if (it != fileMap.end())
+    {
+        delete it->second.file;
+        delete it->second.img;
+        fileMap.erase(client);
+    }
+}
+
 void Download::add_map(int client, imgDown content)
 {
     fileMap.insert(std::make_pair(client, content));
@@ -90,13 +101,14 @@ Request &Download::isitFULL(int client, char *file)
         if (it->second.content_len <= it->second.current_len)
         {
             int headless = removehead(it->second.file);
-            Request req(std::string(it->second.file));
+            Request req(it->second.file);
             size_t size = removeFinalBoundary(it->second.file + headless, it->second.content_len, req);
             it->second.img = new char[size];
             memcpy(it->second.img, it->second.file + headless, size);
             Request *reo = new Request(it->second.file);
             reo->content.setContent(it->second.img);
-			reo->content.content_size = size;
+			reo->content.setContentSize(size);
+            eraseClient(client);
             return *reo;
         }
         Request *rel = new Request();

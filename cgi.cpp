@@ -100,7 +100,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		close(input_fd[0]);
 		close(output_fd[1]);
 
-		write(input_fd[1], req.content.getContent(), req.content.content_size);
+		write(input_fd[1], req.content.getContent(), req.content.getContentSize());
 		close(input_fd[1]);
 		wait(&status);
 		return (output_fd[0]);

@@ -26,16 +26,18 @@ class Content
     private:
         std::string content_type;
         char        *_content;
+        size_t	content_size;
     
     public:
-        size_t	content_size;
 		Content( void );
         Content(const Content &other);
         Content(std::string content, std::string boundary);
         Content &operator=(const Content &other);
         Disposition filename;
-        char *getContent( void ) const;
-        void setContent( char *newcontent );
+        size_t  getContentSize( void ) const;
+        void    setContentSize( size_t size );
+        char    *getContent( void ) const;
+        void    setContent( char *newcontent );
         std::string getContentType( void ) const;
         ~Content();
 };
@@ -43,6 +45,7 @@ class Content
 class Request
 {
     private:
+        char        *c_request;
         std::string _request;
         std::string get;
         std::string query;
@@ -70,10 +73,11 @@ class Request
     
     public:
         Request();
-        Request( std::string buffer );
+        Request( char *buffer );
         Request( const Request &other );
         Request &operator=( const Request &other);
         Content content;
+        char *C_request( void );
         std::string request( void ) const;
         std::string Get( void ) const;
         std::string Query( void ) const;
