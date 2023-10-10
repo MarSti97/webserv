@@ -29,8 +29,10 @@ valgrind : all
 
 clean : 
 	@rm -rf $(OBJ) $(BIN)
+	@rm -rf ./guarder-html/cgi-bin/uploads
 
 fclean : clean
 	@rm -rf $(NAME)
+
 
 re : fclean all

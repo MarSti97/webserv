@@ -113,7 +113,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
 {
 	meta_vars->push_back("AUTH_TYPE=");
-	meta_vars->push_back("CONTENT_TYPE=" + req.Contenttype());
+	meta_vars->push_back("CONTENT_TYPE=" + req.Contenttype() + "; boundary=" + req.Boundary());
 	meta_vars->push_back("CONTENT_LENGTH=" + req.Contentlength());
 	meta_vars->push_back("GATEWAY_INTERFACE=CGI/1.1");
 	
