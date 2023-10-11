@@ -29,6 +29,8 @@
 #include "request.hpp"
 #include "Servers.hpp"
 #include "Download.hpp"
+#include <sys/stat.h>
+#include <dirent.h>
 
 #define RED "\033[0;91m"
 #define GREEN "\033[0;92m"
@@ -63,6 +65,7 @@ std::string	getINFOtwo(std::string request, const char *what, int pos);
 Request &postThings(std::string findbuffer, char *buffer, int fd, int size);
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
 int end_loop(int end);
+std::string	makeDirectoryList(std::string dirpath);
 
 
 #endif
