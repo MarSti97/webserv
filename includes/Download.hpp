@@ -36,6 +36,7 @@ class Download
         static Download &getInstance();
         // void    map_manage(int client, char *buf, int bufsize);
         void    eraseClient( int client );
+        void    clean();
         void    add_map(int client, imgDown content);
         void    append_map(int client, char *buf, int bufsize);
         Request &isitFULL(int client, char *file, size_t filesize);
@@ -57,7 +58,7 @@ class Download
         // void    Setboundary(std::string newboundary);
         // void    Setclientnbr(int newnbr);
         // void    Seteof(int neweof);
-        void    clean();
+        // void    clean();
 };
 
 

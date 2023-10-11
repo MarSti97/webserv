@@ -14,6 +14,7 @@ Download &Download::getInstance()
 void    Download::clean()
 {
     // fix and make do delete one selected sockets too
+    fileMap.clear();
     delete instance;
 }
 
@@ -93,30 +94,55 @@ size_t  Download::removeFinalBoundary( char *str, size_t len, Request req )
     return i;
 }
 
+int removeheadnoimg(char *file, int size)
+{
+    std::string str(file, size);
+    size_t i = str.find("\r\n\r\n");
+    // std::cout << i << std::endl;
+    if (i != std::string::npos)
+        return i + 4;
+    return 0;
+}
+
+
 Request &Download::isitFULL(int client, char *file, size_t filesize)
 {
     std::map<int, imgDown>::iterator it = fileMap.find(client);
     if (it != fileMap.end())
     {
+        for (size_t f = 0; f < filesize; ++f)
+            write (1, &it->second.file[f], 1);
+        std::cout << filesize << " " << it->second.current_len << " " << it->second.content_len << " ";
         if (it->second.content_len <= it->second.current_len)
         {
-            int headless = removehead(it->second.file);
-            Request req(it->second.file, it->second.current_len);
-            size_t size = removeFinalBoundary(it->second.file + headless, it->second.content_len, req);
-            it->second.img = new char[size];
-            memcpy(it->second.img, it->second.file + headless, size);
-            // std::cout << " FUCK THAT SHIIIIIIIT " << size << " " << headless << " " << it->second.content_len << std::endl;
-            std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
-            if (outfile.is_open())
-            {
-                outfile.write(it->second.img, size);
-                outfile.close();
-            }
-            // delete it->second.file;
-            printlog("Successfully downloaded file", 0, GREEN);
             Request *reo = new Request(it->second.file, it->second.current_len);
+            if (!(reo->Boundary().empty()))
+            {
+                int headless = removehead(reo->C_request());
+                Request req(reo->C_request(), it->second.current_len);
+                size_t size = removeFinalBoundary(reo->C_request() + headless, it->second.content_len, req);
+                it->second.img = new char[size];
+                memcpy(it->second.img, reo->C_request() + headless, size);
+                // std::cout << " FUCK THAT SHIIIIIIIT " << size << " " << headless << " " << it->second.content_len << std::endl;
+                std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
+                if (outfile.is_open())
+                {
+                    outfile.write(it->second.img, size);
+                    outfile.close();
+                }
+                // delete it->second.file;
+                printlog("Successfully downloaded file", 0, GREEN);
+                reo->content.setContent(it->second.img);
+                reo->content.setContentSize(size);
+                eraseClient(client);
+                return *reo;
+            }
+            size_t size = removeheadnoimg(reo->C_request(), it->second.current_len);
+            std::cout << size << std::endl;
+            it->second.img = new char[it->second.current_len - size];
+            memcpy(it->second.img, reo->C_request() + size, it->second.current_len - size);
             reo->content.setContent(it->second.img);
-			reo->content.setContentSize(size);
+            reo->content.setContentSize(it->second.current_len - size);
             eraseClient(client);
             return *reo;
         }

@@ -12,7 +12,7 @@ class Serv
 
 	public :
 		Serv(Config info) : serv_info(info) {}
-		virtual ~Serv() {}
+		~Serv() {}
 
 		int establish_connection();
 		void print(int i) const;
@@ -37,7 +37,7 @@ class Servers
 	public : 
 		Servers() {}
 		Servers(std::string file, char **environment);
-		virtual ~Servers() {}
+		~Servers() {std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
 
 		void	printAll() const;
 		void	init();

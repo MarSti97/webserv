@@ -62,6 +62,7 @@ std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 Request &postThings(std::string findbuffer, char *buffer, int fd, int size);
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
+int end_loop(int end);
 
 
 #endif

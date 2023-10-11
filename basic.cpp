@@ -22,7 +22,16 @@ int main(int ac, char **av, char **env)
     }
 	servs.printAll();
 	servs.run();
+
     return 0;
+}
+
+int end_loop(int end)
+{
+    static int loop;
+    if (end)
+        loop = end;
+    return loop;
 }
 
 int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
@@ -406,8 +415,11 @@ void	ctrlc(int signum) // need to fix this
 {
 	if (signum == SIGINT)
 	{
-		close(glob_fd);
-		close(cli_glob);
-		exit(EXIT_FAILURE);
+        end_loop(1);
+        Download &down = Download::getInstance();
+        down.clean();
+		// close(glob_fd);
+		// close(cli_glob);
+		// exit(EXIT_FAILURE);
 	}
 }

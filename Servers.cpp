@@ -161,7 +161,7 @@ void Servers::run()
     socklen_t size = sizeof(clientinfo);
 	int timeout = 0;
 
-	while (true)
+	while (!end_loop(0))
     {
         // bzero(buffer, sizeof(buffer));
         // std::cout << fds.size() << std::endl;
@@ -202,6 +202,7 @@ void Servers::run()
 						int cgi_fd = getCorrectServ(req).filter_request(*req);
 						if (!(req->Get().empty() && req->Post().empty()))
 							parseSend(fds, i, *req, cgi_fd);
+						
 						delete req;
 					}
 				}

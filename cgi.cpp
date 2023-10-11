@@ -52,9 +52,9 @@ int	Serv::cgi_request(Request &req, std::string path_info, std::string script_ex
 		cmd_name = script_extension.substr(1);
 	int	cgi_fd = execute_script(findcommand("/" + cmd_name), path_info, cgi_env, req); 
 
-	// i = -1;
-	// while (cgi_env[++i])
-	// 	delete[] cgi_env[i];
+	i = -1;
+	while (cgi_env[++i])
+		delete[] cgi_env[i];
 	delete[] cgi_env;
 	return (cgi_fd);
 }

@@ -256,7 +256,11 @@ std::string	getINFOtwo(std::string request, const char *what, int pos)
 
 Request::Request( char *buffer, size_t size )
 {
-    this->c_request = buffer;
+    char reqqu[size + 1];
+    memcpy(reqqu, buffer, size);
+    delete[] buffer;
+    reqqu[size] = '\0';
+    this->c_request = reqqu;
     this->_request = std::string(c_request, size);
     content.setContentSize(0);
 
@@ -373,6 +377,7 @@ Request::Request( const Request &other )
 
 Request &Request::operator=( const Request &other)
 {
+    this->c_request = other.c_request;
     this->_request = other._request;
     this->get = other.get;
     this->post = other.post;
@@ -432,9 +437,17 @@ Disposition::~Disposition()
 }
 Content::~Content()
 {
+    // if (_content != NULL)
+    // {
+    //     delete[] _content;
+    // }
 }
 Request::~Request()
 {
+    // if (c_request != NULL)
+    // {
+    //     delete[] c_request;
+    // }
 }
 
 Disposition::Disposition()

@@ -16,6 +16,7 @@ struct Location
 	std::string redirect_status;
 
 	Location(): allow_get(false), allow_post(false), allow_delete(false), root(""), index(""), path(""), error_pages(){}
+	~Location() {error_pages.clear();}
 };
 
 class Config
@@ -36,6 +37,7 @@ class Config
 		std::vector<Location> location;
 		std::map<std::string, std::string> error_pages;
 		Config() : allow_get(false), allow_post(false), allow_delete(false) {}
+		~Config() {std::vector<Location>().swap(location); std::vector<std::string>().swap(server_name); error_pages.clear();}
 };
 
 #endif
