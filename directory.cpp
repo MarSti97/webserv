@@ -52,3 +52,26 @@ std::string	makeDirectoryList(std::string dirpath)
 	indexpage.append("</table></body></html>");
 	return indexpage;
 }
+
+// void	filter_request(){
+	// check in what "location" the request is being made and if you 
+	// have permission for it (allow GET on the config file, for example)
+		// if you do, check if the request is for a file or a directory
+			// if it's for a directory, check if it exists
+				// if yes, check if there is an index on that location
+					// if there is, always serve the index
+					// if there isn't, check if autoindex is on and the file has read access
+						// if it does, serve the directory listing
+						// if it doesn't, return error "403 Forbidden"
+				// if it doesn't exist, return "404 Not Found"
+			// if it's for a file, check if it exists
+				// if yes, check if it has the cgi_extension and is on the cgi_directory
+					// if yes, send it through the CGI (already implemented)
+					// if not, serve the requested file normally
+				// if it doesn't exist, return "404 Not Found"
+	// if you don't have permission for that type of request, return "405 Method Not Allowed"
+	// if it's a request other than GET, POST or DELETE, return "501 Not Implemented"
+	// If when processing a request with body, the content-length is bigger than 
+	// max_body_size, return "413 Payload Too Large"
+// }
+

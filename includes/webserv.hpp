@@ -31,6 +31,7 @@
 #include "Download.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
+#include <cstdio>
 
 #define RED "\033[0;91m"
 #define GREEN "\033[0;92m"
