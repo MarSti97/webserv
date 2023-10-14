@@ -15,7 +15,8 @@ void    Download::clean()
 {
     // fix and make do delete one selected sockets too
     fileMap.clear();
-    delete instance;
+    if (instance)
+        delete instance;
 }
 
 void    Download::eraseClient( int client )
@@ -105,52 +106,52 @@ int removeheadnoimg(char *file, int size)
 }
 
 
-Request &Download::isitFULL(int client, char *file, size_t filesize)
+Request Download::isitFULL(int client, char *file, size_t filesize)
 {
     std::map<int, imgDown>::iterator it = fileMap.find(client);
     if (it != fileMap.end())
     {
-        for (size_t f = 0; f < filesize; ++f)
-            write (1, &it->second.file[f], 1);
-        std::cout << filesize << " " << it->second.current_len << " " << it->second.content_len << " ";
+        // for (size_t f = 0; f < filesize; ++f)
+        //     write (1, &it->second.file[f], 1);
+        // std::cout << filesize << " " << it->second.current_len << " " << it->second.content_len << " ";
         if (it->second.content_len <= it->second.current_len)
         {
-            Request *reo = new Request(it->second.file, it->second.current_len);
-            if (!(reo->Boundary().empty()))
+            Request reo(it->second.file, it->second.current_len);
+            if (!(reo.Boundary().empty()))
             {
-                int headless = removehead(reo->C_request());
-                Request req(reo->C_request(), it->second.current_len);
-                size_t size = removeFinalBoundary(reo->C_request() + headless, it->second.content_len, req);
+                int headless = removehead(reo.C_request());
+                Request req(strdup(reo.C_request()), it->second.current_len);
+                std::cout << "HERE" << std::endl;
+                size_t size = removeFinalBoundary(reo.C_request() + headless, it->second.content_len, req);
                 it->second.img = new char[size];
-                memcpy(it->second.img, reo->C_request() + headless, size);
+                memcpy(it->second.img, reo.C_request() + headless, size);
                 // std::cout << " FUCK THAT SHIIIIIIIT " << size << " " << headless << " " << it->second.content_len << std::endl;
-                std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
-                if (outfile.is_open())
-                {
-                    outfile.write(it->second.img, size);
-                    outfile.close();
-                }
+                // std::ofstream outfile("dickhead.jpg", std::ios::binary | std::ios::trunc);
+                // if (outfile.is_open())
+                // {
+                //     outfile.write(it->second.img, size);
+                //     outfile.close();
+                // }
                 // delete it->second.file;
                 printlog("Successfully downloaded file", 0, GREEN);
-                reo->content.setContent(it->second.img);
-                reo->content.setContentSize(size);
+                reo.content.setContent(it->second.img);
+                reo.content.setContentSize(size);
                 eraseClient(client);
-                return *reo;
+                return reo;
             }
-            size_t size = removeheadnoimg(reo->C_request(), it->second.current_len);
-            std::cout << size << std::endl;
+            size_t size = removeheadnoimg(reo.C_request(), it->second.current_len);
+            // std::cout << size << std::endl;
             it->second.img = new char[it->second.current_len - size];
-            memcpy(it->second.img, reo->C_request() + size, it->second.current_len - size);
-            reo->content.setContent(it->second.img);
-            reo->content.setContentSize(it->second.current_len - size);
+            memcpy(it->second.img, reo.C_request() + size, it->second.current_len - size);
+            reo.content.setContent(it->second.img);
+            reo.content.setContentSize(it->second.current_len - size);
             eraseClient(client);
-            return *reo;
+            return reo;
         }
-        Request *rel = new Request();
-        return *rel;
+        return Request();
     }
-    Request *rek = new Request(file, filesize);
-    return *rek;
+    Request rek(file, filesize);
+    return rek;
 }
 
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2)

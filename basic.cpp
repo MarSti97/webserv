@@ -153,7 +153,7 @@ bool headcheck(std::string buf)
 }
 
 
-Request &postThings(std::string findbuffer, char *buffer, int fd, int size)
+Request postThings(std::string findbuffer, char *buffer, int fd, int size)
 {
     Download &instance = Download::getInstance();
     bool flag = headcheck(findbuffer);
@@ -179,7 +179,7 @@ Request &postThings(std::string findbuffer, char *buffer, int fd, int size)
     // return true;
 }
 
-Request &parseRecv(std::vector<pollfd> &fds, int pos)
+Request parseRecv(std::vector<pollfd> &fds, int pos)
 {
     char buffer[4097];
     buffer[4096] = '\0';
@@ -188,7 +188,6 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
     ssize_t n;
     int counter = 0;
     int buf_size = 0;
-    Request *rek = new Request();
     while (1)
     {
         bzero(buffer, sizeof(buffer));
@@ -204,7 +203,7 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
                     printlog("LOST CLIENT", fds[pos].fd, RED);
                     close(fds[pos].fd);
                     fds.erase(fds.begin() + pos);
-                    return *rek;
+                    return Request();
                 }
                 break;
             }
@@ -217,7 +216,7 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
                 // Handle other receive errors
                 std::cerr << "Error reading from poll" << std::endl;
                 perror("read");
-                return *rek;
+                return Request();
             }
         }
         else
@@ -244,7 +243,6 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
             break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
-    delete rek;
     // for (int i = 0; i < buf_size; ++i)
     //     write(2, &buf[i], 1);
     // std::ofstream img("img", std::ios::trunc);
@@ -252,8 +250,7 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
     //     img << buf;
     findbuffer = std::string(buf, buf_size);
     // std::cout << "BUFSIZE: " << buf_size << std::endl;
-    // std::cout << findbuffer << std::endl;
-    Request &req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
+    Request req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
     return req;
     // size_t ok = findbuffer.find("\r\n\r\n");
     // if (ok == std::string::npos)
@@ -294,7 +291,7 @@ std::string makeStamp( void )
     return hours.str() + ':' + minutes.str() + '/' + day.str() + '-' + month.str() + '-' + year.str();
 }
 
-int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
+int acceptConnection(int &socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
 {
     // Accept incoming connection and add the client socket to the fds array
     int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);

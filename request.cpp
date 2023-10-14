@@ -453,10 +453,10 @@ Request::~Request()
 Disposition::Disposition()
 {
 }
-Content::Content()
+Content::Content() : _content(NULL), content_size(0)
 {
 }
-Request::Request() : eof(0)
+Request::Request() : c_request(NULL), eof(0)
 {
 }
 
