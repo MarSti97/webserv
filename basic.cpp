@@ -38,7 +38,8 @@ int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
 {
     
     std::string response = getResponse(req, "guarder-html", "/index.html", cgi_fd);
-    std::cout << "GOING" << std::endl;
+    // std::cout << req.Get() << std::endl;
+    
 
     // std::cout << response.size();
     if (!response.empty())
@@ -148,6 +149,7 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
 
 bool headcheck(std::string buf)
 {
+    std::cout << buf << std::endl;
     if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
         return true;
     return false;
@@ -161,9 +163,9 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
+        std::cout << "COME HERE" << std::endl;
         if (oi != std::string::npos)
         {
-            // std::cout << "COME HERE" << std::endl;
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
 	        size_t headerlength = findbuffer.find( "\r\n\r\n");
@@ -249,12 +251,14 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
     for (it = full_buf.begin(); it != full_buf.end(); ++it)
     {
         int i = -1;
+        std::cout << it->second << std::endl;
         while (++i < it->second)
             buf[f++] = it->first[i];
     }
     buf[buf_size] = '\0';
-    // for (int i = 0; i < buf_size; ++i)
-    //     write(1, &buf[i], 1);
+    // for (int u = 0; u < buf_size; ++u)
+    //     write(1, &buf[u], 1);
+    std::vector<std::pair<char *, int> >().swap(full_buf);
     findbuffer = std::string(buf, buf_size);
     // std::cout << "BUFSIZE: " << buf_size << std::endl;
     Request req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
@@ -298,7 +302,7 @@ std::string makeStamp( void )
     return hours.str() + ':' + minutes.str() + '/' + day.str() + '-' + month.str() + '-' + year.str();
 }
 
-int acceptConnection(int &socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
+int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
 {
     // Accept incoming connection and add the client socket to the fds array
     int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);

@@ -80,12 +80,13 @@ char *Content::getContent( void ) const
 
 void Content::setContent( char *newcontent, size_t size )
 {
-    char hass[size + 1];
+    char *hass = new char[size + 1];
     hass[size] = '\0';
     for (size_t i = 0; i < size; ++i)
     {
         hass[i] = newcontent[i];
     }
+    //std::cout << "FUUUUUUUUUUUUUUKC " << hass << std::endl;
     // memcpy(ass, newcontent, size);
     // delete[] newcontent;
     _content = hass;
@@ -377,68 +378,80 @@ int Request::EndBoundary( char *str, size_t len, char *bound)
     return 0;
 }
 
-Request::Request( const Request &other )
+void    Content::clean()
 {
-    if (this != &other)
-        *this = other;  
+    // fix and make do delete one selected sockets too
+    delete[] _content;
 }
 
-Request &Request::operator=( const Request &other)
+void    Request::clean_content()
 {
-    this->c_request = other.c_request;
-    this->_request = other._request;
-    this->get = other.get;
-    this->post = other.post;
-    this->host = other.host;
-    this->useragent = other.useragent;
-    this->accept = other.accept;
-    this->acceptencoding = other.acceptencoding;
-    this->acceptlanguage = other.acceptlanguage;
-    this->xrequestedwith = other.xrequestedwith;
-    this->connection = other.connection;
-    this->referer = other.referer;
-    this->upgradeinsecurerequests = other.upgradeinsecurerequests;
-    this->secfetchdest = other.secfetchdest;
-    this->secfetchmode = other.secfetchmode;
-    this->secfetchsite = other.secfetchsite;
-    this->secfetchuser = other.secfetchuser;
-    this->contenttype = other.contenttype;
-    this->contentlength = other.contentlength;
-    this->contentdisposition = other.contentdisposition;
-    this->origin = other.origin;
-    this->boundary = other.boundary;
-    this->content = other.content;
-    this->eof = other.eof;
-    return *this;
+    // fix and make do delete one selected sockets too
+    content.clean();
 }
 
-Content::Content(const Content &other)
-{
-    if (this != &other)
-        *this = other; 
-}
+// Request::Request( const Request &other )
+// {
+//     if (this != &other)
+//         *this = other;  
+// }
 
-Content &Content::operator=(const Content &other)
-{
-    this->content_type = other.content_type;
-    this->_content = other._content;
-    this->filename = other.filename;
-    return *this;
-}
+// Request &Request::operator=( const Request &other)
+// {
+//     this->c_request = other.c_request;
+//     this->_request = other._request;
+//     this->get = other.get;
+//     this->post = other.post;
+//     this->host = other.host;
+//     this->useragent = other.useragent;
+//     this->accept = other.accept;
+//     this->acceptencoding = other.acceptencoding;
+//     this->acceptlanguage = other.acceptlanguage;
+//     this->xrequestedwith = other.xrequestedwith;
+//     this->connection = other.connection;
+//     this->referer = other.referer;
+//     this->upgradeinsecurerequests = other.upgradeinsecurerequests;
+//     this->secfetchdest = other.secfetchdest;
+//     this->secfetchmode = other.secfetchmode;
+//     this->secfetchsite = other.secfetchsite;
+//     this->secfetchuser = other.secfetchuser;
+//     this->contenttype = other.contenttype;
+//     this->contentlength = other.contentlength;
+//     this->contentdisposition = other.contentdisposition;
+//     this->origin = other.origin;
+//     this->boundary = other.boundary;
+//     this->content = other.content;
+//     this->eof = other.eof;
+//     return *this;
+// }
 
-Disposition::Disposition(const Disposition &other)
-{
-    if (this != &other)
-        *this = other; 
-}
+// Content::Content(const Content &other)
+// {
+//     if (this != &other)
+//         *this = other; 
+// }
 
-Disposition &Disposition::operator=(const Disposition &other)
-{
-    this->type = other.type;
-    this->filename = other.filename;
-    this->contentdisposition = other.contentdisposition;
-    return *this;
-}
+// Content &Content::operator=(const Content &other)
+// {
+//     this->content_type = other.content_type;
+//     this->_content = other._content;
+//     this->filename = other.filename;
+//     return *this;
+// }
+
+// Disposition::Disposition(const Disposition &other)
+// {
+//     if (this != &other)
+//         *this = other; 
+// }
+
+// Disposition &Disposition::operator=(const Disposition &other)
+// {
+//     this->type = other.type;
+//     this->filename = other.filename;
+//     this->contentdisposition = other.contentdisposition;
+//     return *this;
+// }
 
 Disposition::~Disposition()
 {

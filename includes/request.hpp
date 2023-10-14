@@ -11,9 +11,9 @@ class Disposition
 
     public:
         Disposition( void );
-        Disposition(const Disposition &other);
+        // Disposition(const Disposition &other);
         Disposition(std::string disposition);
-        Disposition &operator=(const Disposition &other);
+        // Disposition &operator=(const Disposition &other);
         std::string getType( void ) const;
         std::string getFilename( void ) const;
         std::string getcontentdisposition( void ) const;
@@ -30,10 +30,11 @@ class Content
     
     public:
 		Content( void );
-        Content(const Content &other);
+        // Content(const Content &other);
         Content(std::string content, std::string boundary);
-        Content &operator=(const Content &other);
+        // Content &operator=(const Content &other);
         Disposition filename;
+        void    clean( void );
         size_t  getContentSize( void ) const;
         void    setContentSize( size_t size );
         char    *getContent( void ) const;
@@ -74,9 +75,10 @@ class Request
     public:
         Request();
         Request( char *buffer, size_t size );
-        Request( const Request &other );
-        Request &operator=( const Request &other);
+        // Request( const Request &other );
+        // Request &operator=( const Request &other);
         Content content;
+        void    clean_content( void );
         char *C_request( void );
         std::string request( void ) const;
         std::string Get( void ) const;

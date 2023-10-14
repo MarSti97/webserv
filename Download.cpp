@@ -120,8 +120,8 @@ int removeheadnoimg(char *file, int size)
                 if (file[f + i] && file[f + i] == find[i])
                     if (i == 3)
                     {
-                        std::cout << "WORK" << std::endl;
-                        return f + i;              
+                        // std::cout << "WORK" << std::endl;
+                        return f + i + 1;              
                     }
             }
     }
@@ -135,11 +135,12 @@ int removeheadnoimg(char *file, int size)
 Request Download::isitFULL(int client, char *file, size_t filesize)
 {
     std::map<int, imgDown>::iterator it = fileMap.find(client);
+    // std::cout << filesize << " " << it->second.current_len << " " << it->second.content_len << " ";
     if (it != fileMap.end())
     {
         // for (size_t f = 0; f < filesize; ++f)
         //     write (1, &it->second.file[f], 1);
-        // std::cout << filesize << " " << it->second.current_len << " " << it->second.content_len << " ";
+        std::cout << " cunt " << std::endl;
         if (it->second.content_len <= it->second.current_len)
         {
             Request reo(it->second.file, it->second.current_len);
@@ -171,7 +172,8 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
             // it->second.img = new char[it->second.current_len - size];
             // it->second.img[it->second.current_len - size + 1] = '\0';
             // memcpy(it->second.img, reo.C_request() + size, it->second.current_len - size);
-            reo.content.setContent(reo.C_request() + size, it->second.current_len - size);
+            reo.content.setContent(reo.C_request() + size, strlen(reo.C_request() + size));
+            // std::cout << " ass "<< reo.Contentlength() << strlen(reo.C_request() + size) << "fucking marcelo" << std::endl;
             reo.content.setContentSize(it->second.current_len - size);
             // std::cout << " fuck you?" << std::endl;
             eraseClient(client);

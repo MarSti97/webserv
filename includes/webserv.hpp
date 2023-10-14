@@ -47,7 +47,7 @@ std::string getMimeType(const std::string& filePath);
 void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);
 bool 	check_new_attribute(std::string token);
-int acceptConnection(int &socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
+int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
 Request parseRecv(std::vector<pollfd> &fds, int pos);
 int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd);
 std::string getResponse(Request req, std::string path, std::string index, int cgi_fd);

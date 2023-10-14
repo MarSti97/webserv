@@ -1,6 +1,6 @@
 #include "includes/webserv.hpp"
 
-int	Serv::filter_request(Request &req)
+int	Serv::filter_request(Request req)
 {
 	std::string	path_info;
 	std::string extension_string;
@@ -10,10 +10,10 @@ int	Serv::filter_request(Request &req)
 		path_info = req.Get();
 	else if (!(req.Post().empty()))
 		path_info = req.Post();
-
 	// Important: Throw error during config parsing if the cgi is set
 	// to use a static file extension (.html, .jpg, etc)
 
+	std::cout << "something shit" << std::endl;
 	size_t	extension_start = path_info.rfind('.');
 	if (extension_start != std::string::npos)
 	{
@@ -22,6 +22,7 @@ int	Serv::filter_request(Request &req)
 			extension_string = path_info.substr(extension_start, query_start - extension_start);
 		else
 			extension_string = path_info.substr(extension_start);
+		// std::cout << extension_string << " ass " << serv_info.cgi_extension << std::endl;
 		if (extension_string == serv_info.cgi_extension)
 			cgi_fd = cgi_request(req, path_info, extension_string);
 
@@ -29,7 +30,7 @@ int	Serv::filter_request(Request &req)
 	return (cgi_fd);
 }
 
-int	Serv::cgi_request(Request &req, std::string path_info, std::string script_extension)
+int	Serv::cgi_request(Request req, std::string path_info, std::string script_extension)
 {
 	std::vector<std::string> meta_vars;
 	char **cgi_env;
@@ -59,7 +60,7 @@ int	Serv::cgi_request(Request &req, std::string path_info, std::string script_ex
 	return (cgi_fd);
 }
 
-int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request &req)
+int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request req)
 {
 	int		input_fd[2];
 	int		output_fd[2];
@@ -102,6 +103,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		char *content = req.content.getContent();
 		for (size_t f = 0; f < req.content.getContentSize(); ++f)
 			write(input_fd[1], &content[f], 1);
+		req.clean_content();
 		close(input_fd[1]);
 		wait(&status);
 		return (output_fd[0]);
@@ -110,8 +112,9 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 }
 
 
-void Serv::init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars)
+void Serv::init_cgi_meta_vars(Request req, std::vector<std::string> *meta_vars)
 {
+	// std::cout << req.request() << "fuck?" << std::endl;
 	meta_vars->push_back("AUTH_TYPE=");
 	meta_vars->push_back("CONTENT_TYPE=" + req.Contenttype() + "; boundary=" + req.Boundary());
 	meta_vars->push_back("CONTENT_LENGTH=" + req.Contentlength());
