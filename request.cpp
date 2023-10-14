@@ -78,9 +78,17 @@ char *Content::getContent( void ) const
     return _content;
 }
 
-void Content::setContent( char *newcontent )
+void Content::setContent( char *newcontent, size_t size )
 {
-    _content = newcontent;
+    char hass[size + 1];
+    hass[size] = '\0';
+    for (size_t i = 0; i < size; ++i)
+    {
+        hass[i] = newcontent[i];
+    }
+    // memcpy(ass, newcontent, size);
+    // delete[] newcontent;
+    _content = hass;
 }
 
 size_t Content::getContentSize( void ) const
@@ -256,11 +264,11 @@ std::string	getINFOtwo(std::string request, const char *what, int pos)
 
 Request::Request( char *buffer, size_t size )
 {
-    char reqqu[size + 1];
-    memcpy(reqqu, buffer, size);
-    delete[] buffer;
-    reqqu[size] = '\0';
-    this->c_request = reqqu;
+    // char reqqu[size + 1];
+    // memcpy(reqqu, buffer, size);
+    // delete[] buffer;
+    // reqqu[size] = '\0';
+    this->c_request = buffer;
     this->_request = std::string(c_request, size);
     content.setContentSize(0);
 

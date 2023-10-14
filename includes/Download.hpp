@@ -13,6 +13,7 @@ struct imgDown
     bool eof;
     // maybe find file type!
 
+    imgDown() : content_len(0), current_len(0), file(NULL), img(NULL), eof(false) {}
     imgDown(int full_len, int size, char *str, std::string _boundary) {
         current_len = size;
         content_len = full_len;

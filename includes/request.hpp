@@ -37,7 +37,7 @@ class Content
         size_t  getContentSize( void ) const;
         void    setContentSize( size_t size );
         char    *getContent( void ) const;
-        void    setContent( char *newcontent );
+        void    setContent( char *newcontent, size_t size );
         std::string getContentType( void ) const;
         ~Content();
 };

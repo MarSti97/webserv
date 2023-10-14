@@ -36,8 +36,9 @@ int end_loop(int end)
 
 int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
 {
+    
     std::string response = getResponse(req, "guarder-html", "/index.html", cgi_fd);
-    // std::cout << response << std::endl;
+    std::cout << "GOING" << std::endl;
 
     // std::cout << response.size();
     if (!response.empty())
@@ -182,8 +183,8 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
 Request parseRecv(std::vector<pollfd> &fds, int pos)
 {
     char buffer[4097];
-    buffer[4096] = '\0';
-    char *buf = NULL;
+    // buffer[4096] = '\0';
+    std::vector<std::pair<char *, int> > full_buf;
     std::string findbuffer;
     ssize_t n;
     int counter = 0;
@@ -191,7 +192,7 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
     while (1)
     {
         bzero(buffer, sizeof(buffer));
-        n = recv(fds[pos].fd, buffer, 4095, 0);
+        n = recv(fds[pos].fd, buffer, 4096, 0);
         // std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
@@ -200,7 +201,7 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
                 if (!counter)
                 {
                     // Connection closed by the client
-                    printlog("LOST CLIENT", fds[pos].fd, RED);
+                    printlog("LOST CLIENT", fds[pos].fd - 2, RED);
                     close(fds[pos].fd);
                     fds.erase(fds.begin() + pos);
                     return Request();
@@ -214,40 +215,46 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
             }
             else {
                 // Handle other receive errors
-                std::cerr << "Error reading from poll" << std::endl;
+                std::cerr << "Error: reading from poll" << std::endl;
                 perror("read");
                 return Request();
             }
         }
         else
         {
-            if (!buf)
-            {
-                buf = new char[n];
-                // buf[n] = '\0';
-            }    
-            else
-            {
-                char tmp[buf_size];
-                memcpy(tmp, buf, buf_size);
-                delete[] buf;
-                buf = new char[buf_size + n];
-                memcpy(buf, tmp, buf_size);
-                // delete[] tmp; // mismached free;
-            }
-            memcpy(buf + buf_size, buffer, n);
+            full_buf.push_back(std::make_pair(buffer, n));
+            // char buf[n + 1];
+            // buf[n] = '\0';
+
+            //     char tmp[buf_size];
+            //     memcpy(tmp, buf, buf_size);
+            //     delete[] buf;
+            //     buf = new char[buf_size + n + 1];
+            //     buf[buf_size + n] = '\0';
+            //     memcpy(buf, tmp, buf_size);
+            // memcpy(buf + buf_size, buffer, n);
         }
         counter++;
         buf_size += n;
-        if (n < 4095)
+        if (n < 4096)
             break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
-    // for (int i = 0; i < buf_size; ++i)
-    //     write(2, &buf[i], 1);
     // std::ofstream img("img", std::ios::trunc);
     // if (img.is_open())
     //     img << buf;
+    char buf[buf_size + 1];
+    std::vector<std::pair<char *, int> >::iterator it;
+    int f = 0;
+    for (it = full_buf.begin(); it != full_buf.end(); ++it)
+    {
+        int i = -1;
+        while (++i < it->second)
+            buf[f++] = it->first[i];
+    }
+    buf[buf_size] = '\0';
+    // for (int i = 0; i < buf_size; ++i)
+    //     write(1, &buf[i], 1);
     findbuffer = std::string(buf, buf_size);
     // std::cout << "BUFSIZE: " << buf_size << std::endl;
     Request req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
@@ -415,8 +422,8 @@ void	ctrlc(int signum) // need to fix this
         end_loop(1);
         Download &down = Download::getInstance();
         down.clean();
-		// close(glob_fd);
-		// close(cli_glob);
+		close(glob_fd);
+		close(cli_glob);
 		// exit(EXIT_FAILURE);
 	}
 }
