@@ -33,6 +33,7 @@ void    Download::eraseClient( int client )
 void Download::add_map(int client, imgDown content)
 {
     fileMap.insert(std::make_pair(client, content));
+    // std::cout << "ass" << std::endl;
 }
 
 void Download::append_map(int client, char *buf, int bufsize)
@@ -41,12 +42,15 @@ void Download::append_map(int client, char *buf, int bufsize)
     if (it != fileMap.end())
     {
         // it->second.file = strjoin(it->second.file, buf, it->second.current_len, bufsize);
+        std::cout << it->second.file << "WTF" << std::endl;
         int totalLength = it->second.current_len + bufsize;
         char combinedStr[totalLength + 1]; // +1 for the null-terminator
         combinedStr[totalLength] = '\0'; // +1 for the null-terminator
         memcpy(combinedStr, it->second.file, it->second.current_len);
         memcpy(combinedStr + it->second.current_len, buf, bufsize);
+        it->second.file = combinedStr;
         it->second.current_len += bufsize;
+        std::cout << it->second.file << std::endl;
         // std::cout << "Full-len: " << it->second.content_len << " | Current-len: " << it->second.current_len << std::endl;
     }
 }
@@ -104,9 +108,9 @@ int removeheadnoimg(char *file, int size)
 {
     // int len = strlen(file);
     // for (int i = 0; i < size; ++i)
-    int h = -1;
-    while (file[++h])
-        write(1, &file[h], 1);
+    // int h = -1;
+    // while (file[++h])
+    //     write(1, &file[h], 1);
 
     // std::cout << "THIS len: " << len << " OTHER ln : " << size << std::endl;
     // std::string str((std::string)file, size);
@@ -140,7 +144,7 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
     {
         // for (size_t f = 0; f < filesize; ++f)
         //     write (1, &it->second.file[f], 1);
-        std::cout << " cunt " << std::endl;
+        // std::cout << " cunt " << std::endl;
         if (it->second.content_len <= it->second.current_len)
         {
             Request reo(it->second.file, it->second.current_len);

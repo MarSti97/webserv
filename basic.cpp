@@ -149,7 +149,7 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
 
 bool headcheck(std::string buf)
 {
-    std::cout << buf << std::endl;
+    // std::cout << buf << std::endl;
     if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
         return true;
     return false;
@@ -163,7 +163,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
-        std::cout << "COME HERE" << std::endl;
+        // std::cout << "COME HERE" << std::endl;
         if (oi != std::string::npos)
         {
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
@@ -224,7 +224,10 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
         }
         else
         {
-            full_buf.push_back(std::make_pair(buffer, n));
+            char *bug = new char[n + 1];
+            for (int o = 0; o < n; ++o)
+                bug[o] = buffer[o];
+            full_buf.push_back(std::make_pair(bug, n));
             // char buf[n + 1];
             // buf[n] = '\0';
 
@@ -254,7 +257,9 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
         std::cout << it->second << std::endl;
         while (++i < it->second)
             buf[f++] = it->first[i];
+        delete[] it->first;
     }
+    // std::cout << f << " " << buf_size << std::endl;
     buf[buf_size] = '\0';
     // for (int u = 0; u < buf_size; ++u)
     //     write(1, &buf[u], 1);

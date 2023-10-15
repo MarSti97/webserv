@@ -13,7 +13,7 @@ int	Serv::filter_request(Request req)
 	// Important: Throw error during config parsing if the cgi is set
 	// to use a static file extension (.html, .jpg, etc)
 
-	std::cout << "something shit" << std::endl;
+	// std::cout << "something shit" << std::endl;
 	size_t	extension_start = path_info.rfind('.');
 	if (extension_start != std::string::npos)
 	{

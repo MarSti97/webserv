@@ -198,7 +198,7 @@ void Servers::run()
 						Request req = parseRecv(fds, i);
 						if (!(req.Get().empty() && req.Post().empty()))
 						{
-							std::cout << "ass " << std::endl;
+							// std::cout << "ass " << std::endl;
 							int cgi_fd = getCorrectServ(req).filter_request(req);
 							parseSend(fds, i, req, cgi_fd);
 						}
