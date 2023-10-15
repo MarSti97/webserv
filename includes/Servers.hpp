@@ -17,12 +17,15 @@ class Serv
 		int establish_connection();
 		void print(int i) const;
 		int	getSocket();
-		int	filter_request(Request &req);
-		int	cgi_request(Request &req, std::string path_info, std::string script_extension);
-		void 	init_cgi_meta_vars(Request &req, std::vector<std::string> *meta_vars);
+		int	filter_request(Request req);
+		int	cgi_request(Request req, std::string path_info, std::string script_extension);
+		void 	init_cgi_meta_vars(Request req, std::vector<std::string> *meta_vars);
 		char	**create_cgi_env(std::vector<std::string> meta_vars);
-		int	execute_script(std::string cmd_path, std::string path_info, char **env, Request &req);
+		int	execute_script(std::string cmd_path, std::string path_info, char **env, Request req);
 		bool compareHostPort(std::string host, std::string port);
+		// void printshit() {
+		// 	std::cout << serv_info.cgi_extension << "  THIS SJIT" << std::endl;
+		// }
 };
 
 class Servers
@@ -43,7 +46,7 @@ class Servers
 		void	init();
 		void	run();
 		int		checkSockets(int fd);
-		Serv	&getCorrectServ(Request *req);
+		Serv	&getCorrectServ(Request req);
 };
 
 

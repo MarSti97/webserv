@@ -142,7 +142,6 @@ void	Servers::printAll() const
 void Servers::init()
 {
     validate_config();
-
     std::vector<Serv>::iterator it;
 	int i = 0;
     for (it = servs.begin(); it != servs.end(); ++it)
@@ -194,16 +193,17 @@ void Servers::run()
 					}
 					else if (fds[i].revents & POLLOUT)
 					{
-						// std::cout << "request received from client " << (struct sockaddr *)clientinfo.sin_addr.s_addr << std::endl;
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
-						Request *req = &parseRecv(fds, i);
-						//std::cout << req->content.getContent() << std::endl;
-						int cgi_fd = getCorrectServ(req).filter_request(*req);
-						if (!(req->Get().empty() && req->Post().empty()))
-							parseSend(fds, i, *req, cgi_fd);
+						Request req = parseRecv(fds, i);
+						if (!(req.Get().empty() && req.Post().empty()))
+						{
+							// std::cout << "ass " << std::endl;
+							int cgi_fd = getCorrectServ(req).filter_request(req);
+							parseSend(fds, i, req, cgi_fd);
+						}
 						
-						delete req;
+						// delete req;
 					}
 				}
 			}
@@ -223,13 +223,15 @@ int	Servers::checkSockets(int fd)
 	return 0;
 }
 
-Serv	&Servers::getCorrectServ(Request *req)
+Serv	&Servers::getCorrectServ(Request req)
 {
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
-		if (it->compareHostPort(req->Host(), req->Port()))
+		// std::cout << "ENTER: " << req.Host() << " " << req.Port() << std::endl;
+		if (it->compareHostPort(req.Host(), req.Port()))
 		{
+			// it->printshit();
 			return *it;
 		}
 	}

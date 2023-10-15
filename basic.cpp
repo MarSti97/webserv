@@ -36,8 +36,10 @@ int end_loop(int end)
 
 int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
 {
+    
     std::string response = getResponse(req, "guarder-html", "/index.html", cgi_fd);
-    // std::cout << response << std::endl;
+    // std::cout << req.Get() << std::endl;
+    
 
     // std::cout << response.size();
     if (!response.empty())
@@ -147,22 +149,23 @@ std::string getResponse(Request req, std::string path, std::string index, int cg
 
 bool headcheck(std::string buf)
 {
+    // std::cout << buf << std::endl;
     if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
         return true;
     return false;
 }
 
 
-Request &postThings(std::string findbuffer, char *buffer, int fd, int size)
+Request postThings(std::string findbuffer, char *buffer, int fd, int size)
 {
     Download &instance = Download::getInstance();
     bool flag = headcheck(findbuffer);
     size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
+        // std::cout << "COME HERE" << std::endl;
         if (oi != std::string::npos)
         {
-            // std::cout << "COME HERE" << std::endl;
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
 	        size_t headerlength = findbuffer.find( "\r\n\r\n");
@@ -179,20 +182,19 @@ Request &postThings(std::string findbuffer, char *buffer, int fd, int size)
     // return true;
 }
 
-Request &parseRecv(std::vector<pollfd> &fds, int pos)
+Request parseRecv(std::vector<pollfd> &fds, int pos)
 {
     char buffer[4097];
-    buffer[4096] = '\0';
-    char *buf = NULL;
+    // buffer[4096] = '\0';
+    std::vector<std::pair<char *, int> > full_buf;
     std::string findbuffer;
     ssize_t n;
     int counter = 0;
     int buf_size = 0;
-    Request *rek = new Request();
     while (1)
     {
         bzero(buffer, sizeof(buffer));
-        n = recv(fds[pos].fd, buffer, 4095, 0);
+        n = recv(fds[pos].fd, buffer, 4096, 0);
         // std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
@@ -201,10 +203,10 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
                 if (!counter)
                 {
                     // Connection closed by the client
-                    printlog("LOST CLIENT", fds[pos].fd, RED);
+                    printlog("LOST CLIENT", fds[pos].fd - 2, RED);
                     close(fds[pos].fd);
                     fds.erase(fds.begin() + pos);
-                    return *rek;
+                    return Request();
                 }
                 break;
             }
@@ -215,45 +217,56 @@ Request &parseRecv(std::vector<pollfd> &fds, int pos)
             }
             else {
                 // Handle other receive errors
-                std::cerr << "Error reading from poll" << std::endl;
+                std::cerr << "Error: reading from poll" << std::endl;
                 perror("read");
-                return *rek;
+                return Request();
             }
         }
         else
         {
-            if (!buf)
-            {
-                buf = new char[n];
-                // buf[n] = '\0';
-            }    
-            else
-            {
-                char tmp[buf_size];
-                memcpy(tmp, buf, buf_size);
-                delete[] buf;
-                buf = new char[buf_size + n];
-                memcpy(buf, tmp, buf_size);
-                // delete[] tmp; // mismached free;
-            }
-            memcpy(buf + buf_size, buffer, n);
+            char *bug = new char[n + 1];
+            for (int o = 0; o < n; ++o)
+                bug[o] = buffer[o];
+            full_buf.push_back(std::make_pair(bug, n));
+            // char buf[n + 1];
+            // buf[n] = '\0';
+
+            //     char tmp[buf_size];
+            //     memcpy(tmp, buf, buf_size);
+            //     delete[] buf;
+            //     buf = new char[buf_size + n + 1];
+            //     buf[buf_size + n] = '\0';
+            //     memcpy(buf, tmp, buf_size);
+            // memcpy(buf + buf_size, buffer, n);
         }
         counter++;
         buf_size += n;
-        if (n < 4095)
+        if (n < 4096)
             break;
         // std::cout << findbuffer.size() << " " << buf_size << std::endl;
     }
-    delete rek;
-    // for (int i = 0; i < buf_size; ++i)
-    //     write(2, &buf[i], 1);
     // std::ofstream img("img", std::ios::trunc);
     // if (img.is_open())
     //     img << buf;
+    char buf[buf_size + 1];
+    std::vector<std::pair<char *, int> >::iterator it;
+    int f = 0;
+    for (it = full_buf.begin(); it != full_buf.end(); ++it)
+    {
+        int i = -1;
+        std::cout << it->second << std::endl;
+        while (++i < it->second)
+            buf[f++] = it->first[i];
+        delete[] it->first;
+    }
+    // std::cout << f << " " << buf_size << std::endl;
+    buf[buf_size] = '\0';
+    // for (int u = 0; u < buf_size; ++u)
+    //     write(1, &buf[u], 1);
+    std::vector<std::pair<char *, int> >().swap(full_buf);
     findbuffer = std::string(buf, buf_size);
     // std::cout << "BUFSIZE: " << buf_size << std::endl;
-    // std::cout << findbuffer << std::endl;
-    Request &req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
+    Request req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
     return req;
     // size_t ok = findbuffer.find("\r\n\r\n");
     // if (ok == std::string::npos)
@@ -418,8 +431,8 @@ void	ctrlc(int signum) // need to fix this
         end_loop(1);
         Download &down = Download::getInstance();
         down.clean();
-		// close(glob_fd);
-		// close(cli_glob);
+		close(glob_fd);
+		close(cli_glob);
 		// exit(EXIT_FAILURE);
 	}
 }
