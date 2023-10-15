@@ -1,5 +1,5 @@
-#import env
 import os
+import re
 
 # List of divs
 divs = ['''<div class = "container" style="background-color: #db9595"><h1>#db9595</h1></div>''',
@@ -17,18 +17,6 @@ divs = ['''<div class = "container" style="background-color: #db9595"><h1>#db959
           '''<div class = "container" style="background-color: #a695db"><h1>#a695db</h1></div>''',
           '''<div class = "container" style="background-color: #bc95db"><h1>#bc95db</h1></div>''',
           '''<div class = "container" style="background-color: #d395db"><h1>#d395db</h1></div>''']
-
-
-query_string = os.environ.get("QUERY_STRING")
-key, page_number = query_string.split('=')
-page_number = int(page_number)
-# Set the content type to HTML
-#print("Content-Type: text/html\r\n")
-
-# Calculate the start and end index for the divs to display
-items_per_page = 5  # Adjust this to change the number of divs per page
-start_index = (page_number - 1) * items_per_page
-end_index = start_index + items_per_page
 
 # Generate the HTML response
 print('''
@@ -178,11 +166,22 @@ print('''
     </div>
     <br>''')
 
-
+query_string = os.environ.get("QUERY_STRING")
+key, page_number = query_string.split('=')
+if not re.match(r"^\d+$", page_number):
+  print("<div class='container'><p>Invalid page number. Please provide a number between 1 and 3</p></div>")
+else:
+  page_number = int(page_number)
+  if 0 < page_number < 4:
+  # Calculate the start and end index for the divs to display
+    items_per_page = 5  # Adjust this to change the number of divs per page
+    start_index = (page_number - 1) * items_per_page
+    end_index = start_index + items_per_page
 # Display the selected divs
-for i in range(start_index, min(end_index, len(divs))):
-    print(divs[i])
-
+    for i in range(start_index, min(end_index, len(divs))):
+      print(divs[i])
+  else:
+    print("<div class='container'><p>Invalid page number. Please provide a number between 1 and 3</p></div>")
 
 print('''
    <nav class="container" aria-label="...">
