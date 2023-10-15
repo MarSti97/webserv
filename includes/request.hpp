@@ -49,6 +49,7 @@ class Request
         char        *c_request;
         std::string _request;
         std::string get;
+        std::string del;
         std::string query;
         std::string post;
         std::string host;
@@ -70,6 +71,7 @@ class Request
         std::string contentdisposition;
         std::string origin;
         std::string boundary;
+        int         clientfd;
         int         eof;
     
     public:
@@ -81,6 +83,7 @@ class Request
         void    clean_content( void );
         char *C_request( void );
         std::string request( void ) const;
+        std::string Del( void ) const;
         std::string Get( void ) const;
         std::string Query( void ) const;
         std::string Post( void ) const;
@@ -103,8 +106,10 @@ class Request
         std::string Contentdisposition( void ) const;
         std::string Origin( void ) const;
         std::string Boundary( void ) const;
-        int EndBoundary( char *str, size_t len, char *boundary );
-        int Eof( void );
+        int         EndBoundary( char *str, size_t len, char *boundary );
+        int         ClientFd( void );
+        void        SetClientFd( int fd );
+        int         Eof( void );
         ~Request();
 };
 

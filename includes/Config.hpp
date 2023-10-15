@@ -10,6 +10,7 @@ struct Location
 	bool allow_delete;
 	std::string	root;
 	std::string index;
+	std::string autoindex;
 	std::string path;
 	std::map<std::string, std::string> error_pages;
 	std::string redirect_path;

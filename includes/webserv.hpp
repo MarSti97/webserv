@@ -49,9 +49,6 @@ void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);
 bool 	check_new_attribute(std::string token);
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
-Request parseRecv(std::vector<pollfd> &fds, int pos);
-int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd);
-std::string getResponse(Request req, std::string path, std::string index, int cgi_fd);
 int GetbyUser(std::string buffer);
 int checkAllowGet(std::string folder, std::vector<Location> Location);
 int checkAllowPost(std::string folder, std::vector<Location> Location);
@@ -67,6 +64,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size);
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
 int end_loop(int end);
 std::string	makeDirectoryList(std::string dirpath);
+std::string getHeader( std::string ARG, std::string extra, std::string filePath );
 
 
 #endif

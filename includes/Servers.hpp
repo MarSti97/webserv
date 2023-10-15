@@ -23,6 +23,19 @@ class Serv
 		char	**create_cgi_env(std::vector<std::string> meta_vars);
 		int	execute_script(std::string cmd_path, std::string path_info, char **env, Request req);
 		bool compareHostPort(std::string host, std::string port);
+		void	filterRequest( Request req );
+		void	PrepareResponse( std::string method, std::string path, Request req );
+		bool	CheckAllowed( std::string method, std::string path, std::vector<Location> Locations);
+		std::string	findFolder( std::string folder, int check );
+		bool	ext_CGI(std::string path_info);
+		bool	folder_CGI(std::string path);
+		std::string	sendby_CGI(int cgi_fd);
+		std::string getResponse(std::string path, std::string file, std::string responseHeaders);
+		int		parseSend(std::string response, int fd);
+		std::string	CheckIndex( std::string path, std::vector<Location> Locations);
+		std::string	CheckRoot( std::string path, std::vector<Location> Locations);
+		bool	CheckAutoindex( std::string path, std::vector<Location> Locations);
+
 		// void printshit() {
 		// 	std::cout << serv_info.cgi_extension << "  THIS SJIT" << std::endl;
 		// }
@@ -42,6 +55,7 @@ class Servers
 		Servers(std::string file, char **environment);
 		~Servers() {std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
 
+		Request parseRecv(std::vector<pollfd> &fds, int pos);
 		void	printAll() const;
 		void	init();
 		void	run();

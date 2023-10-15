@@ -124,6 +124,11 @@ std::string Request::Get( void ) const
     return get;
 }
 
+std::string Request::Del( void ) const
+{
+    return del;
+}
+
 std::string Request::Query( void ) const
 {
     return query;
@@ -234,6 +239,16 @@ int Request::Eof( void )
     return eof;
 }
 
+int Request::ClientFd( void )
+{
+    return clientfd;
+}
+
+void    Request::SetClientFd( int fd )
+{
+    clientfd = fd;
+}
+
 std::string	getINFOone(std::string request, const char *what, int pos)
 {
 	size_t getStart = request.find(what);
@@ -285,6 +300,8 @@ Request::Request( char *buffer, size_t size )
             this->query = _request.substr(queryEnd2, queryEnd - queryEnd2);
     }
 	this->post = getINFOone(_request, "POST ", 5);
+
+    this->del = getINFOone(_request, "DELETE ", 7);
 
 	this->host = getINFOtwo(_request, "Host: ", 6);
 	// std::cout << "THIS: " << this->host << std::endl;

@@ -34,17 +34,16 @@ int end_loop(int end)
     return loop;
 }
 
-int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
+int Serv::parseSend(std::string response, int fd)
 {
     
-    std::string response = getResponse(req, "guarder-html", "/index.html", cgi_fd);
     // std::cout << req.Get() << std::endl;
     
 
     // std::cout << response.size();
     if (!response.empty())
     {
-        ssize_t n = send(fds[pos].fd, response.c_str(), response.size(), 0);
+        ssize_t n = send(fd, response.c_str(), response.size(), 0);
         if (n < 0)
         {
             std::cerr << "Error writing to socket" << std::endl;
@@ -64,87 +63,43 @@ int parseSend(std::vector<pollfd> &fds, int pos, Request req, int cgi_fd)
     return 0;
 }
 
-
-std::string getResponse(Request req, std::string path, std::string index, int cgi_fd)
+std::string getHeader( std::string ARG, std::string extra, std::string filePath )
 {
-    std::string filePath;
     std::string mimeType;
     std::string responseHeaders;
-    // std::cout << req.request() << std::endl;
-    // std::cout << req.Get() << std::endl;
+    mimeType = getMimeType(filePath);
+    // std::cout << filePath << std::endl;
 
-    if (cgi_fd > 2)
-    {
-        char    buffer[4096];
-        std::string response;
-        ssize_t bytesRead;
+    // std::cout << mimeType << std::endl;
+    responseHeaders = "HTTP/1.1 " + ARG + "\r\n";
+    responseHeaders += "Content-Type: " + mimeType + "\r\n";
+    responseHeaders += "Connection: keep-alive\r\n";
+    if (!(extra.empty()))
+        responseHeaders += extra + "\r\n";
+    return responseHeaders;
+}
 
-   
-        while ((bytesRead = read(cgi_fd, buffer, sizeof(buffer))) > 0) {
-            response.append(buffer, bytesRead);
-        }
-
-        if (bytesRead < 0) {
-            perror("Error reading from file descriptor");
-            // Handle the error as needed
-        }
-        responseHeaders = "HTTP/1.1 200 OK\r\n";
-        responseHeaders += "Content-Type: text/html\r\n";
-        responseHeaders += "Connection: keep-alive\r\n";
-        std::stringstream ss;
-        ss << response.length();
-        responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-        //std::cout << responseHeaders + response << std::endl;
-		close(cgi_fd);
-        return responseHeaders + response;
-    }
+std::string Serv::getResponse(std::string root, std::string file, std::string responseHeaders)
+{
+    size_t fi = file.rfind('/');
+    std::string response;
+    if (fi != std::string::npos)
+        response = readFile(root.substr(1) + file.substr(fi));
     else
-    {
-        filePath = req.Get();
-        // if (filePath.empty())
-        // {
-        //     // std::cout << "here" << std::endl;
-        //     if (execute_command(findcommand("/bash"), req.Post(), env) != 0)
-        //     {
-        //         std::cout << "here11" << std::endl;
-        //         return "";
-        //     }
-        //     else
-        //     {
-        //         // std::cout << "here22" << std::endl;
-        //         std::string response = readFile(path + req.Referer());
-        //         responseHeaders = "HTTP/1.1 302 Found\r\n";
-        //         responseHeaders += "Location: " + filePath + "\r\n\r\n";
-        //         return responseHeaders + response;		
-        //     }
-        // }
-        // std::cout << "here44" << std::endl;
+        response = readFile(root.substr(1) + file);
+    // std::cout << root + file.substr(fi) << std::endl;
+    // std::cout << path << " " << filePath << std::endl;
+    std::stringstream ss;
+    ss << response.length();
+    responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
+    // std::cout << responseHeaders << std::endl;
+    // char buf[1024];
+    // getcwd(buf, 1023);
+    // std::cout << response << std::endl;
+    if (response == "" || response.empty())
+        response = readFile(serv_info.root + "/404.html");
+    return responseHeaders + response;
 
-        mimeType = getMimeType(filePath);
-        // std::cout << filePath << std::endl;
-
-        // std::cout << mimeType << std::endl;
-        responseHeaders = "HTTP/1.1 200 OK\r\n";
-        responseHeaders += "Content-Type: " + mimeType + "\r\n";
-        responseHeaders += "Connection: keep-alive\r\n";
-        if (filePath.empty() || filePath == "/")
-            return responseHeaders + readFile(path + index);
-        else
-        {
-            std::string response = readFile(path + filePath);
-            // std::cout << path << " " << filePath << std::endl;
-            std::stringstream ss;
-            ss << response.length();
-            responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-            // std::cout << responseHeaders << std::endl;
-            // char buf[1024];
-            // getcwd(buf, 1023);
-            // std::cout << buf << std::endl;
-            if (response == "" || response.empty())
-                response = readFile(path + "/404.html");
-            return responseHeaders + response;
-        }
-    }
 }
 
 bool headcheck(std::string buf)
@@ -182,7 +137,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     // return true;
 }
 
-Request parseRecv(std::vector<pollfd> &fds, int pos)
+Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 {
     char buffer[4097];
     // buffer[4096] = '\0';
@@ -194,7 +149,7 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
     while (1)
     {
         bzero(buffer, sizeof(buffer));
-        n = recv(fds[pos].fd, buffer, 4096, 0);
+        n = recv(fd[pos].fd, buffer, 4096, 0);
         // std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
@@ -203,9 +158,9 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
                 if (!counter)
                 {
                     // Connection closed by the client
-                    printlog("LOST CLIENT", fds[pos].fd - 2, RED);
-                    close(fds[pos].fd);
-                    fds.erase(fds.begin() + pos);
+                    printlog("LOST CLIENT", fd[pos].fd - 2, RED);
+                    close(fd[pos].fd);
+                    fd.erase(fd.begin() + pos);
                     return Request();
                 }
                 break;
@@ -254,7 +209,7 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
     for (it = full_buf.begin(); it != full_buf.end(); ++it)
     {
         int i = -1;
-        std::cout << it->second << std::endl;
+        // std::cout << it->second << std::endl;
         while (++i < it->second)
             buf[f++] = it->first[i];
         delete[] it->first;
@@ -266,7 +221,7 @@ Request parseRecv(std::vector<pollfd> &fds, int pos)
     std::vector<std::pair<char *, int> >().swap(full_buf);
     findbuffer = std::string(buf, buf_size);
     // std::cout << "BUFSIZE: " << buf_size << std::endl;
-    Request req = postThings(findbuffer, buf, fds[pos].fd, buf_size);
+    Request req = postThings(findbuffer, buf, fd[pos].fd, buf_size);
     return req;
     // size_t ok = findbuffer.find("\r\n\r\n");
     // if (ok == std::string::npos)
@@ -377,43 +332,6 @@ int GetbyUser(std::string buffer)
         return 1;
     return 0;
 }
-
-int checkAllowGet(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_get;
-}
-
-int checkAllowPost(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_post;
-}
-
-int checkAllowDelete(std::string folder, std::vector<Location> Locations)
-{
-    std::vector<Location>::iterator it;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-        if (it->root == folder)
-            break;
-    }
-    return it->allow_delete;
-}
-
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd)
 {
