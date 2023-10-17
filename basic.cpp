@@ -79,15 +79,20 @@ std::string getHeader( std::string ARG, std::string extra, std::string filePath 
     return responseHeaders;
 }
 
-std::string Serv::getResponse(std::string root, std::string file, std::string responseHeaders)
+std::string Serv::getResponse(std::string abs, std::string page, std::string responseHeaders)
 {
-    size_t fi = file.rfind('/');
-    std::string response;
-    if (fi != std::string::npos)
-        response = readFile(root.substr(1) + file.substr(fi));
-    else
-        response = readFile(root.substr(1) + file);
-    // std::cout << root + file.substr(fi) << std::endl;
+    std::cout << "DEBUG: getResponse " << (abs.substr(1) + page) << std::endl;
+    std::string response = readFile(abs.substr(1) + page); // maybe need the substr(1)
+    // if (page != "")
+    // {
+    //     size_t fi = page.rfind('/');
+    //     std::string response;
+    //     if (fi != std::string::npos)
+    //         response = readFile(abs.substr(1) + page.substr(fi));
+    //     else
+    //         response = readFile(abs.substr(1) + page);
+    // }
+    // std::cout << abs + page.substr(fi) << std::endl;
     // std::cout << path << " " << filePath << std::endl;
     std::stringstream ss;
     ss << response.length();

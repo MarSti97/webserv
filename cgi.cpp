@@ -1,34 +1,34 @@
 #include "includes/webserv.hpp"
 
-int	Serv::filter_request(Request req)
-{
-	std::string	path_info;
-	std::string extension_string;
-	int	cgi_fd = 0;
+// int	Serv::filter_request(Request req)
+// {
+// 	std::string	path_info;
+// 	std::string extension_string;
+// 	int	cgi_fd = 0;
 
-	if (!(req.Get().empty()))
-		path_info = req.Get();
-	else if (!(req.Post().empty()))
-		path_info = req.Post();
-	// Important: Throw error during config parsing if the cgi is set
-	// to use a static file extension (.html, .jpg, etc)
+// 	if (!(req.Get().empty()))
+// 		path_info = req.Get();
+// 	else if (!(req.Post().empty()))
+// 		path_info = req.Post();
+// 	// Important: Throw error during config parsing if the cgi is set
+// 	// to use a static file extension (.html, .jpg, etc)
 
-	// std::cout << "something shit" << std::endl;
-	size_t	extension_start = path_info.rfind('.');
-	if (extension_start != std::string::npos)
-	{
-		size_t query_start = path_info.rfind('?');
-		if (query_start != std::string::npos)
-			extension_string = path_info.substr(extension_start, query_start - extension_start);
-		else
-			extension_string = path_info.substr(extension_start);
-		// std::cout << extension_string << " ass " << serv_info.cgi_extension << std::endl;
-		if (extension_string == serv_info.cgi_extension)
-			cgi_fd = cgi_request(req, path_info, extension_string);
+// 	// std::cout << "something shit" << std::endl;
+// 	size_t	extension_start = path_info.rfind('.');
+// 	if (extension_start != std::string::npos)
+// 	{
+// 		size_t query_start = path_info.rfind('?');
+// 		if (query_start != std::string::npos)
+// 			extension_string = path_info.substr(extension_start, query_start - extension_start);
+// 		else
+// 			extension_string = path_info.substr(extension_start);
+// 		// std::cout << extension_string << " ass " << serv_info.cgi_extension << std::endl;
+// 		if (extension_string == serv_info.cgi_extension)
+// 			cgi_fd = cgi_request(req, path_info, extension_string);
 
-	}
-	return (cgi_fd);
-}
+// 	}
+// 	return (cgi_fd);
+// }
 
 int	Serv::cgi_request(Request req, std::string path_info, std::string script_extension)
 {
@@ -76,10 +76,12 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		perror("fork");
 	if (pid == 0)
 	{
-		std::string script_name = path_info.substr(path_info.rfind("/") + 1);
-		path_info = serv_info.root + path_info;
-		if (chdir((serv_info.root + "/" + serv_info.cgi_directory).c_str()) == -1)
-			std::cout << "Error changing to cgi dir: " << serv_info.root + "/" + serv_info.cgi_directory << std::endl;
+		size_t i = path_info.rfind("/");
+		std::string script_name = path_info.substr(i + 1);
+		std::string path = path_info.substr(0, i);
+		// path_info = serv_info.root + path_info;
+		if (chdir(path.c_str() + 1) == -1)
+			std::cout << "Error changing to cgi dir: " << path << std::endl;
 		char *argv[3];
         argv[0] = const_cast<char *>((cmd_path).c_str());
 		argv[1] = const_cast<char *>((script_name).c_str());

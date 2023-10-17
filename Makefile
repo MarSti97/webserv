@@ -22,10 +22,10 @@ $(BIN)/%.o : %.cpp
 	@$(CC) $(FLAGS) -c $< -o $@
 
 run : all
-	@./$(NAME) basic.config
+	@./$(NAME) example.config
 
 valgrind : all
-	@valgrind --leak-check=full --show-leak-kinds=all ./$(NAME) basic.config
+	@valgrind --leak-check=full --show-leak-kinds=all ./$(NAME) example.config
 
 clean : 
 	@rm -rf $(OBJ) $(BIN)

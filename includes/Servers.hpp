@@ -25,16 +25,18 @@ class Serv
 		bool compareHostPort(std::string host, std::string port);
 		void	filterRequest( Request req );
 		void	PrepareResponse( std::string method, std::string path, Request req );
-		bool	CheckAllowed( std::string method, std::string path, std::vector<Location> Locations);
-		std::string	findFolder( std::string folder, int check );
+		bool	CheckAllowed( std::string method, std::string path);
+		std::string	findFolder( std::string folder );
 		bool	ext_CGI(std::string path_info);
 		bool	folder_CGI(std::string path);
 		std::string	sendby_CGI(int cgi_fd);
 		std::string getResponse(std::string path, std::string file, std::string responseHeaders);
 		int		parseSend(std::string response, int fd);
-		std::string	CheckIndex( std::string path, std::vector<Location> Locations);
+		std::string	CheckIndex( std::string path);
 		std::string	CheckRoot( std::string path, std::vector<Location> Locations);
-		bool	CheckAutoindex( std::string path, std::vector<Location> Locations);
+		bool	CheckAutoindex( std::string path);
+		std::string createAbsolutePath(std::string path);
+		std::string	CheckCGI( std::string path);
 
 		// void printshit() {
 		// 	std::cout << serv_info.cgi_extension << "  THIS SJIT" << std::endl;

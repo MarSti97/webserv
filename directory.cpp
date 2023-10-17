@@ -17,7 +17,7 @@ std::string	makeDirectoryList(std::string dirpath)
 	struct stat fileStat;
 	std::string indexpage;
 
-	DIR	*directory = opendir(dirpath.c_str());
+	DIR	*directory = opendir(dirpath.c_str() + 1);
 
 	if (directory == NULL)
 	{
@@ -36,7 +36,7 @@ std::string	makeDirectoryList(std::string dirpath)
 
 		std::string full_path = dirpath + "/" + entry->d_name;
 
-		if (stat(full_path.c_str(), &fileStat) == 0)
+		if (stat(full_path.c_str() + 1, &fileStat) == 0)
 		{
 			std::string index_item = "<tr>";
 			index_item.append("<td><a href='" + std::string(entry->d_name) + "'>" + entry->d_name + "</a></td>");

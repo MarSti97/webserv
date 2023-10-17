@@ -40,28 +40,28 @@ void	Servers::validate_config()
 						temp_config.index = parse_attribute(iss, token);
 					else if (token == "client_max_body_size")
 						temp_config.max_body_size = parse_attribute(iss, token);
-					else if (token == "allow")
-					{
-						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-						{
-							if (token == "GET" || token == "GET;")
-								temp_config.allow_get = true;
-							else if (token == "POST" || token == "POST;")
-								temp_config.allow_post = true;
-							else if (token == "DELETE" || token == "DELETE;")
-								temp_config.allow_delete = true;
-						}
-					}
+					// else if (token == "allow")
+					// {
+					// 	while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
+					// 	{
+					// 		if (token == "GET" || token == "GET;")
+					// 			temp_config.allow_get = true;
+					// 		else if (token == "POST" || token == "POST;")
+					// 			temp_config.allow_post = true;
+					// 		else if (token == "DELETE" || token == "DELETE;")
+					// 			temp_config.allow_delete = true;
+					// 	}
+					// }
 					else if (token == "autoindex")
 						temp_config.autoindex = parse_attribute(iss, token);
-					else if (token == "cgi")
-					{
-						iss >> token;
-						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-							temp_config.cgi_extension = token;
-						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.cgi_directory = token.substr(0, token.size() - 1);						
-					}
+					// else if (token == "cgi")
+					// {
+					// 	iss >> token;
+					// 	if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+					// 		temp_config.cgi_extension = token;
+					// 	if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+					// 		temp_config.cgi_directory = token.substr(0, token.size() - 1);						
+					// }
 					else if (token == "error_page")
 					{
 						iss >> token;
@@ -82,31 +82,69 @@ void	Servers::validate_config()
 							{
 								if (token == "allow")
 								{
+									if (temp_location.path == "/")
+									{
+										while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
+										{
+											std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
+											temp_config.methods.insert(std::make_pair(res, true));
+											// if (token == "GET" || token == "GET;")
+											// 	temp_config.allow_get = true;
+											// else if (token == "POST" || token == "POST;")
+											// 	temp_config.allow_post = true;
+											// else if (token == "DELETE" || token == "DELETE;")
+											// 	temp_config.allow_delete = true;
+										}
+									}
 									while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
 									{
-										if (token == "GET" || token == "GET;")
-											temp_location.allow_get = true;
-										else if (token == "POST" || token == "POST;")
-											temp_location.allow_post = true;
-										else if (token == "DELETE" || token == "DELETE;")
-											temp_location.allow_delete = true;
+										std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
+										temp_location.methods.insert(std::make_pair(res, true));
+										// if (token == "GET" || token == "GET;")
+										// 	temp_location.allow_get = true;
+										// else if (token == "POST" || token == "POST;")
+										// 	temp_location.allow_post = true;
+										// else if (token == "DELETE" || token == "DELETE;")
+										// 	temp_location.allow_delete = true;
 									}
 								}
 								else if (token == "root")
-									temp_location.root = parse_attribute(iss, token);
-								else if (token == "index")
-									temp_location.index = parse_attribute(iss, token);
-								else if (token == "autoindex")
-									temp_location.autoindex = parse_attribute(iss, token);
-								else if (token == "error_page")
 								{
-									iss >> token;
-									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-										temp_location.error_pages[token] = "";
-									std::string oldtoken = token;
-									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-										temp_location.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
+									if (temp_location.path == "/")
+										temp_config.root = parse_attribute(iss, token);
+									else
+										temp_location.root = parse_attribute(iss, token);
 								}
+								else if (token == "index")
+								{
+									if (temp_location.path == "/")
+										temp_config.index = parse_attribute(iss, token);
+									else
+										temp_location.index = parse_attribute(iss, token);
+								}
+								else if (token == "autoindex")
+								{
+									if (temp_location.path == "/")
+										temp_config.autoindex = parse_attribute(iss, token);
+									else
+										temp_location.autoindex = parse_attribute(iss, token);
+								}
+								else if (token == "cgi")
+								{
+									if (temp_location.path == "/")
+										temp_config.cgi_extension = parse_attribute(iss, token);
+									else
+										temp_location.cgi_extension = parse_attribute(iss, token);
+								}
+								// else if (token == "error_page")
+								// {
+								// 	iss >> token;
+								// 	if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+								// 		temp_location.error_pages[token] = "";
+								// 	std::string oldtoken = token;
+								// 	if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+								// 		temp_location.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
+								// }
 								else if (token == "return")
 								{
 									iss >> token;
@@ -223,65 +261,143 @@ void	Serv::filterRequest( Request req )
 		PrepareResponse("DELETE", req.Del(), req);
 	else
 	{
-		if (serv_info.error_pages["405"].empty())
-			parseSend(getResponse(serv_info.root, "/405.html", getHeader("405 Method Not Allowed", "", "/405.html")), req.ClientFd()); // need to do the 405 page.
+		if (serv_info.error_pages["501"].empty())
+			parseSend(getResponse(serv_info.root, "/501.html", getHeader("501 Not Implemented", "", "/501.html")), req.ClientFd()); // need to do the 405 page.
 		else
-			parseSend(getResponse(serv_info.root, serv_info.error_pages["405"], getHeader("405 Method Not Allowed", "", serv_info.error_pages["405"])), req.ClientFd());
+			parseSend(getResponse(serv_info.root, serv_info.error_pages["501"], getHeader("501 Not Implemented", "", serv_info.error_pages["501"])), req.ClientFd());
 	}
 }
 
-std::string	Serv::findFolder( std::string folder, int check ) //parse the path and if called with check it will return the previous folder.
+std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
 {
-	size_t f = folder.rfind('/');
-	if ((f == folder.length() - 1) && !check)
-		return folder;
-	if (f == (folder.length() - 1) && check && (folder != "/"))
-		return folder.substr(0, folder.rfind('/', f - 1));
-	if (f != std::string::npos)
-	{
-		size_t i = folder.rfind('.', f);
-		if (i != std::string::npos)
-			return folder.substr(0, f);
-		else
-			return folder + "/";
-	}
+	// std::cout << "DEGUB: " << folder << " " << check << std::endl;
+		size_t i = path.rfind('/');
+	if (path.substr(i).find('.') != std::string::npos)
+		return path;
 	else
 		return "";
+	// size_t f = folder.rfind('/');
+	// if (f == folder.length() - 1)
+	// 	return folder;
+	// if ((f == folder.length() - 1) && (folder != "/"))
+	// 	return folder.substr(0, folder.rfind('/') - 1);
+	// if (f != std::string::npos)
+	// {
+	// 	size_t i = folder.rfind('.', f);
+	// 	if (i != std::string::npos)
+	// 		return folder.substr(0, f);
+	// 	else
+	// 		return folder;
+	// }
+	// else
+	// 	return "";
 }
 
-std::string makePathGreatAgain(std::string path, std::string root)
+std::string Serv::createAbsolutePath(std::string path)
 {
-	size_t fi = path.rfind('/');
-    if (fi != std::string::npos)
-        return root.substr(1) + path.substr(fi);
-    else
-        return root.substr(1) + path;
+	if (path == "/")
+		return serv_info.root;
+	std::vector<Location>::iterator it;
+	std::string page;
+	size_t i = path.rfind('/');
+	if (path.substr(i).find('.') != std::string::npos)
+		page = path.substr(i);
+	else
+		page = "";
+	std::string newPath = path.substr(0, i);
+    for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
+    {
+		std::cout << "DEBUG: " << newPath << " " << it->path << std::endl;
+		if (!(it->root.empty()) && newPath == it->path)
+		{
+			std::cout << "DEBUG: createABsPath" << it->root << std::endl;
+			return it->root + page;
+		}
+    }
+	return serv_info.root + path;
 }
+
+
+std::string	Serv::CheckIndex( std::string path)
+{
+	if (path == "/")
+		return serv_info.index;
+	std::vector<Location>::iterator it;
+	size_t i = path.rfind('/');
+	std::string newPath = path.substr(0, i);
+    for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
+    {
+		if (it->path == newPath && !(it->index.empty()))
+			return it->index;
+    }
+    return "";
+}
+
+std::string	Serv::CheckCGI( std::string path)
+{
+	std::vector<Location>::iterator it;
+	size_t i = path.rfind('/');
+	size_t j = path.rfind('.');
+	std::string extension = path.substr(j);
+	std::string newPath = path.substr(0, i);
+    for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
+    {
+		std::cout << "DEBUG cgi: " << extension << " | " << newPath << " & " << it->cgi_extension << std::endl;
+		if (it->path == newPath && it->cgi_extension == extension)
+			return extension;
+    }
+    return "";
+}
+
+// std::string	Serv::CheckRoot( std::string path, std::vector<Location> Locations)
+// {
+// 	std::vector<Location>::iterator it;
+//     for (it = Locations.begin(); it != Locations.end(); ++it)
+//     {
+// 		if (it->path == findFolder(path) && std::cout << path << " ko " << findFolder(path) << std::endl)
+// 		{
+// 			std::cout << serv_info.root << std::endl;
+// 			if (!(it->root.empty()))
+// 				return it->root;
+// 			else
+// 				return serv_info.root;
+// 		}
+//     }
+//     return "";
+// }
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
-	if (CheckAllowed(method, path, serv_info.location))
+	if (CheckAllowed(method, path))
 	{
-		std::string ass = makePathGreatAgain(path, CheckRoot(path, serv_info.location));
-		if (findFolder(path, 0).length() < path.length()) // it is a file
+		std::string abs = createAbsolutePath(path);
+		std::cout << "DEBUG: absulote: " << abs << std::endl;
+		if (findFolder(abs) != "") // it is a file
 		{
+			std::cout << "DEBUG: isAFile: " << std::endl;
 			if (method == "GET" || method == "POST")
 			{
-				if (!access(ass.c_str(), R_OK)) // file exists
+				if (!access(abs.c_str() + 1, R_OK)) // file exists
 				{
-					std::cout << "fuck" << std::endl;
-					if (ext_CGI(path) && folder_CGI(path)) // it is a CGI script
-						parseSend(sendby_CGI(cgi_request(req, path, serv_info.cgi_extension)), req.ClientFd());
+					std::string theExtension = CheckCGI(path);
+					if (theExtension != "") // it is a CGI script
+					{
+						std::cout << "fuck" << std::endl;
+						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
+					}
 					else // "normal" request
-						parseSend(getResponse(CheckRoot(path, serv_info.location), path, getHeader("200 OK", "", path)), req.ClientFd());
+					{
+						// std::cout << path << " " << CheckRoot(path, serv_info.location) << std::endl;
+						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
+					}
 				}
 				else // if does not exists, error 404
 				{
 
 					if (serv_info.error_pages["404"].empty())
-						parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", path)), req.ClientFd());
+						parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", abs)), req.ClientFd());
 					else
-						parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", path)), req.ClientFd());
+						parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", abs)), req.ClientFd());
 				}
 			}
 			// else
@@ -289,46 +405,50 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		}
 		else // it is a folder
 		{
-			if (!access(ass.c_str(), F_OK)) // file exists
+			std::cout << "DEBUG: isAFolder: " << std::endl;
+			if (access(abs.c_str() + 1, F_OK) != -1) // folder exists
 			{
-				std::string index = CheckIndex(path, serv_info.location);
-				std::cout << "ass " << path << std::endl;
+				std::string index = CheckIndex(path);
+				std::cout << "abs " << path << std::endl;
 				if (!(index.empty()))
-					parseSend(getResponse(CheckRoot(path, serv_info.location), index, getHeader("200 OK", "", index)), req.ClientFd());
+					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
 				{
-					if (CheckAutoindex(path, serv_info.location))
+					if (CheckAutoindex(path))
 					{
-						if (!access(ass.c_str(), R_OK)) 
-							parseSend(makeDirectoryList(path), req.ClientFd());
+						if (!access(abs.c_str() + 1, R_OK)) 
+							parseSend(makeDirectoryList(abs), req.ClientFd()); // BUGGED
 						else // if does not exists, error 404
 						{
 							if (serv_info.error_pages["403"].empty())
-								parseSend(getResponse(serv_info.root, "/403.html", getHeader("403 Forbidden", "", path)), req.ClientFd());
+								parseSend(getResponse(serv_info.root, "/403.html", getHeader("403 Forbidden", "", abs)), req.ClientFd());
 							else
-								parseSend(getResponse(serv_info.root, serv_info.error_pages["403"], getHeader("403 Forbidden", "", path)), req.ClientFd());
+								parseSend(getResponse(serv_info.root, serv_info.error_pages["403"], getHeader("403 Forbidden", "", abs)), req.ClientFd());
 						}
 					}
 					else // if does not exists, error 404
 					{
+						std::cout << "DEBUG: noIndex: " << std::endl;
 						if (serv_info.error_pages["404"].empty())
-							parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", path)), req.ClientFd());
+							parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", abs)), req.ClientFd());
 						else
-							parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", path)), req.ClientFd());
+							parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", abs)), req.ClientFd());
 					}		
 				}
 			}
 			else // if does not exists, error 404
 			{
+				std::cout << "DEBUG: noAccess: " << std::endl;
 				if (serv_info.error_pages["404"].empty())
-					parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", path)), req.ClientFd());
+					parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", abs)), req.ClientFd());
 				else
-					parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", path)), req.ClientFd());
+					parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", abs)), req.ClientFd());
 			}
 		}
 	}
 	else
 	{
+		// std::cout << "DEGUB: Prepare Response" << std::endl;
 		if (serv_info.error_pages["405"].empty())
 			parseSend(getResponse(serv_info.root, "/405.html", getHeader("405 Method Not Allowed", "", "/405.html")), req.ClientFd()); // need to do the 405 page.
 		else
@@ -337,58 +457,21 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 
 }
 
-bool	Serv::CheckAutoindex( std::string path, std::vector<Location> Locations)
+bool	Serv::CheckAutoindex( std::string path)
 {
+	if (path == "/" && serv_info.autoindex != "")
+		return true;
 	std::vector<Location>::iterator it;
-	int check = 0;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
+	size_t i = path.rfind('/');
+	std::string newPath = path.substr(0, i - 1);
+    for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		if (it->path == findFolder(path, check))
-		{
-			if (!(it->autoindex.empty()))
-				return true;
-			else
-				return 0;
-		}
+		if (it->path == newPath && !(it->autoindex.empty()))
+			return true;
     }
-    return "";
+    return false;
 }
 
-std::string	Serv::CheckRoot( std::string path, std::vector<Location> Locations)
-{
-	std::vector<Location>::iterator it;
-	int check = 0;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-		if (it->path == findFolder(path, check) && std::cout << path << " ko " << findFolder(path, check) << std::endl)
-		{
-			std::cout << serv_info.root << std::endl;
-			if (!(it->root.empty()))
-				return it->root;
-			else
-				return serv_info.root;
-		}
-    }
-    return "";
-}
-
-std::string	Serv::CheckIndex( std::string path, std::vector<Location> Locations)
-{
-	std::vector<Location>::iterator it;
-	int check = 0;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-		if (it->path == findFolder(path, check))
-		{
-			if (!(it->index.empty()))
-				return it->index;
-		}
-    }
-    return "";
-}
 
 std::string	Serv::sendby_CGI(int cgi_fd)
 {
@@ -438,48 +521,67 @@ bool	Serv::ext_CGI(std::string path_info)
 	return 0;
 }
 
-bool	Serv::folder_CGI(std::string path)
+// bool	Serv::folder_CGI(std::string path)
+// {
+// 	size_t k = path.find(serv_info.cgi_directory, 0);
+// 	if (k == serv_info.cgi_directory.length())
+// 		return 1;
+// 	else
+// 		return 0;
+// }
+
+
+bool	Serv::CheckAllowed( std::string method, std::string path)
 {
-	size_t k = path.find(serv_info.cgi_directory, 0);
-	if (k == serv_info.cgi_directory.length())
-		return 1;
-	else
-		return 0;
-}
-
-
-bool	Serv::CheckAllowed( std::string method, std::string path, std::vector<Location> Locations)
-{
-	std::vector<Location>::iterator it;
-	int check = 0;
-
-    for (it = Locations.begin(); it != Locations.end(); ++it)
-    {
-		std::string newpath = path;
-        while (!((newpath = findFolder(newpath, check)).empty()))
-        {
-			if (it->path == findFolder(newpath, check))
-			{
-				if (method == "GET")
-				{
-					if (it->allow_get)
-						return it->allow_get;
-				}
-				else if (method == "POST")
-				{
-					if (it->allow_post)
-						return it->allow_post;
-				}
-				else if (method == "DELETE")
-				{
-					if (it->allow_delete)
-						return it->allow_delete;
-				}
-			}
-			check++;
+	if (serv_info.methods[method])
+		return serv_info.methods[method];
+	std::string newPath = "";
+	int len = 1;
+	while (newPath != path)
+	{
+		size_t i = path.find("/", len);
+		if (i == std::string::npos)
+			newPath = path;
+		else
+			newPath = path.substr(0, i - 1);
+		std::vector<Location>::iterator it;
+		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
+		{
+			if (it->path == newPath && it->methods[method])
+				return it->methods[method];
 		}
-		check = 0;
-    }
+		len += i;
+	}
+    // for (it = Locations.begin(); it != Locations.end(); ++it)
+    // {
+	// 	std::string newpath = path;
+    //     while (!((newpath = findFolder(newpath, check)).empty()))
+    //     {
+	// 		if (it->path == findFolder(newpath, check))
+	// 		{
+	// 			if (method == "GET")
+	// 			{
+	// 				if (it->allow_get)
+	// 				{
+	// 					std::cout << "DEBUG: findFolder,  " << newpath << " " << path << std::endl;
+	// 					return it->allow_get;
+	// 				}
+	// 			}
+	// 			else if (method == "POST")
+	// 			{
+	// 				if (it->allow_post)
+	// 					return it->allow_post;
+	// 			}
+	// 			else if (method == "DELETE")
+	// 			{
+	// 				if (it->allow_delete)
+	// 					return it->allow_delete;
+	// 			}
+	// 		}
+	// 		check++;
+	// 	}
+	// 	check = 0;
+    // }
     return false;
 }
 
@@ -555,9 +657,14 @@ void	Serv::print(int counter) const
 	}
 	std::cout << std::endl;
 	std::cout << "max_body_size: " << serv_info.max_body_size << std::endl;
-	std::cout << (serv_info.allow_get ? "GET: allowed" : "GET: denied") << std::endl;
-	std::cout << (serv_info.allow_post ? "POST: allowed" : "POST: denied") << std::endl;
-	std::cout << (serv_info.allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
+	std::map<std::string, bool>::const_iterator its;
+	for (its = serv_info.methods.begin(); its != serv_info.methods.end(); its++)
+	{
+		std::cout << "Method: " << its->first << " : " << (its->second ? "allowed" : "denied") << std::endl;
+	}
+	// std::cout << (serv_info.allow_get ? "GET: allowed" : "GET: denied") << std::endl;
+	// std::cout << (serv_info.allow_post ? "POST: allowed" : "POST: denied") << std::endl;
+	// std::cout << (serv_info.allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
 	std::cout << "autoindex: " << serv_info.autoindex << std::endl;
 	std::cout << "cgi_extension: " << serv_info.cgi_extension << std::endl;
 	std::cout << "cgi_directory: " << serv_info.cgi_directory << std::endl;
@@ -573,19 +680,25 @@ void	Serv::print(int counter) const
 		std::cout << "Location " << it->path << std::endl;
 		std::cout << "root: " << it->root << std::endl;
 		std::cout << "index: " << it->index << std::endl;
-		std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
-		std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
-		std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
+		std::cout << "cgi-extension: " << it->cgi_extension << std::endl;
+		std::map<std::string, bool>::const_iterator it3;
+		for (it3 = it->methods.begin(); it3 != it->methods.end(); it3++)
+		{
+			std::cout << "Method: " << it3->first << " : " << (it3->second ? "allowed" : "denied") << std::endl;
+		}
+		// std::cout << (it->allow_get ? "GET: allowed" : "GET: denied") << std::endl;
+		// std::cout << (it->allow_post ? "POST: allowed" : "POST: denied") << std::endl;
+		// std::cout << (it->allow_delete ? "DELETE: allowed" : "DELETE: denied") << std::endl;
 		std::cout << "redirect_status: " << it->redirect_status << std::endl;
 		std::cout << "redirect_path: " << it->redirect_path << std::endl;			
-		if (!(it->error_pages.empty()))
-		{
-			std::map<std::string, std::string>::const_iterator it3;
-			for (it3 = it->error_pages.begin(); it3 != it->error_pages.end(); it3++)
-			{
-				std::cout << "error_page " << it3->first << ": " << it3->second << std::endl;
-			}
-		}
+		// if (!(it->error_pages.empty()))
+		// {
+		// 	std::map<std::string, std::string>::const_iterator it3;
+		// 	for (it3 = it->error_pages.begin(); it3 != it->error_pages.end(); it3++)
+		// 	{
+		// 		std::cout << "error_page " << it3->first << ": " << it3->second << std::endl;
+		// 	}
+		// }
 	}
 }
 
