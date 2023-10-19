@@ -63,7 +63,7 @@ std::string	getINFOtwo(std::string request, const char *what, int pos);
 Request postThings(std::string findbuffer, char *buffer, int fd, int size);
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
 int end_loop(int end);
-std::string	makeDirectoryList(std::string dirpath);
+std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
 std::string getHeader( std::string ARG, std::string extra, std::string filePath );
 
 

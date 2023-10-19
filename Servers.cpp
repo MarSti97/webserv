@@ -417,7 +417,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					if (CheckAutoindex(path))
 					{
 						if (!access(abs.c_str() + 1, R_OK)) 
-							parseSend(makeDirectoryList(abs), req.ClientFd()); // BUGGED
+							parseSend(makeDirectoryList(abs, path), req.ClientFd()); // BUGGED
 						else // if does not exists, error 404
 						{
 							if (serv_info.error_pages["403"].empty())

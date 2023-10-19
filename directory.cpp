@@ -5,17 +5,19 @@ std::string filesizeToString(off_t size)
 	std::string result;
 	std::stringstream ss;
 
+	size /= 1000;
 	ss << size;
 	result = ss.str();
 
-	return result;
+	return result + " kB";
 }
 
-std::string	makeDirectoryList(std::string dirpath)
+std::string	makeDirectoryList(std::string dirpath, std::string rel_path)
 {
 	struct dirent *entry;
 	struct stat fileStat;
-	std::string indexpage;
+	std::string response;
+	std::string responseHeaders;
 
 	DIR	*directory = opendir(dirpath.c_str() + 1);
 
@@ -25,32 +27,43 @@ std::string	makeDirectoryList(std::string dirpath)
 		return "";
 	}
 
-	indexpage.append("<html><head><title>Directory Index</title>");
-	indexpage.append("<style> td{font-family: monospace; padding: 0px 5px;} th{text-align: left;  padding: 0px 5px;}</style></head>");
-	indexpage.append("<body><h1>Index of " + dirpath + "</h1><table>");
-	indexpage.append("<tr><th>Name</th><th>Last modified</th><th>Size</th><th>Description</th></tr>");
+	response.append("<html><head><title>Directory Index</title>");
+	response.append("<style> td{font-family: monospace; padding: 0px 5px;} th{text-align: left;  padding: 0px 5px;}</style></head>");
+	response.append("<body><h1>Index of " + dirpath + "</h1><table>");
+	response.append("<tr><th>Name</th><th>Last modified</th><th>Size</th><th>Description</th></tr>");
 	while ((entry = readdir(directory)) != NULL)
 	{
 		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
 			continue;
 
 		std::string full_path = dirpath + "/" + entry->d_name;
+		size_t i = rel_path.rfind('/');
+		std::string rel_folder = rel_path.substr(i);
 
 		if (stat(full_path.c_str() + 1, &fileStat) == 0)
 		{
 			std::string index_item = "<tr>";
-			index_item.append("<td><a href='" + std::string(entry->d_name) + "'>" + entry->d_name + "</a></td>");
+			index_item.append("<td><a href='" + rel_folder + "/" + std::string(entry->d_name) + "'>" + entry->d_name + "</a></td>");
 			index_item.append("<td>" + std::string(ctime(&fileStat.st_mtime)) + "</td>");
 			index_item.append("<td>" + filesizeToString(fileStat.st_size) + "</td>");
 			index_item.append("</tr>");
-			indexpage.append(index_item);
+			response.append(index_item);
 		}
 		else
 			perror("stat");
 
 	}
-	indexpage.append("</table></body></html>");
-	return indexpage;
+	response.append("</table></body></html>");
+
+    std::stringstream ss;
+    ss << response.length();
+
+	responseHeaders = "HTTP/1.1 200 OK\r\n";
+    responseHeaders += "Content-Type: text/html\r\n";
+    responseHeaders += "Connection: keep-alive\r\n";
+    responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
+
+	return responseHeaders + response;
 }
 
 // void	filter_request(){
