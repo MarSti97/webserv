@@ -141,10 +141,10 @@ for image in images:
               <h5>
                 {image}
               </h5>
-              <div class="btn-box small" style="margin-top: 10px;">
-                <a href="">
-                  Delete
-                </a>
+              <div class="delete-button btn-box small" style="margin-top: 10px;">
+              <a class="delete-button" href="#">
+                Delete
+              </a>
               </div>
             </div>
           </div>
@@ -261,6 +261,26 @@ print('''
       </div>
     </div>
   </section>
+
+      <script>
+        $(document).ready(function() {
+         console.log('Image deleted successfully');
+            $(document).on('click', '.delete-button', function() {
+                var imageUrl = $(this).closest('div').prev().prev().find('img').attr('src');
+
+                $.ajax({
+                    url: imageUrl,
+                    type: 'DELETE',
+                    success: function(response) {
+                        console.log('Image deleted successfully');
+                    },
+                    error: function(err) {
+                        console.error('Error deleting image:', err);
+                    }
+                });
+            });
+        });
+    </script>
 
   <!-- end info_section -->
 

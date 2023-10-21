@@ -10,7 +10,6 @@ void	Servers::validate_config()
 {
 	std::istringstream iss(config);
 	std::string token;
-	int i = 0;
     while (iss >> token) 
 	{
 		if (token == "server")
@@ -20,7 +19,7 @@ void	Servers::validate_config()
 			{
 				while (iss >> token) 
 				{
-					if (token == "listen")
+					if (token == "listen" && check_duplicate_attr(temp_config.port))
 						temp_config.port = parse_attribute(iss, token);
 					else if (token == "host")
 						temp_config.host = parse_attribute(iss, token);
@@ -122,7 +121,7 @@ void	Servers::validate_config()
 					}
 					else if (token == "}")
 					{
-	                    check_requirements(temp_config, ++i);
+	                    check_requirements(temp_config);
 						servs.push_back(Serv(temp_config));
 						break ;
 					}

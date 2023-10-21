@@ -32,15 +32,31 @@ class Servers
 // Exceptions 
 class InsufficientInformation : public std::exception {
 	public :
-		InsufficientInformation() {}
+		InsufficientInformation(){}
 		virtual const char* what() const throw() {
-			return "";
+			return ("Error: Insufficient information on server configuration \n- You need at least a listen port and a server address.");
+		}
+};
+
+class DuplicateLocation : public std::exception {
+	public :
+		DuplicateLocation(){}
+		virtual const char* what() const throw() {
+			return ("Error: Duplicate location tag on server configuration");
+		}
+};
+
+class DuplicateAttribute : public std::exception {
+	public :
+		DuplicateAttribute(){}
+		virtual const char* what() const throw() {
+			return ("Error: Duplicate attribute on server configuration ");
 		}
 };
 
 class NotConfigFile : public std::exception {
 	public :
-		NotConfigFile() {}
+		NotConfigFile(){}
 		virtual const char* what() const throw() {
 			return "Error: argument not a config file.";
 		}
