@@ -35,7 +35,6 @@ class Download
 
     public:
         static Download &getInstance();
-        // void    map_manage(int client, char *buf, int bufsize);
         void    eraseClient( int client );
         void    clean();
         void    add_map(int client, imgDown content);
@@ -43,23 +42,6 @@ class Download
         Request isitFULL(int client, char *file, size_t filesize);
         size_t  removeFinalBoundary( char *str, size_t len, Request req );
         imgDown getStruct(int client);
-
-
-        // std::string &filename() const;
-        // std::string &filelocation() const;
-        // std::string &referer() const;
-        // std::string &boundary() const;
-        // char    *file() const;
-        // int     clientnbr() const;
-        // int     eof() const;
-        // void    Setfile(char *buf);
-        // void    Setfilename(std::string newfilename);
-        // void    Setfilelocation(std::string newfilelocation);
-        // void    Setreferer(std::string newreferer);
-        // void    Setboundary(std::string newboundary);
-        // void    Setclientnbr(int newnbr);
-        // void    Seteof(int neweof);
-        // void    clean();
 };
 
 

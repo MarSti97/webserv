@@ -1,47 +1,9 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
+
 #include "webserv.hpp"
 
-class Disposition
-{
-    private:
-        std::string type;
-        std::string filename;
-        std::string contentdisposition;
-
-    public:
-        Disposition( void );
-        // Disposition(const Disposition &other);
-        Disposition(std::string disposition);
-        // Disposition &operator=(const Disposition &other);
-        std::string getType( void ) const;
-        std::string getFilename( void ) const;
-        std::string getcontentdisposition( void ) const;
-        ~Disposition();
-};
-
-class Content
-{
-
-    private:
-        std::string content_type;
-        char        *_content;
-        size_t	content_size;
-    
-    public:
-		Content( void );
-        // Content(const Content &other);
-        Content(std::string content, std::string boundary);
-        // Content &operator=(const Content &other);
-        Disposition filename;
-        void    clean( void );
-        size_t  getContentSize( void ) const;
-        void    setContentSize( size_t size );
-        char    *getContent( void ) const;
-        void    setContent( char *newcontent, size_t size );
-        std::string getContentType( void ) const;
-        ~Content();
-};
+class Content;
 
 class Request
 {
@@ -77,8 +39,6 @@ class Request
     public:
         Request();
         Request( char *buffer, size_t size );
-        // Request( const Request &other );
-        // Request &operator=( const Request &other);
         Content content;
         void    clean_content( void );
         char *C_request( void );

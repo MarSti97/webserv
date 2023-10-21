@@ -5,16 +5,12 @@
 
 struct Location
 {
-	// bool allow_get;
-	// bool allow_post;
-	// bool allow_delete;
 	std::map<std::string, bool> methods;
 	std::string	root;
 	std::string index;
 	std::string autoindex;
 	std::string path;
 	std::string cgi_extension;
-	// std::map<std::string, std::string> error_pages;
 	std::string redirect_path;
 	std::string redirect_status;
 

@@ -1,4 +1,5 @@
-SRC = basic.cpp open_config.cpp parse_config.cpp request.cpp Servers.cpp cgi.cpp Download.cpp directory.cpp
+SRC = basic.cpp open_config.cpp parse_config.cpp Content.cpp Servers.cpp Serv.cpp cgi.cpp Download.cpp\
+directory.cpp tools.cpp Disposition.cpp Request.cpp
 BIN = bin
 OBJ = $(SRC:%.cpp=${BIN}/%.o)
 FLAGS = -Wall -Werror -Wextra -Wshadow -g -std=c++98

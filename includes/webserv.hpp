@@ -21,17 +21,21 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include "Config.hpp"
-#include <vector>
-#include <poll.h>
-#include <sys/wait.h>
-#include <ctime>
-#include "request.hpp"
-#include "Servers.hpp"
-#include "Download.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
+#include <vector>
+#include <poll.h>
 #include <cstdio>
+#include <sys/wait.h>
+#include <ctime>
+
+#include "Disposition.hpp"
+#include "Content.hpp"
+#include "Config.hpp"
+#include "Request.hpp"
+#include "Servers.hpp"
+#include "Serv.hpp"
+#include "Download.hpp"
 
 #define RED "\033[0;91m"
 #define GREEN "\033[0;92m"
@@ -58,13 +62,18 @@ std::string findcommand(std::string command);
 bool    correctfile(std::string file);
 void	check_requirements(Config temp, int i);
 void    createPost(char *buf, int client, int checker);
-std::string	getINFOone(std::string request, const char *what, int pos);
-std::string	getINFOtwo(std::string request, const char *what, int pos);
 Request postThings(std::string findbuffer, char *buffer, int fd, int size);
 char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
 int end_loop(int end);
 std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
 std::string getHeader( std::string ARG, std::string extra, std::string filePath );
+
+// tools
+int removehead(char *file);
+bool compare(const char *find, char* str);
+int removeheadnoimg(char *file, int size);
+std::string	getINFOone(std::string request, const char *what, int pos);
+std::string	getINFOtwo(std::string request, const char *what, int pos);
 
 
 #endif

@@ -34,35 +34,6 @@ int end_loop(int end)
     return loop;
 }
 
-int Serv::parseSend(std::string response, int fd)
-{
-    
-    // std::cout << req.Get() << std::endl;
-    
-
-    // std::cout << response.size();
-    if (!response.empty())
-    {
-        ssize_t n = send(fd, response.c_str(), response.size(), 0);
-        if (n < 0)
-        {
-            std::cerr << "Error writing to socket" << std::endl;
-            return 1;
-        }
-        if ((unsigned long)n != response.size())
-        {
-            std::cout << "bad response sent" << std::endl;
-            return 1;
-        }
-        // close(fds[pos].fd);
-        // fds.erase(fds.begin() + pos);
-        return n;
-    }
-    else
-        std::cout << "post chuncked" << std::endl;
-    return 0;
-}
-
 std::string getHeader( std::string ARG, std::string extra, std::string filePath )
 {
     std::string mimeType;
@@ -79,34 +50,6 @@ std::string getHeader( std::string ARG, std::string extra, std::string filePath 
     return responseHeaders;
 }
 
-std::string Serv::getResponse(std::string abs, std::string page, std::string responseHeaders)
-{
-    std::cout << "DEBUG: getResponse " << (abs.substr(1) + page) << std::endl;
-    std::string response = readFile(abs.substr(1) + page); // maybe need the substr(1)
-    // if (page != "")
-    // {
-    //     size_t fi = page.rfind('/');
-    //     std::string response;
-    //     if (fi != std::string::npos)
-    //         response = readFile(abs.substr(1) + page.substr(fi));
-    //     else
-    //         response = readFile(abs.substr(1) + page);
-    // }
-    // std::cout << abs + page.substr(fi) << std::endl;
-    // std::cout << path << " " << filePath << std::endl;
-    std::stringstream ss;
-    ss << response.length();
-    responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-    // std::cout << responseHeaders << std::endl;
-    // char buf[1024];
-    // getcwd(buf, 1023);
-    // std::cout << response << std::endl;
-    if (response == "" || response.empty())
-        response = readFile(serv_info.root + "/404.html");
-    return responseHeaders + response;
-
-}
-
 bool headcheck(std::string buf)
 {
     // std::cout << buf << std::endl;
@@ -114,7 +57,6 @@ bool headcheck(std::string buf)
         return true;
     return false;
 }
-
 
 Request postThings(std::string findbuffer, char *buffer, int fd, int size)
 {
@@ -142,101 +84,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     // return true;
 }
 
-Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
-{
-    char buffer[4097];
-    // buffer[4096] = '\0';
-    std::vector<std::pair<char *, int> > full_buf;
-    std::string findbuffer;
-    ssize_t n;
-    int counter = 0;
-    int buf_size = 0;
-    while (1)
-    {
-        bzero(buffer, sizeof(buffer));
-        n = recv(fd[pos].fd, buffer, 4096, 0);
-        // std::cout << "THIS: recv " << n << std::endl;
-        if (n <= 0)
-        {
-            if (n == 0)
-            {
-                if (!counter)
-                {
-                    // Connection closed by the client
-                    printlog("LOST CLIENT", fd[pos].fd - 2, RED);
-                    close(fd[pos].fd);
-                    fd.erase(fd.begin() + pos);
-                    return Request();
-                }
-                break;
-            }
-            else if (errno == EWOULDBLOCK || errno == EAGAIN) {
-            // No data available for non-blocking receive
-                // std::cout << "all recv" << std::endl;
-                break;
-            }
-            else {
-                // Handle other receive errors
-                std::cerr << "Error: reading from poll" << std::endl;
-                perror("read");
-                return Request();
-            }
-        }
-        else
-        {
-            char *bug = new char[n + 1];
-            for (int o = 0; o < n; ++o)
-                bug[o] = buffer[o];
-            full_buf.push_back(std::make_pair(bug, n));
-            // char buf[n + 1];
-            // buf[n] = '\0';
 
-            //     char tmp[buf_size];
-            //     memcpy(tmp, buf, buf_size);
-            //     delete[] buf;
-            //     buf = new char[buf_size + n + 1];
-            //     buf[buf_size + n] = '\0';
-            //     memcpy(buf, tmp, buf_size);
-            // memcpy(buf + buf_size, buffer, n);
-        }
-        counter++;
-        buf_size += n;
-        if (n < 4096)
-            break;
-        // std::cout << findbuffer.size() << " " << buf_size << std::endl;
-    }
-    // std::ofstream img("img", std::ios::trunc);
-    // if (img.is_open())
-    //     img << buf;
-    char buf[buf_size + 1];
-    std::vector<std::pair<char *, int> >::iterator it;
-    int f = 0;
-    for (it = full_buf.begin(); it != full_buf.end(); ++it)
-    {
-        int i = -1;
-        // std::cout << it->second << std::endl;
-        while (++i < it->second)
-            buf[f++] = it->first[i];
-        delete[] it->first;
-    }
-    // std::cout << f << " " << buf_size << std::endl;
-    buf[buf_size] = '\0';
-    // for (int u = 0; u < buf_size; ++u)
-    //     write(1, &buf[u], 1);
-    std::vector<std::pair<char *, int> >().swap(full_buf);
-    findbuffer = std::string(buf, buf_size);
-    // std::cout << "BUFSIZE: " << buf_size << std::endl;
-    Request req = postThings(findbuffer, buf, fd[pos].fd, buf_size);
-    return req;
-    // size_t ok = findbuffer.find("\r\n\r\n");
-    // if (ok == std::string::npos)
-    // {
-    //     std::cout << "bad request received" << std::endl;
-    //     std::cout << buffer << n << std::endl;
-    //     return "";
-    // }
-    // return findbuffer;
-}
 
 void	printlog(std::string msg, int arg, std::string color)
 {

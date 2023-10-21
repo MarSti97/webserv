@@ -1,112 +1,5 @@
-#include "includes/request.hpp"
-#include <string>
-
-Disposition::Disposition(std::string disposition)
-{
-    if (!disposition.empty())
-    {
-        // std::cerr << "HERE2" << std::endl;
-
-        size_t typeStart = disposition.find("name=");
-        size_t typeEnd = disposition.find("\"", typeStart);
-        if (typeEnd != 0)
-            typeEnd = disposition.find("\r", typeStart);
-        if (typeStart != std::string::npos)
-        {
-            typeStart += 6;
-            type = disposition.substr(typeStart, typeEnd - typeStart);
-        }
-
-        size_t nameStart = disposition.find("filename=");
-        size_t nameEnd = disposition.find("\"", nameStart + 10);\
-        if (nameStart != std::string::npos)
-        {
-            nameStart += 10;
-            if (nameEnd > 0)
-                filename = disposition.substr(nameStart, nameEnd - nameStart);
-        }
-
-        size_t contentEnd = disposition.find(";", 0);
-        if (contentEnd != std::string::npos)
-            contentdisposition = disposition.substr(0, contentEnd);
-    }
-}
-
-std::string Disposition::getType( void ) const
-{
-    return type;
-}
-
-std::string Disposition::getFilename( void ) const
-{
-    return filename;
-}
-
-std::string Disposition::getcontentdisposition( void ) const
-{
-    return contentdisposition;
-}
-
-Content::Content(std::string content, std::string boundary)
-{
-    if (!content.empty() && !boundary.empty())
-    {
-        // std::cerr << "HERE1" << std::endl;
-
-        size_t dispositionStart = content.find("Content-Disposition: ");
-        size_t dispositionEnd = content.find("\r", dispositionStart);
-        if (dispositionStart != std::string::npos)
-        {
-            dispositionStart += 20;
-            filename = Disposition(content.substr(dispositionStart, dispositionEnd - dispositionStart));
-        }
-
-        size_t typeStart = content.find("Content-Type: ");
-        size_t typeEnd = content.find("\r", typeStart + 1);
-        if (typeStart != std::string::npos)
-        {
-            typeStart += 13;
-            content_type = content.substr(typeStart, typeEnd - typeStart);
-        }
-
-        _content = NULL;
-    }
-}
-
-char *Content::getContent( void ) const
-{
-    return _content;
-}
-
-void Content::setContent( char *newcontent, size_t size )
-{
-    char *hass = new char[size + 1];
-    hass[size] = '\0';
-    for (size_t i = 0; i < size; ++i)
-    {
-        hass[i] = newcontent[i];
-    }
-    //std::cout << "FUUUUUUUUUUUUUUKC " << hass << std::endl;
-    // memcpy(ass, newcontent, size);
-    // delete[] newcontent;
-    _content = hass;
-}
-
-size_t Content::getContentSize( void ) const
-{
-    return content_size;
-}
-
-void Content::setContentSize( size_t size )
-{
-    content_size = size;
-}
-
-
-std::string Content::getContentType( void ) const
-{
-    return content_type;
-}
+#include "includes/webserv.hpp"
+#include "includes/Request.hpp"
 
 std::string Request::request( void ) const
 {
@@ -249,35 +142,6 @@ void    Request::SetClientFd( int fd )
     clientfd = fd;
 }
 
-std::string	getINFOone(std::string request, const char *what, int pos)
-{
-	size_t getStart = request.find(what);
-    if (getStart != std::string::npos)
-    {
-		// std::cout << "CORRECT" << std::endl;
-        getStart += pos;
-        size_t getEnd = request.find(" ", getStart);
-        size_t getEnd2 = request.find("?", getStart);
-        if (getEnd2 < getEnd)
-            getEnd = getEnd2;
-        return (request.substr(getStart, getEnd - getStart));
-    }
-	return "";
-}
-
-std::string	getINFOtwo(std::string request, const char *what, int pos)
-{
-    size_t hostStart = request.find(what);
-    if (hostStart != std::string::npos)
-    {
-        hostStart += pos;
-        // std::cerr << "CORRECT" << std::endl;
-        size_t hostEnd = request.find("\r", hostStart);
-        return (request.substr(hostStart, hostEnd - hostStart));
-    }
-	return "";
-}
-
 Request::Request( char *buffer, size_t size )
 {
     // char reqqu[size + 1];
@@ -395,108 +259,15 @@ int Request::EndBoundary( char *str, size_t len, char *bound)
     return 0;
 }
 
-void    Content::clean()
-{
-    // fix and make do delete one selected sockets too
-    delete[] _content;
-}
-
 void    Request::clean_content()
 {
     // fix and make do delete one selected sockets too
     content.clean();
 }
 
-// Request::Request( const Request &other )
-// {
-//     if (this != &other)
-//         *this = other;  
-// }
+Request::~Request() {}
 
-// Request &Request::operator=( const Request &other)
-// {
-//     this->c_request = other.c_request;
-//     this->_request = other._request;
-//     this->get = other.get;
-//     this->post = other.post;
-//     this->host = other.host;
-//     this->useragent = other.useragent;
-//     this->accept = other.accept;
-//     this->acceptencoding = other.acceptencoding;
-//     this->acceptlanguage = other.acceptlanguage;
-//     this->xrequestedwith = other.xrequestedwith;
-//     this->connection = other.connection;
-//     this->referer = other.referer;
-//     this->upgradeinsecurerequests = other.upgradeinsecurerequests;
-//     this->secfetchdest = other.secfetchdest;
-//     this->secfetchmode = other.secfetchmode;
-//     this->secfetchsite = other.secfetchsite;
-//     this->secfetchuser = other.secfetchuser;
-//     this->contenttype = other.contenttype;
-//     this->contentlength = other.contentlength;
-//     this->contentdisposition = other.contentdisposition;
-//     this->origin = other.origin;
-//     this->boundary = other.boundary;
-//     this->content = other.content;
-//     this->eof = other.eof;
-//     return *this;
-// }
-
-// Content::Content(const Content &other)
-// {
-//     if (this != &other)
-//         *this = other; 
-// }
-
-// Content &Content::operator=(const Content &other)
-// {
-//     this->content_type = other.content_type;
-//     this->_content = other._content;
-//     this->filename = other.filename;
-//     return *this;
-// }
-
-// Disposition::Disposition(const Disposition &other)
-// {
-//     if (this != &other)
-//         *this = other; 
-// }
-
-// Disposition &Disposition::operator=(const Disposition &other)
-// {
-//     this->type = other.type;
-//     this->filename = other.filename;
-//     this->contentdisposition = other.contentdisposition;
-//     return *this;
-// }
-
-Disposition::~Disposition()
-{
-}
-Content::~Content()
-{
-    // if (_content != NULL)
-    // {
-    //     delete[] _content;
-    // }
-}
-Request::~Request()
-{
-    // if (c_request != NULL)
-    // {
-    //     delete[] c_request;
-    // }
-}
-
-Disposition::Disposition()
-{
-}
-Content::Content() : _content(NULL), content_size(0)
-{
-}
-Request::Request() : c_request(NULL), eof(0)
-{
-}
+Request::Request() : c_request(NULL), eof(0) {}
 
 //#textmate (mate);
 //snippets
