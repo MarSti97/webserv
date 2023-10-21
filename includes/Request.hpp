@@ -39,9 +39,17 @@ class Request
     public:
         Request();
         Request( char *buffer, size_t size );
+        ~Request();
+
         Content content;
+
         void    clean_content( void );
-        char *C_request( void );
+        char    *C_request( void );
+        int     EndBoundary( char *str, size_t len, char *boundary );
+        int     ClientFd( void );
+        void    SetClientFd( int fd );
+        int     Eof( void );
+
         std::string request( void ) const;
         std::string Del( void ) const;
         std::string Get( void ) const;
@@ -66,11 +74,6 @@ class Request
         std::string Contentdisposition( void ) const;
         std::string Origin( void ) const;
         std::string Boundary( void ) const;
-        int         EndBoundary( char *str, size_t len, char *boundary );
-        int         ClientFd( void );
-        void        SetClientFd( int fd );
-        int         Eof( void );
-        ~Request();
 };
 
 #endif

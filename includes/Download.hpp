@@ -5,19 +5,21 @@
 
 struct imgDown
 {
-    int content_len;
-    int current_len;
-    char *file;
-    char *img;
+    int     content_len;
+    int     current_len;
+    char    *file;
+    // char *img;
     std::string boundary;
-    bool eof;
+    bool    eof;
     // maybe find file type!
 
-    imgDown() : content_len(0), current_len(0), file(NULL), img(NULL), eof(false) {}
+    imgDown() : content_len(0), current_len(0), file(NULL), eof(false) {}
     imgDown(int full_len, int size, char *str, std::string _boundary) {
         current_len = size;
         content_len = full_len;
-        file = str;
+        file = new char[size];
+        for (int i = 0; i < size; i++)
+            file[i] = str[i];
         boundary = _boundary;
     }
 };

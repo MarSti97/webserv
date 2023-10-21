@@ -1,34 +1,5 @@
 #include "includes/webserv.hpp"
 
-// int	Serv::filter_request(Request req)
-// {
-// 	std::string	path_info;
-// 	std::string extension_string;
-// 	int	cgi_fd = 0;
-
-// 	if (!(req.Get().empty()))
-// 		path_info = req.Get();
-// 	else if (!(req.Post().empty()))
-// 		path_info = req.Post();
-// 	// Important: Throw error during config parsing if the cgi is set
-// 	// to use a static file extension (.html, .jpg, etc)
-
-// 	// std::cout << "something shit" << std::endl;
-// 	size_t	extension_start = path_info.rfind('.');
-// 	if (extension_start != std::string::npos)
-// 	{
-// 		size_t query_start = path_info.rfind('?');
-// 		if (query_start != std::string::npos)
-// 			extension_string = path_info.substr(extension_start, query_start - extension_start);
-// 		else
-// 			extension_string = path_info.substr(extension_start);
-// 		// std::cout << extension_string << " ass " << serv_info.cgi_extension << std::endl;
-// 		if (extension_string == serv_info.cgi_extension)
-// 			cgi_fd = cgi_request(req, path_info, extension_string);
-
-// 	}
-// 	return (cgi_fd);
-// }
 
 int	Serv::cgi_request(Request req, std::string path_info, std::string script_extension)
 {

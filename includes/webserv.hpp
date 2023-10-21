@@ -45,33 +45,33 @@
 class Request;
 class Download;
 
-std::string makeStamp( void );
-int failToStart(std::string error, struct addrinfo *addr, int socketfd);
+// open_config
 std::string	readFile( std::string filePath );
+void initializeMimeTypes(std::map<std::string, std::string> &mimeTypes);
 std::string getMimeType(const std::string& filePath);
-void	ctrlc(int signum);
-void	printlog(std::string msg, int arg, std::string color);
-bool 	check_new_attribute(std::string token);
-int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
-int GetbyUser(std::string buffer);
-int checkAllowGet(std::string folder, std::vector<Location> Location);
-int checkAllowPost(std::string folder, std::vector<Location> Location);
-int checkAllowDelete(std::string folder, std::vector<Location> Location);
+
+// parse_config
 std::string	parse_attribute(std::istringstream &iss, std::string token);
-std::string findcommand(std::string command);
+bool 	check_new_attribute(std::string token);
 bool    correctfile(std::string file);
 void	check_requirements(Config temp, int i);
-void    createPost(char *buf, int client, int checker);
-Request postThings(std::string findbuffer, char *buffer, int fd, int size);
-char *strjoin(char *str1, char *str2, int sizestr1, int sizestr2);
-int end_loop(int end);
+
+std::string makeStamp( void );
+std::string findcommand(std::string command);
 std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
 std::string getHeader( std::string ARG, std::string extra, std::string filePath );
+Request postThings(std::string findbuffer, char *buffer, int fd, int size);
+int     failToStart(std::string error, struct addrinfo *addr, int socketfd);
+void	ctrlc(int signum);
+void	printlog(std::string msg, int arg, std::string color);
+int     acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
+int     GetbyUser(std::string buffer);
+int     end_loop(int end);
 
 // tools
-int removehead(char *file);
-bool compare(const char *find, char* str);
-int removeheadnoimg(char *file, int size);
+int     removehead(char *file);
+bool    compare(const char *find, char* str);
+int     removeheadnoimg(char *file, int size);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 

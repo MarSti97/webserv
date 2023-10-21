@@ -33,6 +33,7 @@ class Config
 		std::string cgi_directory;
 		std::vector<Location> location;
 		std::map<std::string, std::string> error_pages;
+		
 		Config() {}
 		~Config() {std::vector<Location>().swap(location); std::vector<std::string>().swap(server_name); error_pages.clear();}
 };

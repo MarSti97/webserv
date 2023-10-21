@@ -25,7 +25,6 @@ int Serv::parseSend(std::string response, int fd)
 
 std::string Serv::getResponse(std::string abs, std::string page, std::string responseHeaders)
 {
-    std::cout << "DEBUG: getResponse " << (abs.substr(1) + page) << std::endl;
     std::string response = readFile(abs.substr(1) + page); // maybe need the substr(1)
     std::stringstream ss;
     ss << response.length();
@@ -76,10 +75,8 @@ std::string Serv::createAbsolutePath(std::string path)
 	std::string newPath = path.substr(0, i);
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		std::cout << "DEBUG: " << newPath << " " << it->path << std::endl;
 		if (!(it->root.empty()) && newPath == it->path)
 		{
-			std::cout << "DEBUG: createABsPath" << it->root << std::endl;
 			return it->root + page;
 		}
     }
@@ -111,11 +108,34 @@ std::string	Serv::CheckCGI( std::string path)
 	std::string newPath = path.substr(0, i);
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		std::cout << "DEBUG cgi: " << extension << " | " << newPath << " & " << it->cgi_extension << std::endl;
 		if (it->path == newPath && it->cgi_extension == extension)
 			return extension;
     }
     return "";
+}
+
+void Serv::errorPageCheck(std::string code, std::string message, std::string path, Request req)
+{
+	std::string page = "/" + code + ".html";
+	std::string error = code + " " + message;
+	if (serv_info.error_pages[code].empty())
+		parseSend(getResponse(serv_info.root, page, getHeader(error, "", path)), req.ClientFd());
+	else
+		parseSend(getResponse(serv_info.root, serv_info.error_pages[code], getHeader(error, "", serv_info.error_pages[code])), req.ClientFd());
+}
+
+void Serv::deleteMethod(std::string abs, Request req) // need to test this!
+{
+	if (std::remove(abs.c_str()) == 0)
+	{
+		printlog("Succefully deleted file", 0, GREEN); // the 0 for the arguemnt is shit need to fix
+		parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
+	}
+	else
+	{
+		printlog("Failed to delete file", 0, RED);
+		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
+	}
 }
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
@@ -123,41 +143,32 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
-		std::cout << "DEBUG: absulote: " << abs << std::endl;
 		if (findFolder(abs) != "") // it is a file
 		{
-			std::cout << "DEBUG: isAFile: " << std::endl;
-			if (method == "GET" || method == "POST")
+			if (method == "GET" || method == "POST" || method == "DELETE")
 			{
 				if (!access(abs.c_str() + 1, R_OK)) // file exists
 				{
+					if (method == "DELETE")
+						deleteMethod(abs, req);
 					std::string theExtension = CheckCGI(path);
 					if (theExtension != "") // it is a CGI script
 					{
-						std::cout << "fuck" << std::endl;
 						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
 					}
 					else // "normal" request
-					{
-						// std::cout << path << " " << CheckRoot(path, serv_info.location) << std::endl;
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
-					}
 				}
 				else // if does not exists, error 404
-				{
-
-					if (serv_info.error_pages["404"].empty())
-						parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", abs)), req.ClientFd());
-					else
-						parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", abs)), req.ClientFd());
-				}
+					errorPageCheck("404", "Not Found", abs, req);
 			}
 		}
 		else // it is a folder
 		{
-			std::cout << "DEBUG: isAFolder: " << std::endl;
 			if (access(abs.c_str() + 1, F_OK) != -1) // folder exists
 			{
+				// if (method == "DELETE")
+					// deleteFolderMethod(); // implement execve rm -rf ...
 				std::string index = CheckIndex(path);
 				std::cout << "abs " << path << std::endl;
 				if (!(index.empty()))
@@ -167,44 +178,20 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					if (CheckAutoindex(path))
 					{
 						if (!access(abs.c_str() + 1, R_OK)) 
-							parseSend(makeDirectoryList(abs, path), req.ClientFd()); // BUGGED
+							parseSend(makeDirectoryList(abs, path), req.ClientFd());
 						else // if does not exists, error 404
-						{
-							if (serv_info.error_pages["403"].empty())
-								parseSend(getResponse(serv_info.root, "/403.html", getHeader("403 Forbidden", "", abs)), req.ClientFd());
-							else
-								parseSend(getResponse(serv_info.root, serv_info.error_pages["403"], getHeader("403 Forbidden", "", abs)), req.ClientFd());
-						}
+							errorPageCheck("403", "Forbidden", abs, req);
 					}
 					else // if does not exists, error 404
-					{
-						std::cout << "DEBUG: noIndex: " << std::endl;
-						if (serv_info.error_pages["404"].empty())
-							parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", abs)), req.ClientFd());
-						else
-							parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", abs)), req.ClientFd());
-					}		
+						errorPageCheck("404", "Not Found", abs, req);		
 				}
 			}
 			else // if does not exists, error 404
-			{
-				std::cout << "DEBUG: noAccess: " << std::endl;
-				if (serv_info.error_pages["404"].empty())
-					parseSend(getResponse(serv_info.root, "/404.html", getHeader("404 Not Found", "", abs)), req.ClientFd());
-				else
-					parseSend(getResponse(serv_info.root, serv_info.error_pages["404"], getHeader("404 Not Found", "", abs)), req.ClientFd());
-			}
+				errorPageCheck("404", "Not Found", abs, req);
 		}
 	}
 	else
-	{
-		// std::cout << "DEGUB: Prepare Response" << std::endl;
-		if (serv_info.error_pages["405"].empty())
-			parseSend(getResponse(serv_info.root, "/405.html", getHeader("405 Method Not Allowed", "", "/405.html")), req.ClientFd()); // need to do the 405 page.
-		else
-			parseSend(getResponse(serv_info.root, serv_info.error_pages["405"], getHeader("405 Method Not Allowed", "", serv_info.error_pages["405"])), req.ClientFd());
-	}
-
+		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
 }
 
 bool	Serv::CheckAutoindex( std::string path)

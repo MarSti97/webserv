@@ -13,10 +13,11 @@ class Disposition
     public:
         Disposition( void );
         Disposition(std::string disposition);
+        ~Disposition();
+        
         std::string getType( void ) const;
         std::string getFilename( void ) const;
         std::string getcontentdisposition( void ) const;
-        ~Disposition();
 };
 
 #endif
