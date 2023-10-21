@@ -262,7 +262,7 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
-						if (!(req.Get().empty() && req.Post().empty()))
+						if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
 						{
 							req.SetClientFd(fds[i].fd);
 							getCorrectServ(req).filterRequest(req);

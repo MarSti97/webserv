@@ -65,7 +65,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
-        // std::cout << "COME HERE" << std::endl;
+        std::cout << "COME HERE " << std::endl;
         if (oi != std::string::npos)
         {
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
@@ -76,12 +76,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
         else
             instance.append_map(fd, buffer, size);
     }
-    // size_t ok = findbuffer.find("GET ");
-    // if (ok != std::string::npos)
-    //     return true;
     return instance.isitFULL(fd, buffer, size);
-    //     return false;
-    // return true;
 }
 
 
