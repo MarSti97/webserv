@@ -141,8 +141,8 @@ for image in images:
               <h5>
                 {image}
               </h5>
-              <div class="delete-button btn-box small" style="margin-top: 10px;">
-              <a class="delete-button" href="#">
+              <div class="btn-box small delete-button" style="margin-top: 10px;">
+              <a href="">
                 Delete
               </a>
               </div>
@@ -262,26 +262,6 @@ print('''
     </div>
   </section>
 
-      <script>
-        $(document).ready(function() {
-         console.log('Image deleted successfully');
-            $(document).on('click', '.delete-button', function() {
-                var imageUrl = $(this).closest('div').prev().prev().find('img').attr('src');
-
-                $.ajax({
-                    url: imageUrl,
-                    type: 'DELETE',
-                    success: function(response) {
-                        console.log('Image deleted successfully');
-                    },
-                    error: function(err) {
-                        console.error('Error deleting image:', err);
-                    }
-                });
-            });
-        });
-    </script>
-
   <!-- end info_section -->
 
 
@@ -299,6 +279,27 @@ print('''
   <script src="js/jquery-3.4.1.min.js"></script>
   <script src="js/bootstrap.js"></script>
   <script src="js/custom.js"></script>
+
+  <script>
+    $(document).ready(function() {
+        $(document).on('click', '.delete-button', function() {
+          event.preventDefault();
+            var imageUrl = $(this).closest('.box').find('.img-box img').attr('src');
+            console.log(imageUrl);
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', imageUrl, true);
+            xhr.onload = function() {
+              if (xhr.status === 200) {
+                  console.log('Image deleted successfully');
+              } else {
+                  console.error('Error deleting image:', xhr.statusText);
+              }
+            };
+        
+            xhr.send();
+        });
+    });
+  </script>
 </body>
 
 </html>

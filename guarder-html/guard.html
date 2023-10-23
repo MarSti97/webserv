@@ -122,7 +122,7 @@
               <h5>
                 Martin Anderson
               </h5>
-              <div class="btn-box small" style="margin-top: 10px;">
+              <div class="btn-box small delete-button" style="margin-top: 10px;">
                 <a href="">
                   Delete
                 </a>
@@ -271,6 +271,27 @@
       }
       window.onload = loadPage;
   </script>
+
+  <script>
+    $(document).ready(function() {
+        $(document).on('click', '.delete-button', function() {
+          event.preventDefault();
+            var imageUrl = $(this).closest('.box').find('.img-box img').attr('src');
+            console.log(imageUrl);
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', imageUrl, true);
+            xhr.onload = function() {
+              if (xhr.status === 200) {
+                  console.log('Image deleted successfully');
+              } else {
+                  console.error('Error deleting image:', xhr.statusText);
+              }
+            };
+        
+            xhr.send();
+        });
+    });
+</script>
 </body>
 
 </html>

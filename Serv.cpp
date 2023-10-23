@@ -126,7 +126,8 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string pat
 
 void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 {
-	if (std::remove(abs.c_str()) == 0)
+	std::cout << "File to be deleted: " << abs << std::endl;
+	if (std::remove(abs.c_str() + 1) == 0) // changed to + 1 because it wasn't getting deleted
 	{
 		printlog("Succefully deleted file", 0, GREEN); // the 0 for the arguemnt is shit need to fix
 		parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
@@ -143,6 +144,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
+		std::cout << abs << std::endl;
 		if (findFolder(abs) != "") // it is a file
 		{
 			if (method == "GET" || method == "POST" || method == "DELETE")
@@ -150,12 +152,13 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				if (!access(abs.c_str() + 1, R_OK)) // file exists
 				{
 					if (method == "DELETE")
+					{
+						std::cout << "ENTERED THE DELETE THINGY" << std::endl;
 						deleteMethod(abs, req);
+					}
 					std::string theExtension = CheckCGI(path);
 					if (theExtension != "") // it is a CGI script
-					{
 						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
-					}
 					else // "normal" request
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
 				}
@@ -260,6 +263,7 @@ bool	Serv::ext_CGI(std::string path_info)
 
 bool	Serv::CheckAllowed( std::string method, std::string path)
 {
+	std::cout << "CHECKING METHODS" << std::endl;
 	if (serv_info.methods[method])
 		return serv_info.methods[method];
 	std::string newPath = "";
@@ -270,10 +274,11 @@ bool	Serv::CheckAllowed( std::string method, std::string path)
 		if (i == std::string::npos)
 			newPath = path;
 		else
-			newPath = path.substr(0, i - 1);
+			newPath = path.substr(0, i); // changed this from (i - 1) because the first substring was coming with 1 less character
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
+			std::cout << it->path << " " << newPath << std::endl;
 			if (it->path == newPath && it->methods[method])
 				return it->methods[method];
 		}
