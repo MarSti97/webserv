@@ -80,6 +80,7 @@ bool    compare(const char *find, char* str);
 int     removeheadnoimg(char *file, int size);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
+std::string removeDashIfExists(std::string path);
 
 
 #endif

@@ -67,18 +67,22 @@ std::string Serv::createAbsolutePath(std::string path)
 		return serv_info.root;
 	std::vector<Location>::iterator it;
 	std::string page;
+	std::string newPath;
 	size_t i = path.rfind('/');
 	if (path.substr(i).find('.') != std::string::npos)
+	{
 		page = path.substr(i);
+		newPath = path.substr(0, i);
+	}
 	else
+	{
 		page = "";
-	std::string newPath = path.substr(0, i);
+		newPath = path;
+	}
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
 		if (!(it->root.empty()) && newPath == it->path)
-		{
 			return it->root + page;
-		}
     }
 	return serv_info.root + path;
 }
@@ -89,11 +93,9 @@ std::string	Serv::CheckIndex( std::string path)
 	if (path == "/")
 		return serv_info.index;
 	std::vector<Location>::iterator it;
-	size_t i = path.rfind('/');
-	std::string newPath = path.substr(0, i);
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		if (it->path == newPath && !(it->index.empty()))
+		if (it->path == path && !(it->index.empty()))
 			return it->index;
     }
     return "";
@@ -129,18 +131,52 @@ void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 	std::cout << "File to be deleted: " << abs << std::endl;
 	if (std::remove(abs.c_str() + 1) == 0) // changed to + 1 because it wasn't getting deleted
 	{
-		printlog("Succefully deleted file", 0, GREEN); // the 0 for the arguemnt is shit need to fix
-		parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
+		printlog("Succefully deleted file", -1, GREEN); // the 0 for the arguemnt is shit need to fix
+		parseSend(getResponse(abs, "", getHeader("204 No Content", "", abs)), req.ClientFd());
 	}
 	else
 	{
-		printlog("Failed to delete file", 0, RED);
+		printlog("Failed to delete file", -1, RED);
 		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
+	}
+}
+
+void Serv::deleteFolderMethod(std::string path, Request req)
+{
+	pid_t pid = fork();
+	if (pid < 0)
+		printlog("Error: fork in deleteFolderMethod", -1, RED);
+	else if (pid == 0)
+	{
+		int status;
+		waitpid(pid, &status, 0);
+		if (status == 0)
+		{
+			printlog("Succefully deleted folder", -1, GREEN);
+			parseSend("HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n", req.ClientFd());
+		}
+		else
+		{
+			printlog("Failed to delete file, error code: ", status, RED);
+			errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
+		}
+	}
+	else
+	{
+		const char *temp = path.c_str() + 1;
+		char *cmd[4];
+
+		cmd[0] = const_cast<char*>("/bin/rm");
+		cmd[1] = const_cast<char*>("-rf");
+		cmd[2] = const_cast<char*>(temp);
+		cmd[3] = NULL;
+		execve(cmd[0], cmd, NULL);
 	}
 }
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
+	path = removeDashIfExists(path);
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
@@ -151,13 +187,13 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 			{
 				if (!access(abs.c_str() + 1, R_OK)) // file exists
 				{
+					std::string theExtension = CheckCGI(path);
 					if (method == "DELETE")
 					{
 						std::cout << "ENTERED THE DELETE THINGY" << std::endl;
 						deleteMethod(abs, req);
 					}
-					std::string theExtension = CheckCGI(path);
-					if (theExtension != "") // it is a CGI script
+					else if (theExtension != "") // it is a CGI script
 						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
 					else // "normal" request
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
@@ -170,10 +206,10 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		{
 			if (access(abs.c_str() + 1, F_OK) != -1) // folder exists
 			{
-				// if (method == "DELETE")
-					// deleteFolderMethod(); // implement execve rm -rf ...
+				if (method == "DELETE")
+					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				std::cout << "abs " << path << std::endl;
+				std::cout << "path " << path << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
@@ -197,16 +233,14 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
 }
 
-bool	Serv::CheckAutoindex( std::string path)
+bool	Serv::CheckAutoindex(std::string path)
 {
 	if (path == "/" && serv_info.autoindex != "")
 		return true;
 	std::vector<Location>::iterator it;
-	size_t i = path.rfind('/');
-	std::string newPath = path.substr(0, i - 1);
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		if (it->path == newPath && !(it->autoindex.empty()))
+		if (it->path == path && !(it->autoindex.empty()))
 			return true;
     }
     return false;

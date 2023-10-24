@@ -69,3 +69,11 @@ std::string	getINFOtwo(std::string request, const char *what, int pos)
     }
 	return "";
 }
+
+std::string removeDashIfExists(std::string path)
+{
+    int size = path.length();
+    if (path[size - 1] == '/' && size != 1)
+        return path.substr(0, size - 1);
+    return path;
+}

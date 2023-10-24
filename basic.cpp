@@ -83,7 +83,10 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
 
 void	printlog(std::string msg, int arg, std::string color)
 {
-	std::cout << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl; 
+    if (arg == -1)
+	    std::cout << color << makeStamp() << " " << msg << " " << NOCOLOR << std::endl; 
+    else
+	    std::cout << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl; 
 }
 
 std::string makeStamp( void )

@@ -92,7 +92,7 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
                 Request req(reo.C_request(), it->second.current_len); // TAKE STRDUP
                 size_t size = removeFinalBoundary(reo.C_request() + headless, it->second.content_len, req);
                 reo.content.setContent(reo.C_request() + headless, size);
-                printlog("Successfully downloaded file", 0, GREEN);
+                printlog("Successfully downloaded file", -1, GREEN);
                 reo.content.setContentSize(size);
                 eraseClient(client);
                 return reo;
