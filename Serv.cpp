@@ -153,6 +153,7 @@ void Serv::deleteFolderMethod(std::string path, Request req)
 		if (status == 0)
 		{
 			printlog("Succefully deleted folder", -1, GREEN);
+			// errorPageCheck("204", "No Content", "/204.html", req); I dont know if this works, test
 			parseSend("HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n", req.ClientFd());
 		}
 		else
@@ -180,7 +181,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
-		std::cout << abs << std::endl;
+		// std::cout << abs << std::endl;
 		if (findFolder(abs) != "") // it is a file
 		{
 			if (method == "GET" || method == "POST" || method == "DELETE")
@@ -190,7 +191,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					std::string theExtension = CheckCGI(path);
 					if (method == "DELETE")
 					{
-						std::cout << "ENTERED THE DELETE THINGY" << std::endl;
+						// std::cout << "ENTERED THE DELETE THINGY" << std::endl;
 						deleteMethod(abs, req);
 					}
 					else if (theExtension != "") // it is a CGI script
@@ -209,7 +210,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				if (method == "DELETE")
 					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				std::cout << "path " << path << std::endl;
+				// std::cout << "path " << path << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
@@ -297,7 +298,7 @@ bool	Serv::ext_CGI(std::string path_info)
 
 bool	Serv::CheckAllowed( std::string method, std::string path)
 {
-	std::cout << "CHECKING METHODS" << std::endl;
+	// std::cout << "CHECKING METHODS" << std::endl;
 	if (serv_info.methods[method])
 		return serv_info.methods[method];
 	std::string newPath = "";
@@ -312,12 +313,16 @@ bool	Serv::CheckAllowed( std::string method, std::string path)
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
-			std::cout << it->path << " " << newPath << std::endl;
+			// std::cout << it->path << " " << newPath << std::endl;
 			if (it->path == newPath && it->methods[method])
+			{
+				printlog("Method " + method + " allowed.", -1, GREEN);
 				return it->methods[method];
+			}
 		}
 		len += i;
 	}
+	printlog("Method " + method + " not allowed.", -1, RED);
     return false;
 }
 
@@ -337,7 +342,6 @@ int Serv::establish_connection()
 	int opt = 1;
 	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
 		return failToStart("Error: socket optimise", addr, socketfd);
-	//glob_fd = socketfd;
 	signal(SIGINT, ctrlc);
     int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
     if (flags == -1)
@@ -410,4 +414,9 @@ bool Serv::compareHostPort(std::string host, std::string port)
 int Serv::getSocket()
 {
 	return socketfd;
+}
+
+std::string Serv::getMaxBodySize()
+{
+	return serv_info.max_body_size;
 }

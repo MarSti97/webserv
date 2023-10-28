@@ -37,6 +37,7 @@ class Serv
 		std::string	CheckIndex( std::string path);
 		std::string createAbsolutePath(std::string path);
 		std::string	CheckCGI( std::string path);
+		std::string getMaxBodySize();
 };
 
 #endif

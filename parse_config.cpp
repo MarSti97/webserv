@@ -66,7 +66,6 @@ void	check_duplicate_location(Location temp_location, std::vector<Location> loca
 
 bool	check_duplicate_attr(std::string attribute)
 {
-	//std::cout << attribute << std::endl;
 	if (!(attribute.empty()))
 		throw DuplicateAttribute();
 	return true;

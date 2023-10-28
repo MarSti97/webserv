@@ -14,11 +14,13 @@ class Servers
 		std::string config;
     	std::vector<pollfd> fds;
 		void validate_config();
+		bool checkContentSizeToMax(char *buffer, ssize_t n, int clientfd);
+		bool payloadTooLarge_413;
 	
 	public : 
 		Servers() {}
 		Servers(std::string file, char **environment);
-		~Servers() {std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
+		~Servers(); //{std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
 
 		Request parseRecv(std::vector<pollfd> &fds, int pos);
 		void	printAll() const;

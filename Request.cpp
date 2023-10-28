@@ -157,7 +157,6 @@ Request::Request( char *buffer, size_t size )
     if (queryStart != std::string::npos)
     {
         queryStart += 4;
-		// std::cout << "CORRECT" << std::endl;
         size_t queryEnd = _request.find(" ", queryStart);
         size_t queryEnd2 = _request.find("?", queryStart);
         if (queryEnd2 < queryEnd)
@@ -168,14 +167,12 @@ Request::Request( char *buffer, size_t size )
     this->del = getINFOone(_request, "DELETE ", 7);
 
 	this->host = getINFOtwo(_request, "Host: ", 6);
-	// std::cout << "THIS: " << this->host << std::endl;
 	size_t splitter = host.find(":");
 	if (splitter != std::string::npos)
 	{
 		this->port = this->host.substr(splitter + 1);
 		std::string temp = this->host.substr(0, splitter);
 		this->host = temp;
-		// std::cout << "THAT: " << this->host << " and " << this->port << std::endl;
 	}
 
 	this->useragent = getINFOtwo(_request, "User-Agent: ", 12);
@@ -255,7 +252,6 @@ int Request::EndBoundary( char *str, size_t len, char *bound)
         if (memcmp(str + f, bound, strlen(bound)))
             return f;
     }
-    // std::cout << f << std::endl;
     return 0;
 }
 

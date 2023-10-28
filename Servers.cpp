@@ -1,6 +1,6 @@
 #include "./includes/webserv.hpp"
 
-Servers::Servers(std::string file, char **environment) : env(environment)
+Servers::Servers(std::string file, char **environment) : env(environment), payloadTooLarge_413(false)
 {
 	config = readFile(file);
 	(void)env;
@@ -131,6 +131,38 @@ void	Servers::validate_config()
     }
 }
 
+bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
+{
+	std::string buf(buffer);
+	std::cerr << buf << std::endl;
+	Request req(buffer, n);
+	if (req.Post() != "")
+	{
+		Serv temp = getCorrectServ(req);
+		std::string max_string = temp.getMaxBodySize();
+		std::string len_string = req.Contentlength();
+		if (max_string == "" || len_string == "")
+		{
+			std::cerr << "Error: unable to calculate max body size" << std::endl;
+			return true;
+		}
+		long max;
+		long contentlen;
+
+		std::istringstream(max_string) >> max;
+		std::istringstream(len_string) >> contentlen;
+		if (max < contentlen)
+		{
+			std::cerr << "ERROR: " << max << " < " << contentlen << std::endl; 
+			req.SetClientFd(clientfd);
+			temp.errorPageCheck("413", "Payload Too Large", "/413.html", req);
+			payloadTooLarge_413 = true;
+			return false;
+		}
+	}
+	return true;
+}
+
 Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 {
     char buffer[4097];
@@ -139,11 +171,11 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
     ssize_t n;
     int counter = 0;
     int buf_size = 0;
+	// bool first = true;
     while (1)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fd[pos].fd, buffer, 4096, 0);
-        // std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -172,6 +204,11 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
         }
         else
         {
+			if (counter == 0)
+			{
+				if (!checkContentSizeToMax(buffer, n, fd[pos].fd))
+					return Request();
+			}
             char *bug = new char[n + 1];
             for (int o = 0; o < n; ++o)
                 bug[o] = buffer[o];
@@ -238,7 +275,10 @@ void Servers::run()
 			int ret = poll(&fds[i], 1, timeout);
 			if (ret == -1)
 			{
-				std::cerr << "Error in poll" << std::endl;
+				if (errno == EINTR)
+					std::cerr << "Poll was interupted by a signal" << std::endl;
+				else
+					std::cerr << "Error in poll" << std::endl;
 				continue;
 			}
 			if (ret == 0 && !checkSockets(fds[i].fd))
@@ -262,6 +302,11 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
+						if (payloadTooLarge_413 == true)
+						{
+							payloadTooLarge_413 = false;
+							continue;
+						}
 						if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
 						{
 							req.SetClientFd(fds[i].fd);
@@ -293,12 +338,20 @@ Serv	&Servers::getCorrectServ(Request req)
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
-		// std::cout << "ENTER: " << req.Host() << " " << req.Port() << std::endl;
 		if (it->compareHostPort(req.Host(), req.Port()))
 		{
-			// it->printshit();
 			return *it;
 		}
 	}
 	return *servs.end();
+}
+
+Servers::~Servers()
+{
+	std::vector<pollfd>::iterator it;
+	for (it = fds.begin(); it != fds.end(); ++it)
+	{
+		close(it->fd);
+	}
+	fds.clear();
 }

@@ -28,6 +28,7 @@
 #include <cstdio>
 #include <sys/wait.h>
 #include <ctime>
+#include <cstdlib>
 
 #include "Disposition.hpp"
 #include "Content.hpp"
