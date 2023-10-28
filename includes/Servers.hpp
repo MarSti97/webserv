@@ -42,7 +42,7 @@ class DuplicateLocation : public std::exception {
 	public :
 		DuplicateLocation(){}
 		virtual const char* what() const throw() {
-			return ("Error: Duplicate location tag on server configuration");
+			return ("Error: Duplicate location tag on server configuration.");
 		}
 };
 
@@ -50,7 +50,39 @@ class DuplicateAttribute : public std::exception {
 	public :
 		DuplicateAttribute(){}
 		virtual const char* what() const throw() {
-			return ("Error: Duplicate attribute on server configuration ");
+			return ("Error: Duplicate attribute on server configuration.");
+		}
+};
+
+class InvalidLine : public std::exception {
+	public :
+		InvalidLine(){}
+		virtual const char* what() const throw() {
+			return ("Error: Invalid line while parsing configuration file.");
+		}
+};
+
+class EmptyAttributeValue : public std::exception {
+	public :
+		EmptyAttributeValue(){}
+		virtual const char* what() const throw() {
+			return ("Error: Empty value on attribute line.");
+		}
+};
+
+class UnenclosedAttributeLine : public std::exception {
+	public :
+		UnenclosedAttributeLine(){}
+		virtual const char* what() const throw() {
+			return ("Error: Unenclosed attribute line. Please add a ';' at the end.");
+		}
+};
+
+class InvalidNumberValues : public std::exception {
+	public :
+		InvalidNumberValues(){}
+		virtual const char* what() const throw() {
+			return ("Error: Attribute line with unexpected number or format of values.");
 		}
 };
 

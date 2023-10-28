@@ -5,6 +5,80 @@ Servers::Servers(std::string file, char **environment) : env(environment)
 	config = readFile(file);
 	(void)env;
 }
+void	Servers::validate_config()
+{
+	std::string	line;
+	std::istringstream	file(config);
+	bool		insideServerBlock;
+	bool		insideLocationBlock;
+	Config temp_config;
+
+	while (std::getline(file, line))
+	{
+		if (line.empty())
+			continue;
+
+		std::istringstream iss(line);
+		std::string token;
+		if (!insideServerBlock)
+		{
+			if (iss >> token && token == "server" && iss >> token && token == "{" && iss.eof())
+			{
+				insideServerBlock = true;
+				continue;
+			}
+			else
+				throw InvalidLine();
+		}
+		while (insideServerBlock)
+		{
+			std::getline(file, line);
+			if (line.empty())
+				continue;
+			std::istringstream iss(line);
+			iss >> token;
+			if (token == "listen" && check_duplicate_attr(temp_config.port))
+				temp_config.port = parse_attribute(iss, token);
+			else if (token == "host" && check_duplicate_attr(temp_config.host))
+				temp_config.host = parse_attribute(iss, token);
+			else if (token == "client_max_body_size" && check_duplicate_attr(temp_config.max_body_size))
+				temp_config.max_body_size = parse_attribute(iss, token);
+			else if (token == "server_name" && temp_config.server_name.empty())
+				parseServerNames(iss, token, &temp_config);
+			else if (token == "error_page")
+				parseErrorPages(iss, token, &temp_config);
+			else if (token == "location" && iss >> token && !(iss.eof()))
+			{
+				std::string location_name = token;
+				if (iss >> token && token == "{" && iss.eof())
+				{
+					Location temp_location;
+					insideLocationBlock = true;
+					temp_location.path = location_name;
+					while (insideLocationBlock)
+					{
+						std::getline(file, line);
+						if (line.empty())
+							continue;
+						std::istringstream iss(line);
+						iss >> token;
+						if (token == "root" && check_duplicate_attr(temp_location.root))
+							temp_location.root = parse_attribute(iss, token);
+					}
+				}
+			}
+			else if (token == "}" && iss.eof())
+			{
+				insideServerBlock = false;		
+				check_requirements(temp_config);
+				servs.push_back(Serv(temp_config));
+			}
+			else
+				throw InvalidLine();
+		}
+	}
+	
+}
 
 void	Servers::validate_config()
 {

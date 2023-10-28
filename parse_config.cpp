@@ -1,28 +1,87 @@
 #include "./includes/webserv.hpp"
 #include "./includes/Config.hpp"
 
+// std::string	parse_attribute(std::istringstream &iss, std::string token)
+// {
+// 	std::string parsed;
+	
+// 	iss >> token;
+// 	if (*(token.end() - 1) == ';' && !check_new_attribute(token))
+// 		parsed = token.substr(0, token.size() - 1);
+// 	return (parsed);
+// }
+
 std::string	parse_attribute(std::istringstream &iss, std::string token)
 {
 	std::string parsed;
 	
+	if (iss.eof())
+		throw EmptyAttributeValue();
 	iss >> token;
-	if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-		parsed = token.substr(0, token.size() - 1);
+	if (iss.eof())
+	{
+		if (*(token.end() - 1) == ';')
+			parsed = token.substr(0, token.size() - 1);
+		else
+			throw UnenclosedAttributeLine();
+	}
+	else
+		throw InvalidNumberValues();
 	return (parsed);
 }
 
-
-bool check_new_attribute(std::string token)
-{	
-	std::string attributes[] = {"listen", "host", "error_page", "server_name", "root", "client_max_body_size", "autoindex", "cgi", "index", "location", "allow", "return"};
-	
-	for (size_t i = 0; i < 6; i++)
+void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_config)
+{
+	if (iss.eof())
+		throw EmptyAttributeValue();
+	while (!(iss.eof()))
 	{
-		if (token == attributes[i])
-			return true;
+		iss >> token;
+		if (*(token.end() - 1) != ';')
+			temp_config->server_name.push_back(token);
+		else if (*(token.end() - 1) == ';' && iss.eof())
+			temp_config->server_name.push_back(token.substr(0, token.size() - 1));
+		else
+			throw InvalidNumberValues();
 	}
-	return false;
 }
+
+void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config)
+{
+	std::string error_number;
+	std::string error_pagename;
+	if (iss.eof())
+		throw EmptyAttributeValue();
+	while (!(iss.eof()))
+	{
+		iss >> token;
+		if (token.find_first_not_of("0123456789") == std::string::npos && !(iss.eof()))
+			error_number = token;
+		else
+			throw InvalidNumberValues();
+		if (iss >> token && *(token.end() - 1) == ';' && iss.eof())
+			error_pagename = token;
+		else
+			throw UnenclosedAttributeLine();
+	}
+	if (temp_config->error_pages[error_number].empty())
+		temp_config->error_pages[error_number] = error_pagename.substr(0, error_pagename.size() - 1);
+	else
+		throw DuplicateAttribute();
+}
+
+
+// bool check_new_attribute(std::string token)
+// {	
+// 	std::string attributes[] = {"listen", "host", "error_page", "server_name", "root", "client_max_body_size", "autoindex", "cgi", "index", "location", "allow", "return"};
+	
+// 	for (size_t i = 0; i < 6; i++)
+// 	{
+// 		if (token == attributes[i])
+// 			return true;
+// 	}
+// 	return false;
+// }
 
 void	check_requirements(Config temp)
 {
@@ -32,25 +91,17 @@ void	check_requirements(Config temp)
 	std::vector<Location>::iterator it;
 	for (it = temp.location.begin(); it != temp.location.end(); it++)
 	{
-		std::cout << it->path << " | " << it->root << std::endl;
 		if (it->path == "/" && !(temp.root.empty()))
 		{
-			std::cout << "GOOD" << std::endl;
 			error_flag = 0;
 			break;
 		}
 		error_flag = 1;
-		std::cout << "HERELOC" << std::endl;
 	}
 
-	// check if there's a host and port
-	if (temp.port.empty() || temp.host.empty()) {
-		std::cout << "HEREATTR" << std::endl;
+	if (temp.port.empty() || temp.host.empty())
 		error_flag = 1;
-	}
-
 	if (error_flag == 1)
-		// std::cerr << "Error: Insufficient information on server configuration " << i << ".\nYou need at least a listen port and a server address.";
 		throw InsufficientInformation();
 }
 

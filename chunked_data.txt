@@ -1,5 +1,1 @@
-1a
-This is some sample data
-15
- that will be sent in chunks.
-0
+1a\r\nThis is some sample data\r\n15\r\nthat will be sent in chunks.\r\n0\r\n\r\n

@@ -37,6 +37,7 @@ std::string Serv::getResponse(std::string abs, std::string page, std::string res
 
 void	Serv::filterRequest( Request req )
 {
+	//std::cout << req.request() << std::endl;
 	if (!(req.Get().empty()))
 		PrepareResponse("GET", req.Get(), req);
 	else if (!(req.Post().empty()))
