@@ -4,6 +4,7 @@
 #include "webserv.hpp"
 
 class Content;
+class Download;
 
 class Request
 {
@@ -33,8 +34,11 @@ class Request
         std::string contentdisposition;
         std::string origin;
         std::string boundary;
+        std::string expect;
+        std::string transferencoding;
         int         clientfd;
         int         eof;
+        bool        continue_100;
     
     public:
         Request();
@@ -49,6 +53,8 @@ class Request
         int     ClientFd( void );
         void    SetClientFd( int fd );
         int     Eof( void );
+        bool    processChunked(int current_len, Download &down, int client);
+        bool    getContinue100() const;
 
         std::string request( void ) const;
         std::string Del( void ) const;
@@ -74,6 +80,7 @@ class Request
         std::string Contentdisposition( void ) const;
         std::string Origin( void ) const;
         std::string Boundary( void ) const;
+        std::string TransferEncoding() const;
 };
 
 #endif

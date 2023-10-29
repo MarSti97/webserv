@@ -127,6 +127,11 @@ std::string Request::Boundary( void ) const
     return boundary;
 }
 
+std::string Request::TransferEncoding() const
+{
+    return transferencoding;
+}
+
 int Request::Eof( void )
 {
     return eof;
@@ -142,7 +147,7 @@ void    Request::SetClientFd( int fd )
     clientfd = fd;
 }
 
-Request::Request( char *buffer, size_t size )
+Request::Request( char *buffer, size_t size ) : continue_100(false)
 {
     // char reqqu[size + 1];
     // memcpy(reqqu, buffer, size);
@@ -181,6 +186,8 @@ Request::Request( char *buffer, size_t size )
 	this->acceptencoding = getINFOtwo(_request, "Accept-Encoding: ", 17);
 	this->xrequestedwith = getINFOtwo(_request, "X-Requested-With: ", 18);
 	this->connection = getINFOtwo(_request, "Connection: ", 12);
+    this->expect = getINFOtwo(_request, "Expect: ", 8);
+	this->transferencoding = getINFOtwo(_request, "Transfer-Encoding: ", 19);
 
     size_t refererStart = _request.find("Referer: ");
     if (refererStart != std::string::npos)
@@ -261,9 +268,72 @@ void    Request::clean_content()
     content.clean();
 }
 
+std::string nextSize(std::string str, int pos)
+{
+    int next = str.find("\r\n", pos);
+    return str.substr(pos, pos - next);
+}
+
+bool    Request::processChunked(int current_len, Download &down, int client)
+{
+    int head = removehead(C_request());
+    if (expect == "100-continue")
+    {
+        std::cout << "CHECK: head " << head << " request: " << current_len << std::endl;
+        if (current_len == head)
+        {
+            continue_100 = true;
+            return false;
+        }
+    }
+    if (transferencoding == "chunked")
+    {
+        std::vector<std::pair<char *, int> > res;
+        std::string chunk_size = nextSize(_request, head);
+        std::cout << "CHECK: chunk size: " << chunk_size << std::endl;
+        int size = atoi(chunk_size.c_str());
+        int counter = 0;
+        while (size != 0)
+        {
+            char *str = new char[size + 1];
+            head += chunk_size.size() + 2;
+            for (int i = 0; i != size; i++)
+                str[i] = str[head + i];
+            res.push_back(std::make_pair(str, size));
+            counter += size;
+            head += size + 2;
+            chunk_size = nextSize(_request, head);
+            size = atoi(chunk_size.c_str());
+        }
+        char temp[size + 1];
+        std::vector<std::pair<char *, int> >::iterator it;
+        int f = 0;
+        for (it = res.begin(); it != res.end(); ++it)
+        {
+            int i = -1;
+            while (++i < it->second)
+                temp[f++] = it->first[i];
+            delete[] it->first;
+        }
+        temp[size] = '\0';
+        // char *temp = joinVector(res, counter);
+        content.setContent(temp, counter);
+        content.setContentSize(counter);
+        printlog("Successfully unchunked request", -1, GREEN);
+        down.eraseClient(client);
+        return false;
+    }
+    return true;
+}
+
+bool Request::getContinue100() const
+{
+    return continue_100;
+}
+
 Request::~Request() {}
 
-Request::Request() : c_request(NULL), eof(0) {}
+Request::Request() : c_request(NULL), eof(0), continue_100(false) {}
 
 //#textmate (mate);
 //snippets

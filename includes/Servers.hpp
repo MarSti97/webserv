@@ -13,9 +13,13 @@ class Servers
 		std::vector<Serv> servs;
 		std::string config;
     	std::vector<pollfd> fds;
+		bool payloadTooLarge_413;
+		// bool continue_100;
+		// bool chunked_data;
+
 		void validate_config();
 		bool checkContentSizeToMax(char *buffer, ssize_t n, int clientfd);
-		bool payloadTooLarge_413;
+		void expectContinueOrChuncked(std::string buf, Serv serv, int clientfd);
 	
 	public : 
 		Servers() {}

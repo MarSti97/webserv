@@ -131,6 +131,20 @@ void	Servers::validate_config()
     }
 }
 
+// void	Servers::expectContinueOrChuncked(std::string buf, Serv serv, int clientfd)
+// {
+
+
+	// std::cout << "CHECK: expect: " << expect << " chunked: " << chunked << std::endl;
+	// if (chunked == "chunked")
+	// 	chunked_data = true;
+	// if (expect == "100-continue")
+	// {
+	// 	serv.parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
+	// 	continue_100 = true;
+	// }
+// }
+
 bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
 {
 	std::string buf(buffer);
@@ -139,6 +153,7 @@ bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
 	if (req.Post() != "")
 	{
 		Serv temp = getCorrectServ(req);
+		// expectContinueOrChuncked(buf, temp, clientfd);
 		std::string max_string = temp.getMaxBodySize();
 		std::string len_string = req.Contentlength();
 		if (max_string == "" || len_string == "")
@@ -153,7 +168,7 @@ bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
 		std::istringstream(len_string) >> contentlen;
 		if (max < contentlen)
 		{
-			std::cerr << "ERROR: " << max << " < " << contentlen << std::endl; 
+			// std::cerr << "ERROR: " << max << " < " << contentlen << std::endl;
 			req.SetClientFd(clientfd);
 			temp.errorPageCheck("413", "Payload Too Large", "/413.html", req);
 			payloadTooLarge_413 = true;
@@ -230,7 +245,7 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
         delete[] it->first;
     }
     buf[buf_size] = '\0';
-    std::vector<std::pair<char *, int> >().swap(full_buf);
+    std::vector<std::pair<char *, int> >().swap(full_buf); // why
     findbuffer = std::string(buf, buf_size);
     Request req = postThings(findbuffer, buf, fd[pos].fd, buf_size);
     return req;
@@ -302,11 +317,14 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
-						if (payloadTooLarge_413 == true)
-						{
-							payloadTooLarge_413 = false;
-							continue;
-						}
+						// if (req.getContinue100())
+						// 	getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
+						// if (payloadTooLarge_413 == true || continue_100 == true)
+						// {
+						// 	// continue_100 = false; // this will probably need to be in isitFULL function
+						// 	payloadTooLarge_413 = false;
+						// 	continue;
+						// } maybe dont need this shit
 						if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
 						{
 							req.SetClientFd(fds[i].fd);

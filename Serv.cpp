@@ -19,7 +19,7 @@ int Serv::parseSend(std::string response, int fd)
         return n;
     }
     else
-        std::cout << "post chuncked" << std::endl;
+        std::cout << "post chuncked" << std::endl; // i don't think we use this ...
     return 0;
 }
 
@@ -128,7 +128,7 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string pat
 
 void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 {
-	std::cout << "File to be deleted: " << abs << std::endl;
+	// std::cout << "File to be deleted: " << abs << std::endl;
 	if (std::remove(abs.c_str() + 1) == 0) // changed to + 1 because it wasn't getting deleted
 	{
 		printlog("Succefully deleted file", -1, GREEN); // the 0 for the arguemnt is shit need to fix
@@ -139,35 +139,6 @@ void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 		printlog("Failed to delete file", -1, RED);
 		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
 	}
-}
-
-bool deleteFolderRecusively(std::string path)
-{
-	struct dirent *entry;
-	DIR *dir = opendir(path.c_str() + 1);
-	if (dir == NULL)
-		std::cout << "Error: couldnt open dir for delete method: " << path << std::endl;
-	else
-	{
-		while ((entry = readdir(dir)) != NULL)
-		{
-			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            	continue;
-			if (entry->d_type == DT_DIR)
-				deleteFolderRecusively(path + "/" + entry->d_name); // does d_name have / already?
-			else
-			{
-				std::string fileToDelete = path + "/" + entry->d_name;
-				if (std::remove(fileToDelete.c_str() + 1) != 0)
-					std::cout << "Error: could not delete file within directory: " << fileToDelete << std::endl;
-			}
-		}
-		closedir(dir);
-		if (rmdir(path.c_str() + 1) != 0)
-			return false;
-		return true;
-	}
-	return false;
 }
 
 void Serv::deleteFolderMethod(std::string path, Request req)
@@ -185,12 +156,31 @@ void Serv::deleteFolderMethod(std::string path, Request req)
 	}
 }
 
+void Serv::chunkedResponse(Request req)
+{
+	size_t max;
+	std::istringstream(serv_info.max_body_size) >> max;
+	if (req.content.getContentSize() > max)
+		errorPageCheck("413", "Payload Too Large", "/413.html", req);
+	else
+	{
+		std::string content(req.content.getContent());
+		if (content != "")
+			parseSend("HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n" + content, req.ClientFd());
+		else
+			errorPageCheck("404", "Not Found", "/404.html", req);
+	}
+
+}
+
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
 	path = removeDashIfExists(path);
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
+		// if (req.TransferEncoding() == "chunked")
+		// 	return chunkedResponse(req);
 		// std::cout << abs << std::endl;
 		if (findFolder(abs) != "") // it is a file
 		{
