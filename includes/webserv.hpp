@@ -61,8 +61,8 @@ std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
 std::string getHeader( std::string ARG, std::string extra, std::string filePath );
 std::string	parse_attribute(std::istringstream &iss, std::string token);
 void	check_duplicate_location(Location temp_location, std::vector<Location> locations); // validate location name here
-bool	check_duplicate_attr(std::string attribute);
-void	check_requirements(Config temp);
+void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location);
+void	check_requirements(Config *temp);
 void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_config);
 void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config);
 

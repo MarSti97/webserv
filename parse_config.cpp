@@ -1,16 +1,6 @@
 #include "./includes/webserv.hpp"
 #include "./includes/Config.hpp"
 
-// std::string	parse_attribute(std::istringstream &iss, std::string token)
-// {
-// 	std::string parsed;
-	
-// 	iss >> token;
-// 	if (*(token.end() - 1) == ';' && !check_new_attribute(token))
-// 		parsed = token.substr(0, token.size() - 1);
-// 	return (parsed);
-// }
-
 std::string	parse_attribute(std::istringstream &iss, std::string token)
 {
 	std::string parsed;
@@ -18,7 +8,7 @@ std::string	parse_attribute(std::istringstream &iss, std::string token)
 	if (iss.eof())
 		throw EmptyAttributeValue();
 	iss >> token;
-	if (iss.eof())
+	if (*(token.end() - 1) == ';' && token.find_first_not_of(";'\"") != std::string::npos && !(iss >> token))
 	{
 		if (*(token.end() - 1) == ';')
 			parsed = token.substr(0, token.size() - 1);
@@ -34,15 +24,17 @@ void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_c
 {
 	if (iss.eof())
 		throw EmptyAttributeValue();
-	while (!(iss.eof()))
+	while (iss >> token)
 	{
-		iss >> token;
-		if (*(token.end() - 1) != ';')
+		if (*(token.end() - 1) != ';' && token.find_first_not_of(";'\"") != std::string::npos)
 			temp_config->server_name.push_back(token);
-		else if (*(token.end() - 1) == ';' && iss.eof())
+		else if (*(token.end() - 1) == ';' && token.find_first_not_of(";'\"") != std::string::npos && !(iss >> token))
 			temp_config->server_name.push_back(token.substr(0, token.size() - 1));
 		else
+		{
+			iss >> token;
 			throw InvalidNumberValues();
+		}
 	}
 }
 
@@ -52,14 +44,13 @@ void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_co
 	std::string error_pagename;
 	if (iss.eof())
 		throw EmptyAttributeValue();
-	while (!(iss.eof()))
+	while (iss >> token)
 	{
-		iss >> token;
 		if (token.find_first_not_of("0123456789") == std::string::npos && !(iss.eof()))
 			error_number = token;
 		else
 			throw InvalidNumberValues();
-		if (iss >> token && *(token.end() - 1) == ';' && iss.eof())
+		if (iss >> token && *(token.end() - 1) == ';' && !(iss >> token))
 			error_pagename = token;
 		else
 			throw UnenclosedAttributeLine();
@@ -70,36 +61,48 @@ void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_co
 		throw DuplicateAttribute();
 }
 
+void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location)
+{
+	if (iss.eof())
+		throw EmptyAttributeValue();
+	while (iss >> token)
+	{
+		if (token == "GET" || token == "POST" || token == "DELETE")
+			temp_location->methods.insert(std::make_pair(token, true));
+		else if (iss >> token)
+			throw InvalidNumberValues();
+	}
+	if (*(token.end() - 1) != ';')
+		throw UnenclosedAttributeLine();
+	if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token))
+		temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), true));
+	else
+		throw InvalidNumberValues();
+}
 
-// bool check_new_attribute(std::string token)
-// {	
-// 	std::string attributes[] = {"listen", "host", "error_page", "server_name", "root", "client_max_body_size", "autoindex", "cgi", "index", "location", "allow", "return"};
-	
-// 	for (size_t i = 0; i < 6; i++)
-// 	{
-// 		if (token == attributes[i])
-// 			return true;
-// 	}
-// 	return false;
-// }
-
-void	check_requirements(Config temp)
+void	check_requirements(Config *temp)
 {
 	int error_flag = 0;
 	
 	// check if there is a "/" location
 	std::vector<Location>::iterator it;
-	for (it = temp.location.begin(); it != temp.location.end(); it++)
+	for (it = temp->location.begin(); it != temp->location.end(); it++)
 	{
-		if (it->path == "/" && !(temp.root.empty()))
+		if (it->path == "/" && !(it->root.empty()))
 		{
+			temp->autoindex = it->autoindex;
+			temp->index = it->index;
+			temp->cgi_extension = it->cgi_extension;
+			temp->root = it->root;
+			temp->redirect_path = it->redirect_path;
+			temp->methods = it->methods;
 			error_flag = 0;
 			break;
 		}
 		error_flag = 1;
 	}
 
-	if (temp.port.empty() || temp.host.empty())
+	if (temp->port.empty() || temp->host.empty())
 		error_flag = 1;
 	if (error_flag == 1)
 		throw InsufficientInformation();
@@ -113,14 +116,6 @@ void	check_duplicate_location(Location temp_location, std::vector<Location> loca
 		if (it->path == temp_location.path)
 			throw DuplicateLocation();
 	}
-}
-
-bool	check_duplicate_attr(std::string attribute)
-{
-	//std::cout << attribute << std::endl;
-	if (!(attribute.empty()))
-		throw DuplicateAttribute();
-	return true;
 }
 
 bool correctfile(std::string file)

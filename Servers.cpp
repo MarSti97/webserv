@@ -1,5 +1,13 @@
 #include "./includes/webserv.hpp"
 
+template <typename T>
+bool	check_duplicate_attr(T attribute)
+{
+	if (!(attribute.empty()))
+		throw DuplicateAttribute();
+	return true;
+}
+
 Servers::Servers(std::string file, char **environment) : env(environment)
 {
 	config = readFile(file);
@@ -18,15 +26,12 @@ void	Servers::validate_config()
 		if (line.empty())
 			continue;
 
-		std::istringstream iss(line);
+		std::istringstream s(line);
 		std::string token;
 		if (!insideServerBlock)
 		{
-			if (iss >> token && token == "server" && iss >> token && token == "{" && iss.eof())
-			{
+			if (s >> token && token == "server" && s >> token && token == "{" && s.eof())
 				insideServerBlock = true;
-				continue;
-			}
 			else
 				throw InvalidLine();
 		}
@@ -35,22 +40,22 @@ void	Servers::validate_config()
 			std::getline(file, line);
 			if (line.empty())
 				continue;
-			std::istringstream iss(line);
-			iss >> token;
+			std::istringstream ss(line);
+			ss >> token;
 			if (token == "listen" && check_duplicate_attr(temp_config.port))
-				temp_config.port = parse_attribute(iss, token);
+				temp_config.port = parse_attribute(ss, token);
 			else if (token == "host" && check_duplicate_attr(temp_config.host))
-				temp_config.host = parse_attribute(iss, token);
+				temp_config.host = parse_attribute(ss, token);
 			else if (token == "client_max_body_size" && check_duplicate_attr(temp_config.max_body_size))
-				temp_config.max_body_size = parse_attribute(iss, token);
-			else if (token == "server_name" && temp_config.server_name.empty())
-				parseServerNames(iss, token, &temp_config);
+				temp_config.max_body_size = parse_attribute(ss, token);
+			else if (token == "server_name" && check_duplicate_attr(temp_config.server_name))
+				parseServerNames(ss, token, &temp_config);
 			else if (token == "error_page")
-				parseErrorPages(iss, token, &temp_config);
-			else if (token == "location" && iss >> token && !(iss.eof()))
+				parseErrorPages(ss, token, &temp_config);
+			else if (token == "location" && ss >> token && !(ss.eof()))
 			{
 				std::string location_name = token;
-				if (iss >> token && token == "{" && iss.eof())
+				if (ss >> token && token == "{" && ss.eof())
 				{
 					Location temp_location;
 					insideLocationBlock = true;
@@ -64,13 +69,28 @@ void	Servers::validate_config()
 						iss >> token;
 						if (token == "root" && check_duplicate_attr(temp_location.root))
 							temp_location.root = parse_attribute(iss, token);
+						else if (token == "index" && check_duplicate_attr(temp_location.index))
+							temp_location.index = parse_attribute(iss, token);	
+						else if (token == "autoindex" && check_duplicate_attr(temp_location.autoindex))
+							temp_location.autoindex = parse_attribute(iss, token);	
+						else if (token == "cgi" && check_duplicate_attr(temp_location.cgi_extension))
+							temp_location.cgi_extension = parse_attribute(iss, token);	
+						else if (token == "return" && check_duplicate_attr(temp_location.redirect_path))
+							temp_location.redirect_path = parse_attribute(iss, token);
+						else if (token == "allow" && check_duplicate_attr(temp_location.methods))
+							parseMethods(iss, token, &temp_location);
+						else if (token == "}" && iss.eof())
+						{
+							temp_config.location.push_back(temp_location);			
+							insideLocationBlock = false;
+						}
 					}
 				}
 			}
-			else if (token == "}" && iss.eof())
+			else if (token == "}" && ss.eof())
 			{
 				insideServerBlock = false;		
-				check_requirements(temp_config);
+				check_requirements(&temp_config);
 				servs.push_back(Serv(temp_config));
 			}
 			else
@@ -80,130 +100,130 @@ void	Servers::validate_config()
 	
 }
 
-void	Servers::validate_config()
-{
-	std::istringstream iss(config);
-	std::string token;
-    while (iss >> token) 
-	{
-		if (token == "server")
-		{
-			Config temp_config;
-			if (iss >> token && token == "{")
-			{
-				while (iss >> token) 
-				{
-					if (token == "listen" && check_duplicate_attr(temp_config.port))
-						temp_config.port = parse_attribute(iss, token);
-					else if (token == "host")
-						temp_config.host = parse_attribute(iss, token);
-					else if (token == "server_name")
-					{
-						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-						{
-							if (*(token.end() - 1) == ';')
-								temp_config.server_name.push_back(token.substr(0, token.size() - 1));
-							else
-								temp_config.server_name.push_back(token);
-						}
-					}
-					else if (token == "root")
-						temp_config.root = parse_attribute(iss, token);
-					else if (token == "index")
-						temp_config.index = parse_attribute(iss, token);
-					else if (token == "client_max_body_size")
-						temp_config.max_body_size = parse_attribute(iss, token);
-					else if (token == "autoindex")
-						temp_config.autoindex = parse_attribute(iss, token);
-					else if (token == "error_page")
-					{
-						iss >> token;
-						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-							temp_config.error_pages[token] = "";
-						std::string oldtoken = token;
-						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-							temp_config.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
-					}
-					else if (token == "location")
-					{
-						Location temp_location;
-						iss >> token;
-						temp_location.path = token;
-						if (!check_new_attribute(token) && iss >> token && token == "{")
-						{
-							while (iss >> token)
-							{
-								if (token == "allow")
-								{
-									if (temp_location.path == "/")
-									{
-										while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-										{
-											std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
-											temp_config.methods.insert(std::make_pair(res, true));
-										}
-									}
-									while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-									{
-										std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
-										temp_location.methods.insert(std::make_pair(res, true));
-									}
-								}
-								else if (token == "root")
-								{
-									if (temp_location.path == "/")
-										temp_config.root = parse_attribute(iss, token);
-									else
-										temp_location.root = parse_attribute(iss, token);
-								}
-								else if (token == "index")
-								{
-									if (temp_location.path == "/")
-										temp_config.index = parse_attribute(iss, token);
-									else
-										temp_location.index = parse_attribute(iss, token);
-								}
-								else if (token == "autoindex")
-								{
-									if (temp_location.path == "/")
-										temp_config.autoindex = parse_attribute(iss, token);
-									else
-										temp_location.autoindex = parse_attribute(iss, token);
-								}
-								else if (token == "cgi")
-								{
-									if (temp_location.path == "/")
-										temp_config.cgi_extension = parse_attribute(iss, token);
-									else
-										temp_location.cgi_extension = parse_attribute(iss, token);
-								}
-								else if (token == "return")
-								{
-									iss >> token;
-									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-										temp_location.redirect_status = token;
-									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-										temp_location.redirect_path = token.substr(0, token.size() - 1);						
-								}
-								else if (token == "}")
-								{
-									temp_config.location.push_back(temp_location);
-									break ;
-								}
-							}
-						}
-					}
-					else if (token == "}")
-					{
-	                    check_requirements(temp_config);
-						servs.push_back(Serv(temp_config));
-						break ;
-					}
-				}
-			}
-		}
-    }
-}
+// void	Servers::validate_config()
+// {
+// 	std::istringstream iss(config);
+// 	std::string token;
+//     while (iss >> token) 
+// 	{
+// 		if (token == "server")
+// 		{
+// 			Config temp_config;
+// 			if (iss >> token && token == "{")
+// 			{
+// 				while (iss >> token) 
+// 				{
+// 					if (token == "listen" && check_duplicate_attr(temp_config.port))
+// 						temp_config.port = parse_attribute(iss, token);
+// 					else if (token == "host")
+// 						temp_config.host = parse_attribute(iss, token);
+// 					else if (token == "server_name")
+// 					{
+// 						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
+// 						{
+// 							if (*(token.end() - 1) == ';')
+// 								temp_config.server_name.push_back(token.substr(0, token.size() - 1));
+// 							else
+// 								temp_config.server_name.push_back(token);
+// 						}
+// 					}
+// 					else if (token == "root")
+// 						temp_config.root = parse_attribute(iss, token);
+// 					else if (token == "index")
+// 						temp_config.index = parse_attribute(iss, token);
+// 					else if (token == "client_max_body_size")
+// 						temp_config.max_body_size = parse_attribute(iss, token);
+// 					else if (token == "autoindex")
+// 						temp_config.autoindex = parse_attribute(iss, token);
+// 					else if (token == "error_page")
+// 					{
+// 						iss >> token;
+// 						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+// 							temp_config.error_pages[token] = "";
+// 						std::string oldtoken = token;
+// 						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+// 							temp_config.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
+// 					}
+// 					else if (token == "location")
+// 					{
+// 						Location temp_location;
+// 						iss >> token;
+// 						temp_location.path = token;
+// 						if (!check_new_attribute(token) && iss >> token && token == "{")
+// 						{
+// 							while (iss >> token)
+// 							{
+// 								if (token == "allow")
+// 								{
+// 									if (temp_location.path == "/")
+// 									{
+// 										while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
+// 										{
+// 											std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
+// 											temp_config.methods.insert(std::make_pair(res, true));
+// 										}
+// 									}
+// 									while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
+// 									{
+// 										std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
+// 										temp_location.methods.insert(std::make_pair(res, true));
+// 									}
+// 								}
+// 								else if (token == "root")
+// 								{
+// 									if (temp_location.path == "/")
+// 										temp_config.root = parse_attribute(iss, token);
+// 									else
+// 										temp_location.root = parse_attribute(iss, token);
+// 								}
+// 								else if (token == "index")
+// 								{
+// 									if (temp_location.path == "/")
+// 										temp_config.index = parse_attribute(iss, token);
+// 									else
+// 										temp_location.index = parse_attribute(iss, token);
+// 								}
+// 								else if (token == "autoindex")
+// 								{
+// 									if (temp_location.path == "/")
+// 										temp_config.autoindex = parse_attribute(iss, token);
+// 									else
+// 										temp_location.autoindex = parse_attribute(iss, token);
+// 								}
+// 								else if (token == "cgi")
+// 								{
+// 									if (temp_location.path == "/")
+// 										temp_config.cgi_extension = parse_attribute(iss, token);
+// 									else
+// 										temp_location.cgi_extension = parse_attribute(iss, token);
+// 								}
+// 								else if (token == "return")
+// 								{
+// 									iss >> token;
+// 									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
+// 										temp_location.redirect_status = token;
+// 									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
+// 										temp_location.redirect_path = token.substr(0, token.size() - 1);						
+// 								}
+// 								else if (token == "}")
+// 								{
+// 									temp_config.location.push_back(temp_location);
+// 									break ;
+// 								}
+// 							}
+// 						}
+// 					}
+// 					else if (token == "}")
+// 					{
+// 	                    check_requirements(&temp_config);
+// 						servs.push_back(Serv(temp_config));
+// 						break ;
+// 					}
+// 				}
+// 			}
+// 		}
+//     }
+// }
 
 Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 {

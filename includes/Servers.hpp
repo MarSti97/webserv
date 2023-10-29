@@ -34,7 +34,7 @@ class InsufficientInformation : public std::exception {
 	public :
 		InsufficientInformation(){}
 		virtual const char* what() const throw() {
-			return ("Error: Insufficient information on server configuration \n- You need at least a listen port and a server address.");
+			return ("Error: Insufficient information on server configuration. \nYou need at least a listen port and a server address,\nas well as a '/' location with a root.");
 		}
 };
 
