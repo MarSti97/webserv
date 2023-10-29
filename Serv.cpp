@@ -141,37 +141,47 @@ void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 	}
 }
 
+bool deleteFolderRecusively(std::string path)
+{
+	struct dirent *entry;
+	DIR *dir = opendir(path.c_str() + 1);
+	if (dir == NULL)
+		std::cout << "Error: couldnt open dir for delete method: " << path << std::endl;
+	else
+	{
+		while ((entry = readdir(dir)) != NULL)
+		{
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            	continue;
+			if (entry->d_type == DT_DIR)
+				deleteFolderRecusively(path + "/" + entry->d_name); // does d_name have / already?
+			else
+			{
+				std::string fileToDelete = path + "/" + entry->d_name;
+				if (std::remove(fileToDelete.c_str() + 1) != 0)
+					std::cout << "Error: could not delete file within directory: " << fileToDelete << std::endl;
+			}
+		}
+		closedir(dir);
+		if (rmdir(path.c_str() + 1) != 0)
+			return false;
+		return true;
+	}
+	return false;
+}
+
 void Serv::deleteFolderMethod(std::string path, Request req)
 {
-	pid_t pid = fork();
-	if (pid < 0)
-		printlog("Error: fork in deleteFolderMethod", -1, RED);
-	else if (pid == 0)
+	if (deleteFolderRecusively(path))
 	{
-		int status;
-		waitpid(pid, &status, 0);
-		if (status == 0)
-		{
-			printlog("Succefully deleted folder", -1, GREEN);
-			// errorPageCheck("204", "No Content", "/204.html", req); I dont know if this works, test
-			parseSend("HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n", req.ClientFd());
-		}
-		else
-		{
-			printlog("Failed to delete file, error code: ", status, RED);
-			errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
-		}
+		printlog("Succefully deleted folder", -1, GREEN);
+		// errorPageCheck("204", "No Content", "/204.html", req); I dont know if this works, test
+		parseSend("HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n", req.ClientFd());
 	}
 	else
 	{
-		const char *temp = path.c_str() + 1;
-		char *cmd[4];
-
-		cmd[0] = const_cast<char*>("/bin/rm");
-		cmd[1] = const_cast<char*>("-rf");
-		cmd[2] = const_cast<char*>(temp);
-		cmd[3] = NULL;
-		execve(cmd[0], cmd, NULL);
+		printlog("Failed to delete folder ", -1, RED);
+		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
 	}
 }
 
