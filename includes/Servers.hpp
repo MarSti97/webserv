@@ -34,7 +34,7 @@ class InsufficientInformation : public std::exception {
 	public :
 		InsufficientInformation(){}
 		virtual const char* what() const throw() {
-			return ("Error: Insufficient information on server configuration. \nYou need at least a listen port and a server address,\nas well as a '/' location with a root.");
+			return ("Error while parsing config file\nDescription: Insufficient information on server configuration. \nYou need at least a listen port and a server address,\nas well as a '/' location with a root.");
 		}
 };
 
@@ -42,7 +42,7 @@ class DuplicateLocation : public std::exception {
 	public :
 		DuplicateLocation(){}
 		virtual const char* what() const throw() {
-			return ("Error: Duplicate location tag on server configuration.");
+			return ("Description: Duplicate location tag on server configuration.");
 		}
 };
 
@@ -50,7 +50,7 @@ class DuplicateAttribute : public std::exception {
 	public :
 		DuplicateAttribute(){}
 		virtual const char* what() const throw() {
-			return ("Error: Duplicate attribute on server configuration.");
+			return ("Description: Duplicate attribute on server configuration.");
 		}
 };
 
@@ -58,7 +58,7 @@ class InvalidLine : public std::exception {
 	public :
 		InvalidLine(){}
 		virtual const char* what() const throw() {
-			return ("Error: Invalid line while parsing configuration file.");
+			return ("Description: Invalid line while parsing configuration file.");
 		}
 };
 
@@ -66,7 +66,7 @@ class EmptyAttributeValue : public std::exception {
 	public :
 		EmptyAttributeValue(){}
 		virtual const char* what() const throw() {
-			return ("Error: Empty value on attribute line.");
+			return ("Description: Empty value on attribute line.");
 		}
 };
 
@@ -74,15 +74,23 @@ class UnenclosedAttributeLine : public std::exception {
 	public :
 		UnenclosedAttributeLine(){}
 		virtual const char* what() const throw() {
-			return ("Error: Unenclosed attribute line. Please add a ';' at the end.");
+			return ("Description: Unenclosed attribute line. Please add a ';' at the end.");
 		}
 };
 
-class InvalidNumberValues : public std::exception {
+class InvalidValues : public std::exception {
 	public :
-		InvalidNumberValues(){}
+		InvalidValues(){}
 		virtual const char* what() const throw() {
-			return ("Error: Attribute line with unexpected number or format of values.");
+			return ("Description: Attribute line with unexpected number or format of values.");
+		}
+};
+
+class InvalidLocationName : public std::exception {
+	public :
+		InvalidLocationName(){}
+		virtual const char* what() const throw() {
+			return "Description: location has invalid pathname.\nPlease write it in the format '/pathname',\nyou may add subpaths by repeating this syntax";
 		}
 };
 
@@ -90,8 +98,9 @@ class NotConfigFile : public std::exception {
 	public :
 		NotConfigFile(){}
 		virtual const char* what() const throw() {
-			return "Error: argument not a config file.";
+			return "Description: argument not a config file.";
 		}
 };
+
 
 #endif

@@ -1,10 +1,10 @@
 #include "./includes/webserv.hpp"
 
 template <typename T>
-bool	check_duplicate_attr(T attribute)
+bool	check_duplicate_attr(T attribute, std::string line)
 {
 	if (!(attribute.empty()))
-		throw DuplicateAttribute();
+		throw_parsing_exception(line, 1);
 	return true;
 }
 
@@ -33,7 +33,7 @@ void	Servers::validate_config()
 			if (s >> token && token == "server" && s >> token && token == "{" && s.eof())
 				insideServerBlock = true;
 			else
-				throw InvalidLine();
+				throw_parsing_exception(line, 2);
 		}
 		while (insideServerBlock)
 		{
@@ -42,16 +42,16 @@ void	Servers::validate_config()
 				continue;
 			std::istringstream ss(line);
 			ss >> token;
-			if (token == "listen" && check_duplicate_attr(temp_config.port))
-				temp_config.port = parse_attribute(ss, token);
-			else if (token == "host" && check_duplicate_attr(temp_config.host))
-				temp_config.host = parse_attribute(ss, token);
-			else if (token == "client_max_body_size" && check_duplicate_attr(temp_config.max_body_size))
-				temp_config.max_body_size = parse_attribute(ss, token);
-			else if (token == "server_name" && check_duplicate_attr(temp_config.server_name))
-				parseServerNames(ss, token, &temp_config);
+			if (token == "listen" && check_duplicate_attr(temp_config.port, line))
+				temp_config.port = parse_attribute(ss, token, line);
+			else if (token == "host" && check_duplicate_attr(temp_config.host, line))
+				temp_config.host = parse_attribute(ss, token, line);
+			else if (token == "client_max_body_size" && check_duplicate_attr(temp_config.max_body_size, line))
+				temp_config.max_body_size = parse_attribute(ss, token, line);
+			else if (token == "server_name" && check_duplicate_attr(temp_config.server_name, line))
+				parseServerNames(ss, token, &temp_config, line);
 			else if (token == "error_page")
-				parseErrorPages(ss, token, &temp_config);
+				parseErrorPages(ss, token, &temp_config, line);
 			else if (token == "location" && ss >> token && !(ss.eof()))
 			{
 				std::string location_name = token;
@@ -67,23 +67,26 @@ void	Servers::validate_config()
 							continue;
 						std::istringstream iss(line);
 						iss >> token;
-						if (token == "root" && check_duplicate_attr(temp_location.root))
-							temp_location.root = parse_attribute(iss, token);
-						else if (token == "index" && check_duplicate_attr(temp_location.index))
-							temp_location.index = parse_attribute(iss, token);	
-						else if (token == "autoindex" && check_duplicate_attr(temp_location.autoindex))
-							temp_location.autoindex = parse_attribute(iss, token);	
-						else if (token == "cgi" && check_duplicate_attr(temp_location.cgi_extension))
-							temp_location.cgi_extension = parse_attribute(iss, token);	
-						else if (token == "return" && check_duplicate_attr(temp_location.redirect_path))
-							temp_location.redirect_path = parse_attribute(iss, token);
-						else if (token == "allow" && check_duplicate_attr(temp_location.methods))
-							parseMethods(iss, token, &temp_location);
+						if (token == "root" && check_duplicate_attr(temp_location.root, line))
+							temp_location.root = parse_attribute(iss, token, line);
+						else if (token == "index" && check_duplicate_attr(temp_location.index, line))
+							temp_location.index = parse_attribute(iss, token, line);	
+						else if (token == "autoindex" && check_duplicate_attr(temp_location.autoindex, line))
+							temp_location.autoindex = parse_attribute(iss, token, line);	
+						else if (token == "cgi" && check_duplicate_attr(temp_location.cgi_extension, line))
+							temp_location.cgi_extension = parse_attribute(iss, token, line);	
+						else if (token == "return" && check_duplicate_attr(temp_location.redirect_path, line))
+							temp_location.redirect_path = parse_attribute(iss, token, line);
+						else if (token == "allow" && check_duplicate_attr(temp_location.methods, line))
+							parseMethods(iss, token, &temp_location, line);
 						else if (token == "}" && iss.eof())
 						{
+							validate_location(temp_location, temp_config.location, line);
 							temp_config.location.push_back(temp_location);			
 							insideLocationBlock = false;
 						}
+						else
+							throw_parsing_exception(line, 2);
 					}
 				}
 			}
@@ -94,7 +97,7 @@ void	Servers::validate_config()
 				servs.push_back(Serv(temp_config));
 			}
 			else
-				throw InvalidLine();
+				throw_parsing_exception(line, 2);
 		}
 	}
 	
