@@ -4,6 +4,12 @@ import cgi
 import sys
 import re
 
+
+# test an infinite loop by uncommenting the following lines
+# while True:
+#     pass
+
+
 print('''
 <!DOCTYPE html>
 <html>

@@ -385,7 +385,7 @@ int	Servers::checkSockets(int fd)
 	return 0;
 }
 
-Serv	&Servers::getCorrectServ(Request req)
+Serv	&Servers::getCorrectServ(Request req) // this is probably the right place to implement the server_name differentiation
 {
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)

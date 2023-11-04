@@ -264,7 +264,7 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 
 			if (bytesRead < 0) {
 				perror("Error reading from file descriptor");
-				// Handle the error as needed
+				// Error 500
 			}
 			responseHeaders = "HTTP/1.1 200 OK\r\n";
 			responseHeaders += "Content-Type: text/html\r\n";
@@ -274,6 +274,11 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 			responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
 			//std::cout << responseHeaders + response << std::endl;
 			close(cgi_fd);
+	}
+	else
+	{
+		response = getResponse(serv_info.root, "/404.html", getHeader("500 Internal Server Error", "", "/404.html"));
+		//error 500 - will need to implement differently
 	}
 	return responseHeaders + response;
 }
@@ -327,7 +332,7 @@ bool	Serv::CheckAllowed( std::string method, std::string path)
 int Serv::establish_connection()
 {
     struct addrinfo *addr;
-    if (getaddrinfo(serv_info.server_name[0].c_str(), serv_info.port.c_str(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
+    if (getaddrinfo(serv_info.host.c_str(), serv_info.port.c_str(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }
