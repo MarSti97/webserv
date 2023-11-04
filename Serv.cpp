@@ -158,6 +158,7 @@ void Serv::deleteFolderMethod(std::string path, Request req)
 
 void Serv::chunkedResponse(Request req)
 {
+	// std::cout << "ENTER CHUNKED RESPONSE!" << std::endl;
 	size_t max;
 	std::istringstream(serv_info.max_body_size) >> max;
 	if (req.content.getContentSize() > max)
@@ -166,7 +167,14 @@ void Serv::chunkedResponse(Request req)
 	{
 		std::string content(req.content.getContent());
 		if (content != "")
-			parseSend("HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n" + content, req.ClientFd());
+		{
+			// std::cout << "Are we here?" << std::endl;
+			std::stringstream ss;
+    		ss << req.content.getContentSize();
+			std::string response = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: " + ss.str() + "\r\n\r\n";
+			// std::cout << "CONTENT: " << response << content << std::endl;
+			parseSend(response + content, req.ClientFd());
+		}
 		else
 			errorPageCheck("404", "Not Found", "/404.html", req);
 	}
@@ -179,8 +187,8 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
-		// if (req.TransferEncoding() == "chunked")
-		// 	return chunkedResponse(req);
+		if (req.TransferEncoding() == "chunked")
+			return chunkedResponse(req);
 		// std::cout << abs << std::endl;
 		if (findFolder(abs) != "") // it is a file
 		{
@@ -190,12 +198,11 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				{
 					std::string theExtension = CheckCGI(path);
 					if (method == "DELETE")
-					{
-						// std::cout << "ENTERED THE DELETE THINGY" << std::endl;
 						deleteMethod(abs, req);
-					}
 					else if (theExtension != "") // it is a CGI script
 						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
+					// else if (method == "POST")
+					// 	errorPage()
 					else // "normal" request
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
 				}

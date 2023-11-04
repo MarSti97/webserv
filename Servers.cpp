@@ -135,14 +135,14 @@ void	Servers::validate_config()
 // {
 
 
-	// std::cout << "CHECK: expect: " << expect << " chunked: " << chunked << std::endl;
-	// if (chunked == "chunked")
-	// 	chunked_data = true;
-	// if (expect == "100-continue")
-	// {
-	// 	serv.parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
-	// 	continue_100 = true;
-	// }
+// 	std::cout << "CHECK: expect: " << expect << " chunked: " << chunked << std::endl;
+// 	if (chunked == "chunked")
+// 		chunked_data = true;
+// 	if (expect == "100-continue")
+// 	{
+// 		serv.parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
+// 		continue_100 = true;
+// 	}
 // }
 
 bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
@@ -317,8 +317,11 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
-						// if (req.getContinue100())
-						// 	getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
+						if (req.getContinue100())
+						{
+							getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
+							continue;
+						}
 						// if (payloadTooLarge_413 == true || continue_100 == true)
 						// {
 						// 	// continue_100 = false; // this will probably need to be in isitFULL function

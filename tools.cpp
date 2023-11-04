@@ -107,6 +107,19 @@ bool deleteFolderRecusively(std::string path)
 	return false;
 }
 
+int getIntSize(int nbr)
+{
+    if (nbr == 0)
+        return 1;
+    int res = 0;
+    while (nbr)
+    {
+        nbr /= 10;
+        res++;
+    }
+    return res;
+}
+
 // char *joinVector(std::vector<std::pair<char *, int> > full, int size)
 // {
 //     char buf[size + 1];
