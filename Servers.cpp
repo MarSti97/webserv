@@ -77,8 +77,10 @@ void	Servers::validate_config()
 							temp_location.cgi_extension = parse_attribute(iss, token, line);	
 						else if (token == "return" && check_duplicate_attr(temp_location.redirect_path, line))
 							temp_location.redirect_path = parse_attribute(iss, token, line);
-						else if (token == "allow" && check_duplicate_attr(temp_location.methods, line))
-							parseMethods(iss, token, &temp_location, line);
+						else if (token == "allow") // find check dup for allow and deny
+							parseMethods(iss, token, &temp_location, line, token);
+						else if (token == "deny")
+							parseMethods(iss, token, &temp_location, line, token);						
 						else if (token == "}" && iss.eof())
 						{
 							validate_location(temp_location, temp_config.location, line);

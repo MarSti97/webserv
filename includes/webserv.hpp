@@ -62,7 +62,7 @@ std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
 std::string getHeader( std::string ARG, std::string extra, std::string filePath );
 std::string	parse_attribute(std::istringstream &iss, std::string token, std::string line);
 void	validate_location(Location temp_location, std::vector<Location> locations, std::string line);
-void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line);
+void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line, std::string type);
 void	check_requirements(Config *temp);
 void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_config, std::string line);
 void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config, std::string line);

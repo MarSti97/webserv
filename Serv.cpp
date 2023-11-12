@@ -18,14 +18,12 @@ int Serv::parseSend(std::string response, int fd)
         }
         return n;
     }
-    else
-        std::cout << "post chuncked" << std::endl; // i don't think we use this ...
     return 0;
 }
 
 std::string Serv::getResponse(std::string abs, std::string page, std::string responseHeaders)
 {
-    std::string response = readFile(abs.substr(1) + page); // maybe need the substr(1)
+    std::string response = readFile(abs.substr(1) + page);
     std::stringstream ss;
     ss << response.length();
     responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
@@ -182,15 +180,31 @@ void Serv::chunkedResponse(Request req)
 
 }
 
+bool Serv::redirection(std::string path, Request req)
+{
+	std::vector<Location>::iterator it;
+    for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
+    {
+		std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
+		if (it->path == path && !(it->redirect_path.empty()))
+		{
+			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\n", req.ClientFd());
+			return true;
+		}
+    }
+    return false;
+}
+
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
 	path = removeDashIfExists(path);
-	if (CheckAllowed(method, path))
+	if (CheckAllowed(method, path) == ALLOWED)
 	{
 		std::string abs = createAbsolutePath(path);
 		if (req.TransferEncoding() == "chunked")
 			return chunkedResponse(req);
-		// std::cout << abs << std::endl;
+		if (redirection(path, req))
+			return ;
 		if (findFolder(abs) != "") // it is a file
 		{
 			if (method == "GET" || method == "POST" || method == "DELETE")
@@ -309,7 +323,7 @@ bool	Serv::ext_CGI(std::string path_info)
 	return 0;
 }
 
-bool	Serv::CheckAllowed( std::string method, std::string path)
+Methods	Serv::CheckAllowed( std::string method, std::string path)
 {
 	// std::cout << "CHECKING METHODS" << std::endl;
 	if (serv_info.methods[method])
@@ -327,16 +341,24 @@ bool	Serv::CheckAllowed( std::string method, std::string path)
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
 			// std::cout << it->path << " " << newPath << std::endl;
+			// std::cout << "METHOD: " << path << " | " << newPath << std::endl;
 			if (it->path == newPath && it->methods[method])
 			{
-				printlog("Method " + method + " allowed.", -1, GREEN);
-				return it->methods[method];
+				if (it->methods[method] == ALLOWED)
+				{
+					printlog("Method " + method + " allowed.", -1, GREEN);
+					return ALLOWED;
+				}
+				else if (it->methods[method] == DENIED)
+				{
+					printlog("Method " + method + " not allowed.", -1, RED);
+					return DENIED;
+				}
 			}
 		}
 		len += i;
 	}
-	printlog("Method " + method + " not allowed.", -1, RED);
-    return false;
+    return UNDEFINED;
 }
 
 
@@ -385,10 +407,10 @@ void	Serv::print(int counter) const
 	}
 	std::cout << std::endl;
 	std::cout << "max_body_size: " << serv_info.max_body_size << std::endl;
-	std::map<std::string, bool>::const_iterator its;
+	std::map<std::string, Methods>::const_iterator its;
 	for (its = serv_info.methods.begin(); its != serv_info.methods.end(); its++)
 	{
-		std::cout << "Method: " << its->first << " : " << (its->second ? "allowed" : "denied") << std::endl;
+		std::cout << "Method: " << its->first << " : " << (its->second ? "denied" : "allowed") << std::endl;
 	}
 	std::cout << "autoindex: " << serv_info.autoindex << std::endl;
 	std::cout << "cgi_extension: " << serv_info.cgi_extension << std::endl;
@@ -406,10 +428,10 @@ void	Serv::print(int counter) const
 		std::cout << "root: " << it->root << std::endl;
 		std::cout << "index: " << it->index << std::endl;
 		std::cout << "cgi-extension: " << it->cgi_extension << std::endl;
-		std::map<std::string, bool>::const_iterator it3;
+		std::map<std::string, Methods>::const_iterator it3;
 		for (it3 = it->methods.begin(); it3 != it->methods.end(); it3++)
 		{
-			std::cout << "Method: " << it3->first << " : " << (it3->second ? "allowed" : "denied") << std::endl;
+			std::cout << "Method: " << it3->first << " : " << (it3->second ? "denied" : "allowed") << std::endl;
 		}
 		std::cout << "redirect_status: " << it->redirect_status << std::endl;
 		std::cout << "redirect_path: " << it->redirect_path << std::endl;			

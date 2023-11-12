@@ -58,21 +58,25 @@ void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_co
 		throw_parsing_exception(line, 1);
 }
 
-void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line)
+void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line, std::string type)
 {
 	if (iss.eof())
 		throw_parsing_exception(line, 3);
 	while (iss >> token)
 	{
-		if (token == "GET" || token == "POST" || token == "DELETE")
-			temp_location->methods.insert(std::make_pair(token, true));
+		if ((token == "GET" || token == "POST" || token == "DELETE") && type == "allow")
+			temp_location->methods.insert(std::make_pair(token, ALLOWED));
+		else if ((token == "GET" || token == "POST" || token == "DELETE") && type == "deny")
+			temp_location->methods.insert(std::make_pair(token, DENIED));
 		else if (iss >> token)
 			throw_parsing_exception(line, 5);
 	}
 	if (*(token.end() - 1) != ';')
 		throw_parsing_exception(line, 4);
-	if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token))
-		temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), true));
+	if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token) && type == "allow")
+		temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), ALLOWED));
+	else if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token) && type == "deny")
+		temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), DENIED));	
 	else
 		throw_parsing_exception(line, 5);
 }

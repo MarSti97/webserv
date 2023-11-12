@@ -24,7 +24,7 @@ class Serv
 		bool	compareHostPort(std::string host, std::string port);
 		void	filterRequest( Request req );
 		void	PrepareResponse( std::string method, std::string path, Request req );
-		bool	CheckAllowed( std::string method, std::string path);
+		Methods	CheckAllowed( std::string method, std::string path);
 		bool	ext_CGI(std::string path_info);
 		int		parseSend(std::string response, int fd);
 		bool	CheckAutoindex( std::string path);
@@ -32,6 +32,7 @@ class Serv
 		void	deleteFolderMethod(std::string path, Request req);
 		void	chunkedResponse(Request req);
 		void	errorPageCheck(std::string code, std::string message, std::string path, Request req);
+		bool	redirection(std::string path, Request req);
 		std::string	findFolder( std::string folder );
 		std::string	sendby_CGI(int cgi_fd);
 		std::string getResponse(std::string path, std::string file, std::string responseHeaders);

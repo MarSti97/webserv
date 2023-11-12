@@ -3,9 +3,17 @@
 
 #include "webserv.hpp"
 
+enum Methods
+{
+	ALLOWED,
+	DENIED,
+	UNDEFINED,
+};
+
+
 struct Location
 {
-	std::map<std::string, bool> methods;
+	std::map<std::string, Methods> methods;
 	std::string	root;
 	std::string index;
 	std::string autoindex;
@@ -21,7 +29,7 @@ struct Location
 class Config
 {
 	public:
-		std::map<std::string, bool> methods;
+		std::map<std::string, Methods> methods;
 		std::string host;
 		std::string port;
 		std::string	root;
