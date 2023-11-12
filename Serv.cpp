@@ -185,7 +185,7 @@ bool Serv::redirection(std::string path, Request req)
 	std::vector<Location>::iterator it;
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
+		// std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
 		if (it->path == path && !(it->redirect_path.empty()))
 		{
 			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\n", req.ClientFd());
@@ -323,41 +323,55 @@ bool	Serv::ext_CGI(std::string path_info)
 	return 0;
 }
 
+void printMethods(std::map<std::string, Methods> map)
+{
+	std::map<std::string, Methods>::const_iterator its;
+	std::cout << "PRINTING: methods" << std::endl;
+	for (its = map.begin(); its != map.end(); its++)
+	{
+		std::cout << "Method: " << its->first << " : "; 
+		switch (its->second)
+		{
+			case ALLOWED :
+				std::cout << "allowed";
+				break;
+			case DENIED :
+				std::cout << "denied";
+				break;
+			default :
+				std::cout << "undefined";
+				break;
+		}
+		std::cout << std::endl;
+	}
+}
+
 Methods	Serv::CheckAllowed( std::string method, std::string path)
 {
-	// std::cout << "CHECKING METHODS" << std::endl;
-	if (serv_info.methods[method])
-		return serv_info.methods[method];
-	std::string newPath = "";
-	int len = 1;
-	while (newPath != path)
+	size_t i = path.rfind("/");
+	std::string newPath;
+	if (path.substr(i).find(".") != std::string::npos)
+		newPath = path.substr(0, i + 1);
+	else
+		newPath = path;
+	while (newPath != "")
 	{
-		size_t i = path.find("/", len);
-		if (i == std::string::npos)
-			newPath = path;
-		else
-			newPath = path.substr(0, i); // changed this from (i - 1) because the first substring was coming with 1 less character
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
-			// std::cout << it->path << " " << newPath << std::endl;
-			// std::cout << "METHOD: " << path << " | " << newPath << std::endl;
-			if (it->path == newPath && it->methods[method])
+			if (it->path == newPath)
 			{
-				if (it->methods[method] == ALLOWED)
+				if (it->methods.find(method) != it->methods.end())
 				{
-					printlog("Method " + method + " allowed.", -1, GREEN);
-					return ALLOWED;
-				}
-				else if (it->methods[method] == DENIED)
-				{
-					printlog("Method " + method + " not allowed.", -1, RED);
-					return DENIED;
+					return whatstheMethod(it->methods[method], method);
 				}
 			}
 		}
-		len += i;
+		i = newPath.rfind("/");
+		newPath = newPath.substr(0, i);
 	}
+	// if (serv_info.methods.find(method) != serv_info.methods.end()) // might need this, check with root if things work
+	// 	return whatstheMethod(serv_info.methods[method], method);
     return UNDEFINED;
 }
 

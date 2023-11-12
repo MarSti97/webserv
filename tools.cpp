@@ -120,6 +120,21 @@ int getIntSize(int nbr)
     return res;
 }
 
+Methods whatstheMethod(Methods meth, std::string word)
+{
+	if (meth == ALLOWED)
+	{
+		printlog("Method " + word + " allowed.", -1, GREEN);
+		return ALLOWED;
+	}
+	else if (meth == DENIED)
+	{
+		printlog("Method " + word + " not allowed.", -1, RED);
+		return DENIED;
+	}
+    return UNDEFINED;
+}
+
 // char *joinVector(std::vector<std::pair<char *, int> > full, int size)
 // {
 //     char buf[size + 1];

@@ -86,6 +86,7 @@ int     getIntSize(int nbr);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 std::string removeDashIfExists(std::string path);
+Methods whatstheMethod(Methods meth, std::string word);
 
 
 

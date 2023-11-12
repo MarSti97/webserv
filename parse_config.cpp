@@ -65,18 +65,22 @@ void	parseMethods(std::istringstream &iss, std::string token, Location *temp_loc
 	while (iss >> token)
 	{
 		if ((token == "GET" || token == "POST" || token == "DELETE") && type == "allow")
-			temp_location->methods.insert(std::make_pair(token, ALLOWED));
+			// temp_location->methods.insert(std::make_pair(token, ALLOWED));
+			temp_location->methods[token] = ALLOWED;
 		else if ((token == "GET" || token == "POST" || token == "DELETE") && type == "deny")
-			temp_location->methods.insert(std::make_pair(token, DENIED));
+			// temp_location->methods.insert(std::make_pair(token, DENIED));
+			temp_location->methods[token] = DENIED;
 		else if (iss >> token)
 			throw_parsing_exception(line, 5);
 	}
 	if (*(token.end() - 1) != ';')
 		throw_parsing_exception(line, 4);
 	if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token) && type == "allow")
-		temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), ALLOWED));
+		// temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), ALLOWED));
+		temp_location->methods[token.substr(0, token.size() - 1)] = ALLOWED;
 	else if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token) && type == "deny")
-		temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), DENIED));	
+		// temp_location->methods.insert(std::make_pair(token.substr(0, token.size() - 1), DENIED));
+		temp_location->methods[token.substr(0, token.size() - 1)] = DENIED;
 	else
 		throw_parsing_exception(line, 5);
 }
