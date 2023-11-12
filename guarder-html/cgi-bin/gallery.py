@@ -4,6 +4,8 @@ UPLOADS_FOLDER = 'uploads'
 
 def list_images():
     images = []
+    if not os.path.exists(UPLOADS_FOLDER):
+        return images
     for filename in os.listdir(UPLOADS_FOLDER):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
             images.append(filename)
