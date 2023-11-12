@@ -272,7 +272,7 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 
 			if (bytesRead < 0) {
 				perror("Error reading from file descriptor");
-				// Handle the error as needed
+				// Error 500
 			}
 			responseHeaders = "HTTP/1.1 200 OK\r\n";
 			responseHeaders += "Content-Type: text/html\r\n";
@@ -282,6 +282,11 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 			responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
 			//std::cout << responseHeaders + response << std::endl;
 			close(cgi_fd);
+	}
+	else
+	{
+		response = getResponse(serv_info.root, "/404.html", getHeader("500 Internal Server Error", "", "/404.html"));
+		//error 500 - will need to implement differently
 	}
 	return responseHeaders + response;
 }
