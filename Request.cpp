@@ -127,6 +127,11 @@ std::string Request::Boundary( void ) const
     return boundary;
 }
 
+std::string Request::TransferEncoding() const
+{
+    return transferencoding;
+}
+
 int Request::Eof( void )
 {
     return eof;
@@ -142,7 +147,7 @@ void    Request::SetClientFd( int fd )
     clientfd = fd;
 }
 
-Request::Request( char *buffer, size_t size )
+Request::Request( char *buffer, size_t size ) : continue_100(false)
 {
     // char reqqu[size + 1];
     // memcpy(reqqu, buffer, size);
@@ -157,7 +162,6 @@ Request::Request( char *buffer, size_t size )
     if (queryStart != std::string::npos)
     {
         queryStart += 4;
-		// std::cout << "CORRECT" << std::endl;
         size_t queryEnd = _request.find(" ", queryStart);
         size_t queryEnd2 = _request.find("?", queryStart);
         if (queryEnd2 < queryEnd)
@@ -168,14 +172,12 @@ Request::Request( char *buffer, size_t size )
     this->del = getINFOone(_request, "DELETE ", 7);
 
 	this->host = getINFOtwo(_request, "Host: ", 6);
-	// std::cout << "THIS: " << this->host << std::endl;
 	size_t splitter = host.find(":");
 	if (splitter != std::string::npos)
 	{
 		this->port = this->host.substr(splitter + 1);
 		std::string temp = this->host.substr(0, splitter);
 		this->host = temp;
-		// std::cout << "THAT: " << this->host << " and " << this->port << std::endl;
 	}
 
 	this->useragent = getINFOtwo(_request, "User-Agent: ", 12);
@@ -184,6 +186,8 @@ Request::Request( char *buffer, size_t size )
 	this->acceptencoding = getINFOtwo(_request, "Accept-Encoding: ", 17);
 	this->xrequestedwith = getINFOtwo(_request, "X-Requested-With: ", 18);
 	this->connection = getINFOtwo(_request, "Connection: ", 12);
+    this->expect = getINFOtwo(_request, "Expect: ", 8);
+	this->transferencoding = getINFOtwo(_request, "Transfer-Encoding: ", 19);
 
     size_t refererStart = _request.find("Referer: ");
     if (refererStart != std::string::npos)
@@ -255,7 +259,6 @@ int Request::EndBoundary( char *str, size_t len, char *bound)
         if (memcmp(str + f, bound, strlen(bound)))
             return f;
     }
-    // std::cout << f << std::endl;
     return 0;
 }
 
@@ -265,9 +268,82 @@ void    Request::clean_content()
     content.clean();
 }
 
+int nextSize(std::string str, int pos)
+{
+    int next = str.find("\r\n", pos);
+    if ((size_t)next == std::string::npos)
+        return 0;
+    char *end_ptr;
+    std::string chunk_size = str.substr(pos, pos - next);
+    int size = strtol(chunk_size.c_str(), &end_ptr, 16);
+    return size;
+}
+
+bool    Request::processChunked(int current_len, Download &down, int client)
+{
+    int head = _request.find("\r\n\r\n");
+    if ((size_t)head == std::string::npos)
+    {
+        std::cerr << "Error: No head on request" << std::endl;
+        return false;
+    }
+    head += 4;
+    if (expect == "100-continue")
+    {
+        if (current_len == head)
+        {
+            continue_100 = true;
+            return false;
+        }
+    }
+    if (transferencoding == "chunked")
+    {
+        std::vector<std::pair<char *, int> > res;
+        int chunk_size = nextSize(_request, head);
+        int counter = 0;
+        while (chunk_size != 0)
+        {
+            char *str = new char[chunk_size + 1];
+            str[chunk_size] = '\0';
+            head += getIntSize(chunk_size) + 2;
+            for (int i = 0; i != chunk_size; ++i)
+                str[i] = c_request[head + i];
+            res.push_back(std::make_pair(str, chunk_size));
+            counter += chunk_size;
+            head += chunk_size + 2;
+            chunk_size = nextSize(_request, head);
+        }
+        char temp[counter + 1];
+        std::vector<std::pair<char *, int> >::iterator it;
+        int f = 0;
+        for (it = res.begin(); it != res.end(); ++it)
+        {
+            int i = -1;
+            while (++i < it->second)
+            {
+                temp[f] = it->first[i];
+                f++;
+            }
+            delete[] it->first;
+        }
+        temp[counter] = '\0';
+        content.setContent(temp, counter);
+        content.setContentSize(counter);
+        printlog("Successfully unchunked request", -1, GREEN);
+        down.eraseClient(client);
+        return false;
+    }
+    return true;
+}
+
+bool Request::getContinue100() const
+{
+    return continue_100;
+}
+
 Request::~Request() {}
 
-Request::Request() : c_request(NULL), eof(0) {}
+Request::Request() : c_request(NULL), eof(0), continue_100(false) {}
 
 //#textmate (mate);
 //snippets

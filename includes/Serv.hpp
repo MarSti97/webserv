@@ -30,6 +30,7 @@ class Serv
 		bool	CheckAutoindex( std::string path);
 		void	deleteMethod(std::string abs, Request req);
 		void	deleteFolderMethod(std::string path, Request req);
+		void	chunkedResponse(Request req);
 		void	errorPageCheck(std::string code, std::string message, std::string path, Request req);
 		std::string	findFolder( std::string folder );
 		std::string	sendby_CGI(int cgi_fd);
@@ -37,6 +38,7 @@ class Serv
 		std::string	CheckIndex( std::string path);
 		std::string createAbsolutePath(std::string path);
 		std::string	CheckCGI( std::string path);
+		std::string getMaxBodySize();
 };
 
 #endif

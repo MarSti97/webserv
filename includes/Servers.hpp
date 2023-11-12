@@ -13,12 +13,18 @@ class Servers
 		std::vector<Serv> servs;
 		std::string config;
     	std::vector<pollfd> fds;
+		bool payloadTooLarge_413;
+		// bool continue_100;
+		// bool chunked_data;
+
 		void validate_config();
+		bool checkContentSizeToMax(char *buffer, ssize_t n, int clientfd);
+		void expectContinueOrChuncked(std::string buf, Serv serv, int clientfd);
 	
 	public : 
 		Servers() {}
 		Servers(std::string file, char **environment);
-		~Servers() {std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
+		~Servers(); //{std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
 
 		Request parseRecv(std::vector<pollfd> &fds, int pos);
 		void	printAll() const;

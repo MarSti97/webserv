@@ -32,7 +32,6 @@ void    Download::eraseClient( int client )
 void Download::add_map(int client, imgDown content)
 {
     fileMap.insert(std::make_pair(client, content));
-    // std::cout << "ass" << std::endl;
 }
 
 void Download::append_map(int client, char *buf, int bufsize)
@@ -41,7 +40,7 @@ void Download::append_map(int client, char *buf, int bufsize)
     if (it != fileMap.end())
     {
         // it->second.file = strjoin(it->second.file, buf, it->second.current_len, bufsize);
-        std::cout << "WTF" << std::endl;
+        // std::cout << "WTF" << std::endl;
         int totalLength = it->second.current_len + bufsize;
         char *combinedStr = new char[totalLength + 1]; // +1 for the null-terminator
         combinedStr[totalLength] = '\0'; // +1 for the null-terminator
@@ -50,8 +49,6 @@ void Download::append_map(int client, char *buf, int bufsize)
         delete[] it->second.file;
         it->second.file = combinedStr;
         it->second.current_len += bufsize;
-        // std::cout << it->second.file << std::endl;
-        // std::cout << "Full-len: " << it->second.content_len << " | Current-len: " << it->second.current_len << std::endl;
     }
 }
 
@@ -85,7 +82,9 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
         if (it->second.content_len <= it->second.current_len)
         {
             Request reo(it->second.file, it->second.current_len);
-            std::cout << "DEBUG: isitFull " << reo.Boundary() << std::endl;
+            if(!reo.processChunked(it->second.current_len, *this, client))
+                return reo;
+            // std::cout << "DEBUG: isitFull " << reo.Boundary() << std::endl;
             if (!(reo.Boundary().empty()))
             {
                 int headless = removehead(reo.C_request());

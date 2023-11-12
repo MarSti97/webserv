@@ -10,11 +10,11 @@ int	Serv::cgi_request(Request req, std::string path_info, std::string script_ext
 	init_cgi_meta_vars(req, &meta_vars);
 	cgi_env = create_cgi_env(meta_vars);
 
-	int i = -1;
-	while (cgi_env[++i])
-	{
-		std::cout << cgi_env[i] << std::endl;
-	}
+	// int i = -1;
+	// while (cgi_env[++i])
+	// {
+	// 	std::cout << cgi_env[i] << std::endl;
+	// }
 
 	if (script_extension == ".sh")
 		cmd_name = "bash";
@@ -24,7 +24,7 @@ int	Serv::cgi_request(Request req, std::string path_info, std::string script_ext
 		cmd_name = script_extension.substr(1);
 	int	cgi_fd = execute_script(findcommand("/" + cmd_name), path_info, cgi_env, req); 
 
-	i = -1;
+	int i = -1;
 	while (cgi_env[++i])
 		delete[] cgi_env[i];
 	delete[] cgi_env;
@@ -52,7 +52,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		std::string path = path_info.substr(0, i);
 		// path_info = serv_info.root + path_info;
 		if (chdir(path.c_str() + 1) == -1)
-			std::cout << "Error changing to cgi dir: " << path << std::endl;
+			std::cerr << "Error changing to cgi dir: " << path << std::endl;
 		char *argv[3];
         argv[0] = const_cast<char *>((cmd_path).c_str());
 		argv[1] = const_cast<char *>((script_name).c_str());

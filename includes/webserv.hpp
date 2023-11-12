@@ -28,6 +28,7 @@
 #include <cstdio>
 #include <sys/wait.h>
 #include <ctime>
+#include <cstdlib>
 
 #include "Disposition.hpp"
 #include "Content.hpp"
@@ -79,9 +80,13 @@ int     end_loop(int end);
 int     removehead(char *file);
 bool    compare(const char *find, char* str);
 int     removeheadnoimg(char *file, int size);
+bool    deleteFolderRecusively(std::string path);
+// char    *joinVector(std::vector<std::pair<char *, int> > full, int size);
+int     getIntSize(int nbr);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 std::string removeDashIfExists(std::string path);
+
 
 
 #endif

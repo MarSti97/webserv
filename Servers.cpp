@@ -8,7 +8,7 @@ bool	check_duplicate_attr(T attribute, std::string line)
 	return true;
 }
 
-Servers::Servers(std::string file, char **environment) : env(environment)
+Servers::Servers(std::string file, char **environment) : env(environment), payloadTooLarge_413(false)
 {
 	config = readFile(file);
 	(void)env;
@@ -103,130 +103,52 @@ void	Servers::validate_config()
 	
 }
 
-// void	Servers::validate_config()
+// void	Servers::expectContinueOrChuncked(std::string buf, Serv serv, int clientfd)
 // {
-// 	std::istringstream iss(config);
-// 	std::string token;
-//     while (iss >> token) 
+
+
+// 	std::cout << "CHECK: expect: " << expect << " chunked: " << chunked << std::endl;
+// 	if (chunked == "chunked")
+// 		chunked_data = true;
+// 	if (expect == "100-continue")
 // 	{
-// 		if (token == "server")
-// 		{
-// 			Config temp_config;
-// 			if (iss >> token && token == "{")
-// 			{
-// 				while (iss >> token) 
-// 				{
-// 					if (token == "listen" && check_duplicate_attr(temp_config.port))
-// 						temp_config.port = parse_attribute(iss, token);
-// 					else if (token == "host")
-// 						temp_config.host = parse_attribute(iss, token);
-// 					else if (token == "server_name")
-// 					{
-// 						while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-// 						{
-// 							if (*(token.end() - 1) == ';')
-// 								temp_config.server_name.push_back(token.substr(0, token.size() - 1));
-// 							else
-// 								temp_config.server_name.push_back(token);
-// 						}
-// 					}
-// 					else if (token == "root")
-// 						temp_config.root = parse_attribute(iss, token);
-// 					else if (token == "index")
-// 						temp_config.index = parse_attribute(iss, token);
-// 					else if (token == "client_max_body_size")
-// 						temp_config.max_body_size = parse_attribute(iss, token);
-// 					else if (token == "autoindex")
-// 						temp_config.autoindex = parse_attribute(iss, token);
-// 					else if (token == "error_page")
-// 					{
-// 						iss >> token;
-// 						if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-// 							temp_config.error_pages[token] = "";
-// 						std::string oldtoken = token;
-// 						if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-// 							temp_config.error_pages[oldtoken] = token.substr(0, token.size() - 1);	
-// 					}
-// 					else if (token == "location")
-// 					{
-// 						Location temp_location;
-// 						iss >> token;
-// 						temp_location.path = token;
-// 						if (!check_new_attribute(token) && iss >> token && token == "{")
-// 						{
-// 							while (iss >> token)
-// 							{
-// 								if (token == "allow")
-// 								{
-// 									if (temp_location.path == "/")
-// 									{
-// 										while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-// 										{
-// 											std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
-// 											temp_config.methods.insert(std::make_pair(res, true));
-// 										}
-// 									}
-// 									while (*(token.end() - 1) != ';' && iss >> token && !check_new_attribute(token))
-// 									{
-// 										std::string res = (token[token.length() - 1] == ';' ? token.substr(0, token.length() - 1) : token);
-// 										temp_location.methods.insert(std::make_pair(res, true));
-// 									}
-// 								}
-// 								else if (token == "root")
-// 								{
-// 									if (temp_location.path == "/")
-// 										temp_config.root = parse_attribute(iss, token);
-// 									else
-// 										temp_location.root = parse_attribute(iss, token);
-// 								}
-// 								else if (token == "index")
-// 								{
-// 									if (temp_location.path == "/")
-// 										temp_config.index = parse_attribute(iss, token);
-// 									else
-// 										temp_location.index = parse_attribute(iss, token);
-// 								}
-// 								else if (token == "autoindex")
-// 								{
-// 									if (temp_location.path == "/")
-// 										temp_config.autoindex = parse_attribute(iss, token);
-// 									else
-// 										temp_location.autoindex = parse_attribute(iss, token);
-// 								}
-// 								else if (token == "cgi")
-// 								{
-// 									if (temp_location.path == "/")
-// 										temp_config.cgi_extension = parse_attribute(iss, token);
-// 									else
-// 										temp_location.cgi_extension = parse_attribute(iss, token);
-// 								}
-// 								else if (token == "return")
-// 								{
-// 									iss >> token;
-// 									if (*(token.end() - 1) != ';' && !check_new_attribute(token))
-// 										temp_location.redirect_status = token;
-// 									if (iss >> token && *(token.end() - 1) == ';' && !check_new_attribute(token))
-// 										temp_location.redirect_path = token.substr(0, token.size() - 1);						
-// 								}
-// 								else if (token == "}")
-// 								{
-// 									temp_config.location.push_back(temp_location);
-// 									break ;
-// 								}
-// 							}
-// 						}
-// 					}
-// 					else if (token == "}")
-// 					{
-// 	                    check_requirements(&temp_config);
-// 						servs.push_back(Serv(temp_config));
-// 						break ;
-// 					}
-// 				}
-// 			}
-// 		}
-//     }
+// 		serv.parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
+// 		continue_100 = true;
+// 	}
 // }
+
+bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
+{
+	std::string buf(buffer);
+	std::cerr << buf << std::endl;
+	Request req(buffer, n);
+	if (req.Post() != "")
+	{
+		Serv temp = getCorrectServ(req);
+		// expectContinueOrChuncked(buf, temp, clientfd);
+		std::string max_string = temp.getMaxBodySize();
+		std::string len_string = req.Contentlength();
+		std::cerr << "ERROR: " << max_string << " | " << len_string << std::endl;
+		if (max_string == "" || len_string == "")
+		{
+			std::cerr << "Error: unable to calculate max body size" << std::endl;
+			return true;
+		}
+		long max;
+		long contentlen;
+
+		std::istringstream(max_string) >> max;
+		std::istringstream(len_string) >> contentlen;
+		if (max < contentlen)
+		{
+			req.SetClientFd(clientfd);
+			temp.errorPageCheck("413", "Payload Too Large", "/413.html", req);
+			payloadTooLarge_413 = true;
+			return false;
+		}
+	}
+	return true;
+}
 
 Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 {
@@ -236,11 +158,11 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
     ssize_t n;
     int counter = 0;
     int buf_size = 0;
+	// bool first = true;
     while (1)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fd[pos].fd, buffer, 4096, 0);
-        // std::cout << "THIS: recv " << n << std::endl;
         if (n <= 0)
         {
             if (n == 0)
@@ -269,6 +191,11 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
         }
         else
         {
+			if (counter == 0)
+			{
+				if (!checkContentSizeToMax(buffer, n, fd[pos].fd))
+					return Request();
+			}
             char *bug = new char[n + 1];
             for (int o = 0; o < n; ++o)
                 bug[o] = buffer[o];
@@ -290,8 +217,9 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
         delete[] it->first;
     }
     buf[buf_size] = '\0';
-    std::vector<std::pair<char *, int> >().swap(full_buf);
+    std::vector<std::pair<char *, int> >().swap(full_buf); // why
     findbuffer = std::string(buf, buf_size);
+	// std::cout << "The request :" << findbuffer << std::endl;
     Request req = postThings(findbuffer, buf, fd[pos].fd, buf_size);
     return req;
 }
@@ -335,7 +263,10 @@ void Servers::run()
 			int ret = poll(&fds[i], 1, timeout);
 			if (ret == -1)
 			{
-				std::cerr << "Error in poll" << std::endl;
+				if (errno == EINTR)
+					std::cerr << "Poll was interupted by a signal" << std::endl;
+				else
+					std::cerr << "Error in poll" << std::endl;
 				continue;
 			}
 			if (ret == 0 && !checkSockets(fds[i].fd))
@@ -359,6 +290,17 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
+						if (req.getContinue100())
+						{
+							getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
+							continue;
+						}
+						// if (payloadTooLarge_413 == true || continue_100 == true)
+						// {
+						// 	// continue_100 = false; // this will probably need to be in isitFULL function
+						// 	payloadTooLarge_413 = false;
+						// 	continue;
+						// } maybe dont need this shit
 						if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
 						{
 							req.SetClientFd(fds[i].fd);
@@ -390,12 +332,20 @@ Serv	&Servers::getCorrectServ(Request req)
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
-		// std::cout << "ENTER: " << req.Host() << " " << req.Port() << std::endl;
 		if (it->compareHostPort(req.Host(), req.Port()))
 		{
-			// it->printshit();
 			return *it;
 		}
 	}
 	return *servs.end();
+}
+
+Servers::~Servers()
+{
+	std::vector<pollfd>::iterator it;
+	for (it = fds.begin(); it != fds.end(); ++it)
+	{
+		close(it->fd);
+	}
+	fds.clear();
 }

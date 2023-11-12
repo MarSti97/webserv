@@ -1,8 +1,8 @@
 #include "./includes/webserv.hpp"
 
 
-int glob_fd;
-int cli_glob;
+// int glob_fd;
+// int cli_glob;
 
 int main(int ac, char **av, char **env)
 {
@@ -39,9 +39,7 @@ std::string getHeader( std::string ARG, std::string extra, std::string filePath 
     std::string mimeType;
     std::string responseHeaders;
     mimeType = getMimeType(filePath);
-    // std::cout << filePath << std::endl;
 
-    // std::cout << mimeType << std::endl;
     responseHeaders = "HTTP/1.1 " + ARG + "\r\n";
     responseHeaders += "Content-Type: " + mimeType + "\r\n";
     responseHeaders += "Connection: keep-alive\r\n";
@@ -52,7 +50,6 @@ std::string getHeader( std::string ARG, std::string extra, std::string filePath 
 
 bool headcheck(std::string buf)
 {
-    // std::cout << buf << std::endl;
     if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
         return true;
     return false;
@@ -200,8 +197,8 @@ void	ctrlc(int signum) // need to fix this
         end_loop(1);
         Download &down = Download::getInstance();
         down.clean();
-		close(glob_fd);
-		close(cli_glob);
+		// close(glob_fd);
+		// close(cli_glob);
 		// exit(EXIT_FAILURE);
 	}
 }

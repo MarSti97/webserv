@@ -77,3 +77,61 @@ std::string removeDashIfExists(std::string path)
         return path.substr(0, size - 1);
     return path;
 }
+
+bool deleteFolderRecusively(std::string path)
+{
+	struct dirent *entry;
+	DIR *dir = opendir(path.c_str() + 1);
+	if (dir == NULL)
+		std::cout << "Error: couldnt open dir for delete method: " << path << std::endl;
+	else
+	{
+		while ((entry = readdir(dir)) != NULL)
+		{
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            	continue;
+			if (entry->d_type == DT_DIR)
+				deleteFolderRecusively(path + "/" + entry->d_name); // does d_name have / already?
+			else
+			{
+				std::string fileToDelete = path + "/" + entry->d_name;
+				if (std::remove(fileToDelete.c_str() + 1) != 0)
+					std::cout << "Error: could not delete file within directory: " << fileToDelete << std::endl;
+			}
+		}
+		closedir(dir);
+		if (rmdir(path.c_str() + 1) != 0)
+			return false;
+		return true;
+	}
+	return false;
+}
+
+int getIntSize(int nbr)
+{
+    if (nbr == 0)
+        return 1;
+    int res = 0;
+    while (nbr)
+    {
+        nbr /= 10;
+        res++;
+    }
+    return res;
+}
+
+// char *joinVector(std::vector<std::pair<char *, int> > full, int size)
+// {
+//     char buf[size + 1];
+//     std::vector<std::pair<char *, int> >::iterator it;
+//     int f = 0;
+//     for (it = full.begin(); it != full.end(); ++it)
+//     {
+//         int i = -1;
+//         while (++i < it->second)
+//             buf[f++] = it->first[i];
+//         delete[] it->first;
+//     }
+//     buf[size] = '\0';
+//     return buf;
+// }

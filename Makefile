@@ -23,7 +23,7 @@ $(BIN)/%.o : %.cpp
 	@$(CC) $(FLAGS) -c $< -o $@
 
 run : all
-	@./$(NAME) example.config
+	@./$(NAME) example.config 2> errors.txt
 
 valgrind : all
 	@valgrind --leak-check=full --show-leak-kinds=all ./$(NAME) example.config

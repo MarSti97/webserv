@@ -19,7 +19,7 @@ int Serv::parseSend(std::string response, int fd)
         return n;
     }
     else
-        std::cout << "post chuncked" << std::endl;
+        std::cout << "post chuncked" << std::endl; // i don't think we use this ...
     return 0;
 }
 
@@ -129,7 +129,7 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string pat
 
 void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 {
-	std::cout << "File to be deleted: " << abs << std::endl;
+	// std::cout << "File to be deleted: " << abs << std::endl;
 	if (std::remove(abs.c_str() + 1) == 0) // changed to + 1 because it wasn't getting deleted
 	{
 		printlog("Succefully deleted file", -1, GREEN); // the 0 for the arguemnt is shit need to fix
@@ -144,35 +144,42 @@ void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 
 void Serv::deleteFolderMethod(std::string path, Request req)
 {
-	pid_t pid = fork();
-	if (pid < 0)
-		printlog("Error: fork in deleteFolderMethod", -1, RED);
-	else if (pid == 0)
+	if (deleteFolderRecusively(path))
 	{
-		int status;
-		waitpid(pid, &status, 0);
-		if (status == 0)
-		{
-			printlog("Succefully deleted folder", -1, GREEN);
-			parseSend("HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n", req.ClientFd());
-		}
-		else
-		{
-			printlog("Failed to delete file, error code: ", status, RED);
-			errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
-		}
+		printlog("Succefully deleted folder", -1, GREEN);
+		// errorPageCheck("204", "No Content", "/204.html", req); I dont know if this works, test
+		parseSend("HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n", req.ClientFd());
 	}
 	else
 	{
-		const char *temp = path.c_str() + 1;
-		char *cmd[4];
-
-		cmd[0] = const_cast<char*>("/bin/rm");
-		cmd[1] = const_cast<char*>("-rf");
-		cmd[2] = const_cast<char*>(temp);
-		cmd[3] = NULL;
-		execve(cmd[0], cmd, NULL);
+		printlog("Failed to delete folder ", -1, RED);
+		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
 	}
+}
+
+void Serv::chunkedResponse(Request req)
+{
+	// std::cout << "ENTER CHUNKED RESPONSE!" << std::endl;
+	size_t max;
+	std::istringstream(serv_info.max_body_size) >> max;
+	if (req.content.getContentSize() > max)
+		errorPageCheck("413", "Payload Too Large", "/413.html", req);
+	else
+	{
+		std::string content(req.content.getContent());
+		if (content != "")
+		{
+			// std::cout << "Are we here?" << std::endl;
+			std::stringstream ss;
+    		ss << req.content.getContentSize();
+			std::string response = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: " + ss.str() + "\r\n\r\n";
+			// std::cout << "CONTENT: " << response << content << std::endl;
+			parseSend(response + content, req.ClientFd());
+		}
+		else
+			errorPageCheck("404", "Not Found", "/404.html", req);
+	}
+
 }
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
@@ -181,7 +188,9 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 	if (CheckAllowed(method, path))
 	{
 		std::string abs = createAbsolutePath(path);
-		std::cout << abs << std::endl;
+		if (req.TransferEncoding() == "chunked")
+			return chunkedResponse(req);
+		// std::cout << abs << std::endl;
 		if (findFolder(abs) != "") // it is a file
 		{
 			if (method == "GET" || method == "POST" || method == "DELETE")
@@ -190,12 +199,11 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				{
 					std::string theExtension = CheckCGI(path);
 					if (method == "DELETE")
-					{
-						std::cout << "ENTERED THE DELETE THINGY" << std::endl;
 						deleteMethod(abs, req);
-					}
 					else if (theExtension != "") // it is a CGI script
 						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
+					// else if (method == "POST")
+					// 	errorPage()
 					else // "normal" request
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
 				}
@@ -210,7 +218,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				if (method == "DELETE")
 					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				std::cout << "path " << path << std::endl;
+				// std::cout << "path " << path << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
@@ -298,7 +306,7 @@ bool	Serv::ext_CGI(std::string path_info)
 
 bool	Serv::CheckAllowed( std::string method, std::string path)
 {
-	std::cout << "CHECKING METHODS" << std::endl;
+	// std::cout << "CHECKING METHODS" << std::endl;
 	if (serv_info.methods[method])
 		return serv_info.methods[method];
 	std::string newPath = "";
@@ -313,12 +321,16 @@ bool	Serv::CheckAllowed( std::string method, std::string path)
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
-			std::cout << it->path << " " << newPath << std::endl;
+			// std::cout << it->path << " " << newPath << std::endl;
 			if (it->path == newPath && it->methods[method])
+			{
+				printlog("Method " + method + " allowed.", -1, GREEN);
 				return it->methods[method];
+			}
 		}
 		len += i;
 	}
+	printlog("Method " + method + " not allowed.", -1, RED);
     return false;
 }
 
@@ -327,7 +339,7 @@ bool	Serv::CheckAllowed( std::string method, std::string path)
 int Serv::establish_connection()
 {
     struct addrinfo *addr;
-    if (getaddrinfo(serv_info.server_name[0].c_str(), serv_info.port.c_str(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
+    if (getaddrinfo(serv_info.host.c_str(), serv_info.port.c_str(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }
@@ -338,7 +350,6 @@ int Serv::establish_connection()
 	int opt = 1;
 	if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) // ignores wait time for rebinding
 		return failToStart("Error: socket optimise", addr, socketfd);
-	//glob_fd = socketfd;
 	signal(SIGINT, ctrlc);
     int flags = fcntl(socketfd, F_GETFL, 0); // set the socket to non-blocking;
     if (flags == -1)
@@ -411,4 +422,9 @@ bool Serv::compareHostPort(std::string host, std::string port)
 int Serv::getSocket()
 {
 	return socketfd;
+}
+
+std::string Serv::getMaxBodySize()
+{
+	return serv_info.max_body_size;
 }
