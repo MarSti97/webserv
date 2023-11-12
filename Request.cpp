@@ -290,51 +290,34 @@ bool    Request::processChunked(int current_len, Download &down, int client)
     head += 4;
     if (expect == "100-continue")
     {
-        // std::cout << "CHECK: head " << head << " request: " << current_len << std::endl;
         if (current_len == head)
         {
             continue_100 = true;
             return false;
         }
     }
-    // std::cout << "DEBUG: head size " << head << std::endl;
     if (transferencoding == "chunked")
     {
         std::vector<std::pair<char *, int> > res;
         int chunk_size = nextSize(_request, head);
-        // int j = 0;
-        // while (c_request[j])
-        //     write(1, &c_request[j++], 1);
-        // std::cout << "DEBUG: chunk len " << getIntSize(chunk_size) << std::endl;
-        // char *end_ptr;
-        // int size = strtol(chunk_size.c_str(), &end_ptr, 16);
-        // int size = atoi(chunk_size.c_str());
-        // std::cout << "CHECK: chunk size: " << chunk_size << std::endl;
         int counter = 0;
         while (chunk_size != 0)
         {
             char *str = new char[chunk_size + 1];
             str[chunk_size] = '\0';
             head += getIntSize(chunk_size) + 2;
-            // std::cout << "DEBUG: head size " << head << std::endl;
             for (int i = 0; i != chunk_size; ++i)
-            {
                 str[i] = c_request[head + i];
-                // write(1, &str[i], 1);
-            }
             res.push_back(std::make_pair(str, chunk_size));
             counter += chunk_size;
             head += chunk_size + 2;
             chunk_size = nextSize(_request, head);
-            // size = strtol(chunk_size.c_str(), &end_ptr, 16);
-            // std::cout << "NEXT: chunk size: " << chunk_size << std::endl;
         }
         char temp[counter + 1];
         std::vector<std::pair<char *, int> >::iterator it;
         int f = 0;
         for (it = res.begin(); it != res.end(); ++it)
         {
-            // std::cout << "DEGUB: here" << std::endl;
             int i = -1;
             while (++i < it->second)
             {
@@ -344,12 +327,6 @@ bool    Request::processChunked(int current_len, Download &down, int client)
             delete[] it->first;
         }
         temp[counter] = '\0';
-        // std::cerr << "Printing unchunked :" << std::endl;
-        // int i = 0;
-        // while (temp[i])
-        //     write(2, &temp[i++], 1);
-        // std::cerr << "-- END --" << std::endl;
-        // char *temp = joinVector(res, counter);
         content.setContent(temp, counter);
         content.setContentSize(counter);
         printlog("Successfully unchunked request", -1, GREEN);

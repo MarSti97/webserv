@@ -156,6 +156,7 @@ bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
 		// expectContinueOrChuncked(buf, temp, clientfd);
 		std::string max_string = temp.getMaxBodySize();
 		std::string len_string = req.Contentlength();
+		std::cerr << "ERROR: " << max_string << " | " << len_string << std::endl;
 		if (max_string == "" || len_string == "")
 		{
 			std::cerr << "Error: unable to calculate max body size" << std::endl;
@@ -168,7 +169,6 @@ bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
 		std::istringstream(len_string) >> contentlen;
 		if (max < contentlen)
 		{
-			// std::cerr << "ERROR: " << max << " < " << contentlen << std::endl;
 			req.SetClientFd(clientfd);
 			temp.errorPageCheck("413", "Payload Too Large", "/413.html", req);
 			payloadTooLarge_413 = true;
@@ -247,6 +247,7 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
     buf[buf_size] = '\0';
     std::vector<std::pair<char *, int> >().swap(full_buf); // why
     findbuffer = std::string(buf, buf_size);
+	// std::cout << "The request :" << findbuffer << std::endl;
     Request req = postThings(findbuffer, buf, fd[pos].fd, buf_size);
     return req;
 }
