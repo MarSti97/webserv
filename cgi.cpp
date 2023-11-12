@@ -1,5 +1,5 @@
 #include "includes/webserv.hpp"
-
+#include <sys/prctl.h>
 
 int	Serv::cgi_request(Request req, std::string path_info, std::string script_extension)
 {
@@ -31,6 +31,113 @@ int	Serv::cgi_request(Request req, std::string path_info, std::string script_ext
 	return (cgi_fd);
 }
 
+// void	childSigHandler(int signum)
+// {
+// 	if (signum == SIGALRM)
+// 	{
+// 		std::cerr << "TIMEOUT ON CGI EXECUTION!!" << std::endl;
+// 		exit(1);
+// 	}
+// }
+
+// void	parentSigHandler(int signum)
+// {
+// 	if (signum == SIGALRM)
+// 	{
+// 		std::cerr << "PARENT PROCESS HERE AFTER THE ALARM!!" << std::endl;
+// 		//exit(1);
+// 	}
+// }
+
+// int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request req)
+// {
+// 	int		input_fd[2];
+// 	int		output_fd[2];
+// 	pid_t	pid;
+//     int status = 0;
+
+// 	if (pipe(input_fd) == -1 || pipe(output_fd) == -1)
+// 	{
+// 		perror("cgi pipe");
+// 		return -1;
+// 	}
+// 	pid = fork();
+// 	if (pid == -1)
+// 	{
+// 		perror("cgi fork");
+// 		return -1;
+// 	}
+// 	if (pid == 0)
+// 	{
+// 		signal(SIGALRM, childSigHandler);
+// 		// if (prctl(PR_SET_PDEATHSIG, SIGALRM) == -1) {
+//         // 	perror("prctl");
+//         // 	exit(EXIT_FAILURE);
+//     	// }
+// 		size_t i = path_info.rfind("/");
+// 		std::string script_name = path_info.substr(i + 1);
+// 		std::string path = path_info.substr(0, i);
+// 		if (chdir(path.c_str() + 1) == -1)
+// 		{
+// 			perror("cgi chdir");
+// 			return -1;
+// 		}
+// 		char *argv[3];
+//         argv[0] = const_cast<char *>((cmd_path).c_str());
+// 		argv[1] = const_cast<char *>((script_name).c_str());
+// 		argv[2] = NULL;
+
+// 		dup2(input_fd[0], STDIN_FILENO);
+// 		close(input_fd[1]);
+// 		close(input_fd[0]);		
+		
+// 		dup2(output_fd[1], STDOUT_FILENO);
+// 		close(output_fd[1]);
+// 		close(output_fd[0]);
+
+// 		if (execve(cmd_path.c_str(), argv, env) == -1)
+// 		{
+//             perror("cgi execve");
+// 			return -1;
+// 		}
+// 	}
+// 	else
+// 	{
+// 		signal(SIGALRM, parentSigHandler);
+// 		close(input_fd[0]);
+// 		close(output_fd[1]);
+// 		char *content = req.content.getContent();
+// 		for (size_t f = 0; f < req.content.getContentSize(); ++f)
+// 			write(input_fd[1], &content[f], 1);
+// 		req.clean_content();
+// 		close(input_fd[1]);
+
+// 		int timeout_seconds = 5;
+// 		alarm(timeout_seconds);
+// 		if (wait(&status) == -1)
+// 		{
+// 			std::cout << "READY TO KILL" << std::endl;
+// 			if (errno == ECHILD) {
+// 			// The child process didn't exit within the timeout.
+// 			std::cout << "Child process timed out" << std::endl;
+// 			return (-1);
+// 			// You can take appropriate action here.
+// 				} else {
+// 			perror("waitpid");
+// 			// Handle other errors as needed.
+// 			}
+// 		}
+
+// 		if (WIFEXITED(status)) {
+//             std::cout << "Child process exited with status: " << WEXITSTATUS(status) << std::endl;
+//         } else if (WIFSIGNALED(status)) {
+//             std::cout << "Child process terminated by signal: " << WTERMSIG(status) << std::endl;
+//         }
+// 		return (output_fd[0]);
+// 	}
+// 	return (status);
+// }
+
 int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env, Request req)
 {
 	int		input_fd[2];
@@ -38,21 +145,27 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 	pid_t	pid;
     int status = 0;
 
-	if (pipe(input_fd) == -1)
-		perror("input pipe");
-	if (pipe(output_fd) == -1)
-		perror("output pipe");
+	if (pipe(input_fd) == -1 || pipe(output_fd) == -1)
+	{
+		perror("cgi pipe");
+		return -1;
+	}
 	pid = fork();
 	if (pid == -1)
-		perror("fork");
+	{
+		perror("cgi fork");
+		return -1;
+	}
 	if (pid == 0)
 	{
 		size_t i = path_info.rfind("/");
 		std::string script_name = path_info.substr(i + 1);
 		std::string path = path_info.substr(0, i);
-		// path_info = serv_info.root + path_info;
 		if (chdir(path.c_str() + 1) == -1)
-			std::cerr << "Error changing to cgi dir: " << path << std::endl;
+		{
+			perror("cgi chdir");
+			return -1;
+		}
 		char *argv[3];
         argv[0] = const_cast<char *>((cmd_path).c_str());
 		argv[1] = const_cast<char *>((script_name).c_str());
@@ -67,10 +180,14 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		close(output_fd[0]);
 
 		if (execve(cmd_path.c_str(), argv, env) == -1)
-            perror("execve");
+		{
+            perror("cgi execve");
+			return -1;
+		}
 	}
 	else
 	{
+		time_t	start = std::time(NULL);
 		close(input_fd[0]);
 		close(output_fd[1]);
 		char *content = req.content.getContent();
@@ -78,10 +195,21 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 			write(input_fd[1], &content[f], 1);
 		req.clean_content();
 		close(input_fd[1]);
-		wait(&status);
-		return (output_fd[0]);
+		while (1)
+		{
+			time_t current = std::time(NULL);
+			if (current - start >= 5) // timeout of 5 seconds to stop infinite loops
+			{
+				kill(pid, SIGKILL);
+				return -1;
+			}
+			pid_t result = waitpid(pid, &status, WNOHANG);
+            if (result > 0) {
+                return output_fd[0];
+            }
+		}
 	}
-	return (status);
+	return (-1);
 }
 
 

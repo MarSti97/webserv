@@ -28,6 +28,7 @@ class Config
 		std::string index;
 		std::string	max_body_size;
 		std::string autoindex;
+		std::string redirect_path;
 		std::vector<std::string> server_name;
 		std::string cgi_extension;
 		std::string cgi_directory;
