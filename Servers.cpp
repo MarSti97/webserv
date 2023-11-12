@@ -19,10 +19,10 @@ void	Servers::validate_config()
 	std::istringstream	file(config);
 	bool		insideServerBlock;
 	bool		insideLocationBlock;
-	Config temp_config;
 
 	while (std::getline(file, line))
 	{
+		Config temp_config;
 		if (line.empty())
 			continue;
 
@@ -92,6 +92,7 @@ void	Servers::validate_config()
 			}
 			else if (token == "}" && ss.eof())
 			{
+				std::cout << "HELLO" << std::endl;
 				insideServerBlock = false;		
 				check_requirements(&temp_config);
 				servs.push_back(Serv(temp_config));
