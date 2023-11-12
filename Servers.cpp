@@ -219,7 +219,6 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
     buf[buf_size] = '\0';
     std::vector<std::pair<char *, int> >().swap(full_buf); // why
     findbuffer = std::string(buf, buf_size);
-	// std::cout << "The request :" << findbuffer << std::endl;
     Request req = postThings(findbuffer, buf, fd[pos].fd, buf_size);
     return req;
 }
@@ -295,12 +294,6 @@ void Servers::run()
 							getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
 							continue;
 						}
-						// if (payloadTooLarge_413 == true || continue_100 == true)
-						// {
-						// 	// continue_100 = false; // this will probably need to be in isitFULL function
-						// 	payloadTooLarge_413 = false;
-						// 	continue;
-						// } maybe dont need this shit
 						if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
 						{
 							req.SetClientFd(fds[i].fd);

@@ -53,7 +53,7 @@ class Request
         int     ClientFd( void );
         void    SetClientFd( int fd );
         int     Eof( void );
-        bool    processChunked(int current_len, Download &down, int client);
+        int     processChunked(int current_len, Download &down, int client);
         bool    getContinue100() const;
 
         std::string request( void ) const;

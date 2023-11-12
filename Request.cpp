@@ -279,13 +279,20 @@ int nextSize(std::string str, int pos)
     return size;
 }
 
-bool    Request::processChunked(int current_len, Download &down, int client)
+// bool    findEnd(std::string content)
+// {
+//     if (content.rfind("0\r\n\r\n") != std::string::npos)
+//         return true;
+//     return false;
+// }
+
+int    Request::processChunked(int current_len, Download &down, int client)
 {
     int head = _request.find("\r\n\r\n");
     if ((size_t)head == std::string::npos)
     {
         std::cerr << "Error: No head on request" << std::endl;
-        return false;
+        return 0;
     }
     head += 4;
     if (expect == "100-continue")
@@ -293,11 +300,13 @@ bool    Request::processChunked(int current_len, Download &down, int client)
         if (current_len == head)
         {
             continue_100 = true;
-            return false;
+            return 0;
         }
     }
     if (transferencoding == "chunked")
     {
+        if (_request.rfind("0\r\n\r\n") == std::string::npos)
+            return 2;
         std::vector<std::pair<char *, int> > res;
         int chunk_size = nextSize(_request, head);
         int counter = 0;
@@ -331,9 +340,9 @@ bool    Request::processChunked(int current_len, Download &down, int client)
         content.setContentSize(counter);
         printlog("Successfully unchunked request", -1, GREEN);
         down.eraseClient(client);
-        return false;
+        return 0;
     }
-    return true;
+    return 1;
 }
 
 bool Request::getContinue100() const

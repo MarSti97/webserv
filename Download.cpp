@@ -82,8 +82,11 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
         if (it->second.content_len <= it->second.current_len)
         {
             Request reo(it->second.file, it->second.current_len);
-            if(!reo.processChunked(it->second.current_len, *this, client))
+            int to_do = reo.processChunked(it->second.current_len, *this, client);
+            if(to_do == 0)
                 return reo;
+            else if (to_do == 2)
+                return Request();
             // std::cout << "DEBUG: isitFull " << reo.Boundary() << std::endl;
             if (!(reo.Boundary().empty()))
             {
