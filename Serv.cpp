@@ -221,7 +221,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					else // "normal" request
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
 				}
-				else // if does not exists, error 404
+				else // if it does not exist, error 404
 					errorPageCheck("404", "Not Found", abs, req);
 			}
 		}
@@ -237,18 +237,13 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
 				{
-					if (CheckAutoindex(path))
-					{
-						if (!access(abs.c_str() + 1, R_OK)) 
+					if (CheckAutoindex(path) && !access(abs.c_str() + 1, R_OK))
 							parseSend(makeDirectoryList(abs, path), req.ClientFd());
-						else // if does not exists, error 404
-							errorPageCheck("403", "Forbidden", abs, req);
-					}
-					else // if does not exists, error 404
-						errorPageCheck("404", "Not Found", abs, req);		
+					else
+						errorPageCheck("403", "Forbidden", abs, req); // changed to 403, confirm with nginx
 				}
 			}
-			else // if does not exists, error 404
+			else // if it does not exist, error 404
 				errorPageCheck("404", "Not Found", abs, req);
 		}
 	}
@@ -299,7 +294,7 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 	}
 	else
 	{
-		response = getResponse(serv_info.root, "/404.html", getHeader("500 Internal Server Error", "", "/404.html"));
+		response = getResponse(serv_info.root, "/500.html", getHeader("500 Internal Server Error", "", "/500.html"));
 		//error 500 - will need to implement differently
 	}
 	return responseHeaders + response;
@@ -370,8 +365,8 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 		i = newPath.rfind("/");
 		newPath = newPath.substr(0, i);
 	}
-	// if (serv_info.methods.find(method) != serv_info.methods.end()) // might need this, check with root if things work
-	// 	return whatstheMethod(serv_info.methods[method], method);
+	// if (serv_info.methods.find(method) != serv_info.methods.end()) // folders
+	// 	return whatstheMethod(serv_info.methods[method], method); //
     return UNDEFINED;
 }
 
