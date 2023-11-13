@@ -43,12 +43,7 @@ void	Serv::filterRequest( Request req )
 	else if (!(req.Del().empty()))
 		PrepareResponse("DELETE", req.Del(), req);
 	else
-	{
-		if (serv_info.error_pages["501"].empty())
-			parseSend(getResponse(serv_info.root, "/501.html", getHeader("501 Not Implemented", "", "/501.html")), req.ClientFd()); // need to do the 405 page.
-		else
-			parseSend(getResponse(serv_info.root, serv_info.error_pages["501"], getHeader("501 Not Implemented", "", serv_info.error_pages["501"])), req.ClientFd());
-	}
+		errorPageCheck("501", "Not Implemented", "/501.html", req);
 }
 
 std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
@@ -207,23 +202,20 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 			return ;
 		if (findFolder(abs) != "") // it is a file
 		{
-			if (method == "GET" || method == "POST" || method == "DELETE")
+			if (!access(abs.c_str() + 1, R_OK)) // file exists
 			{
-				if (!access(abs.c_str() + 1, R_OK)) // file exists
-				{
-					std::string theExtension = CheckCGI(path);
-					if (method == "DELETE")
-						deleteMethod(abs, req);
-					else if (theExtension != "") // it is a CGI script
-						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
-					// else if (method == "POST")
-					// 	errorPage()
-					else // "normal" request
-						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
-				}
-				else // if it does not exist, error 404
-					errorPageCheck("404", "Not Found", abs, req);
+				std::string theExtension = CheckCGI(path);
+				if (method == "DELETE")
+					deleteMethod(abs, req);
+				else if (theExtension != "") // it is a CGI script
+					parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
+				// else if (method == "POST")
+				// 	errorPage()
+				else // "normal" request
+					parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
 			}
+			else // if it does not exist, error 404
+				errorPageCheck("404", "Not Found", abs, req);
 		}
 		else // it is a folder
 		{
@@ -248,7 +240,10 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		}
 	}
 	else
+	{
+		std::cout << "NOT ALLOWED" << std::endl;
 		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
+	}
 }
 
 bool	Serv::CheckAutoindex(std::string path)
@@ -271,18 +266,22 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 	std::string response;
 	std::string responseHeaders;
 	ssize_t bytesRead;
+	int error_flag = 0;
 
 	if (cgi_fd > 2)
 	{	
 		while ((bytesRead = read(cgi_fd, buffer, sizeof(buffer))) > 0)
-		{
-				response.append(buffer, bytesRead);
-			}
+			response.append(buffer, bytesRead);
 
-			if (bytesRead < 0) {
-				perror("Error reading from file descriptor");
-				// Error 500
-			}
+		if (bytesRead < 0)
+		{
+			perror("Error reading from file descriptor");
+			error_flag = 500;
+		}
+		if (response.empty())
+			error_flag = 204;
+		else
+		{
 			responseHeaders = "HTTP/1.1 200 OK\r\n";
 			responseHeaders += "Content-Type: text/html\r\n";
 			responseHeaders += "Connection: keep-alive\r\n";
@@ -291,12 +290,17 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 			responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
 			//std::cout << responseHeaders + response << std::endl;
 			close(cgi_fd);
+		}
 	}
-	else
+	if (error_flag == 500 || cgi_fd <= 2)
 	{
-		response = getResponse(serv_info.root, "/500.html", getHeader("500 Internal Server Error", "", "/500.html"));
-		//error 500 - will need to implement differently
+		if (serv_info.error_pages["500"].empty())
+			response = getResponse(serv_info.root, "/500.html", getHeader("500 Internal Server Error", "", "/500.html"));
+		else
+			response = getResponse(serv_info.root, serv_info.error_pages["500"], getHeader("500 Internal Server Error", "", serv_info.error_pages["500"]));
 	}
+	else if (error_flag == 204)
+		responseHeaders = "HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n";
 	return responseHeaders + response;
 }
 
@@ -351,6 +355,7 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 		newPath = path;
 	while (newPath != "")
 	{
+		std::cout << newPath << std::endl;
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
@@ -358,6 +363,7 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 			{
 				if (it->methods.find(method) != it->methods.end())
 				{
+					std::cout << "NEWPATH: " << newPath << " PATH: " << it->path << " METHOD: " << it->methods[method] << std::endl; 
 					return whatstheMethod(it->methods[method], method);
 				}
 			}
@@ -365,8 +371,8 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 		i = newPath.rfind("/");
 		newPath = newPath.substr(0, i);
 	}
-	// if (serv_info.methods.find(method) != serv_info.methods.end()) // folders
-	// 	return whatstheMethod(serv_info.methods[method], method); //
+	if (serv_info.methods.find(method) != serv_info.methods.end())
+		return whatstheMethod(serv_info.methods[method], method);
     return UNDEFINED;
 }
 
