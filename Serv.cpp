@@ -43,7 +43,10 @@ void	Serv::filterRequest( Request req )
 	else if (!(req.Del().empty()))
 		PrepareResponse("DELETE", req.Del(), req);
 	else
+	{
+		std::cout << "NOT RECOGNIZED" << std::endl;
 		errorPageCheck("501", "Not Implemented", "/501.html", req);
+	}
 }
 
 std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
@@ -192,6 +195,7 @@ bool Serv::redirection(std::string path, Request req)
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
+	std::cout << method << std::endl;
 	path = removeDashIfExists(path);
 	if (CheckAllowed(method, path) == ALLOWED)
 	{

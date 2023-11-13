@@ -81,6 +81,7 @@ int     removehead(char *file);
 bool    compare(const char *find, char* str);
 int     removeheadnoimg(char *file, int size);
 bool    deleteFolderRecusively(std::string path);
+bool 	headcheck(std::string buf);
 // char    *joinVector(std::vector<std::pair<char *, int> > full, int size);
 int     getIntSize(int nbr);
 std::string	getINFOone(std::string request, const char *what, int pos);

@@ -50,7 +50,7 @@ std::string getHeader( std::string ARG, std::string extra, std::string filePath 
 
 bool headcheck(std::string buf)
 {
-    if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE ")
+    if (buf.substr(0, 5) == "POST " || buf.substr(0, 4) == "GET " || buf.substr(0, 7) == "DELETE " || buf.find("HTTP/1.1\r\n") != std::string::npos)
         return true;
     return false;
 }

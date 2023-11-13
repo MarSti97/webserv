@@ -297,13 +297,14 @@ void Servers::run()
 							getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
 							continue;
 						}
-						if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
+						//if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
+						if (headcheck(req.request()))
 						{
 							req.SetClientFd(fds[i].fd);
 							getCorrectServ(req).filterRequest(req);
 							// int cgi_fd = getCorrectServ(req).filter_request(req);
 						}
-						
+						// else 400 Bad Request
 					}
 				}
 			}
