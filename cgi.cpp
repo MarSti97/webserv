@@ -161,7 +161,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		size_t i = path_info.rfind("/");
 		std::string script_name = path_info.substr(i + 1);
 		std::string path = path_info.substr(0, i);
-		if (chdir(path.c_str() + 1) == -1)
+		if (chdir(path.c_str()) == -1)
 		{
 			perror("cgi chdir");
 			return -1;
@@ -260,7 +260,7 @@ char	**Serv::create_cgi_env(std::vector<std::string> meta_vars)
 	char **cgi_env = new char*[18 + 1];
 	if (!cgi_env)
 	{
-		std::cerr << "Error allocating memory for the CGI env" << std::endl;
+		printerr("Error allocating memory for the CGI env", 0, RED);
 		return NULL;
 	}
 

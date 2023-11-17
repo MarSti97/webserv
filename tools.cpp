@@ -81,9 +81,9 @@ std::string removeDashIfExists(std::string path)
 bool deleteFolderRecusively(std::string path)
 {
 	struct dirent *entry;
-	DIR *dir = opendir(path.c_str() + 1);
+	DIR *dir = opendir(path.c_str());
 	if (dir == NULL)
-		std::cout << "Error: couldnt open dir for delete method: " << path << std::endl;
+		printerr("Error: couldnt open dir for delete method: " + path, 0, RED);
 	else
 	{
 		while ((entry = readdir(dir)) != NULL)
@@ -95,12 +95,12 @@ bool deleteFolderRecusively(std::string path)
 			else
 			{
 				std::string fileToDelete = path + "/" + entry->d_name;
-				if (std::remove(fileToDelete.c_str() + 1) != 0)
-					std::cout << "Error: could not delete file within directory: " << fileToDelete << std::endl;
+				if (std::remove(fileToDelete.c_str()) != 0)
+					printerr("Error: could not delete file within directory: " + fileToDelete, 0, RED);
 			}
 		}
 		closedir(dir);
-		if (rmdir(path.c_str() + 1) != 0)
+		if (rmdir(path.c_str()) != 0)
 			return false;
 		return true;
 	}

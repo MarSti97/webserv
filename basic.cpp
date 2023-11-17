@@ -17,7 +17,7 @@ int main(int ac, char **av, char **env)
         servs.init();
     }
     catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        printerr(e.what(), 0, RED);
         return 0;
     }
 	servs.printAll();
@@ -62,7 +62,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
-        std::cout << "COME HERE " << std::endl;
+        // std::cout << "COME HERE " << std::endl;
         if (oi != std::string::npos)
         {
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
@@ -76,7 +76,13 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     return instance.isitFULL(fd, buffer, size);
 }
 
-
+void	printerr(std::string msg, int arg, std::string color)
+{
+    if (arg == -1)
+	    std::cerr << color << makeStamp() << " " << msg << " " << NOCOLOR << std::endl; 
+    else
+	    std::cerr << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl; 
+}
 
 void	printlog(std::string msg, int arg, std::string color)
 {
@@ -113,11 +119,12 @@ std::string makeStamp( void )
 int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds)
 {
     // Accept incoming connection and add the client socket to the fds array
+    int servfd = socketfd;
     int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);
-    // std::cout << clientsocket << std::endl;
     if (clientsocket != -1)
     {
-        printlog("NEW CLIENT", clientsocket - 2, GREEN);
+        printlog("NEW CLIENT ", clientsocket - 2, GREEN);
+        ClientServer(clientsocket, servfd, 0);
         pollfd client_pollfd;
         client_pollfd.fd = clientsocket;
         client_pollfd.events = POLLIN | POLLOUT; // Monitor for read and write
@@ -132,10 +139,10 @@ int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &si
         else if (errno == ECONNABORTED) {
             // Handle client disconnect gracefully
             // You can log the disconnection and continue with the loop
-        std::cerr << "Client disconnected" << std::endl;
+            printerr("CLIENT DISCONNECTED" , 0, RED);
             return 1;
         }
-        std::cerr << "Error: client connection failed" << std::endl;
+        printerr("Error: client connection failed", 0, RED);
         // close(socketfd);
             return 1;
     }
@@ -183,7 +190,7 @@ int GetbyUser(std::string buffer)
 
 int failToStart(std::string error, struct addrinfo *addr, int socketfd)
 {
-    std::cerr << error << std::endl;
+    printerr(error, 0, RED);
     freeaddrinfo(addr);
     if (socketfd > 0)
         close(socketfd);

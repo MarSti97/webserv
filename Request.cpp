@@ -291,7 +291,7 @@ int    Request::processChunked(int current_len, Download &down, int client)
     int head = _request.find("\r\n\r\n");
     if ((size_t)head == std::string::npos)
     {
-        std::cerr << "Error: No head on request" << std::endl;
+        printerr("Error: No head on request", 0, RED);
         return 0;
     }
     head += 4;
