@@ -77,9 +77,9 @@ void	Servers::validate_config()
 							temp_location.cgi_extension = parse_attribute(iss, token, line);	
 						else if (token == "return" && check_duplicate_attr(temp_location.redirect_path, line))
 							temp_location.redirect_path = parse_attribute(iss, token, line);
-						else if (token == "allow") // find check dup for allow and deny
+						else if (token == "allow" && check_dup_methods(token, line, &temp_location))
 							parseMethods(iss, token, &temp_location, line, token);
-						else if (token == "deny")
+						else if (token == "deny" && check_dup_methods(token, line, &temp_location))
 							parseMethods(iss, token, &temp_location, line, token);						
 						else if (token == "}" && iss.eof())
 						{
@@ -94,7 +94,6 @@ void	Servers::validate_config()
 			}
 			else if (token == "}" && ss.eof())
 			{
-				std::cout << "HELLO" << std::endl;
 				insideServerBlock = false;		
 				check_requirements(&temp_config);
 				servs.push_back(Serv(temp_config));

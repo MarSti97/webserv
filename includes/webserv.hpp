@@ -67,6 +67,7 @@ void	check_requirements(Config *temp);
 void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_config, std::string line);
 void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config, std::string line);
 void 	throw_parsing_exception(std::string line, int flag);
+bool	check_dup_methods(std::string token, std::string line, Location *temp_location);
 
 Request postThings(std::string findbuffer, char *buffer, int fd, int size);
 int     failToStart(std::string error, struct addrinfo *addr, int socketfd);

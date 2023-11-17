@@ -21,8 +21,9 @@ struct Location
 	std::string cgi_extension;
 	std::string redirect_path;
 	std::string redirect_status;
-
-	Location(): root(""), index(""), path("") {}
+	bool 		allow_limit;
+	bool		deny_limit;
+	Location(): root(""), index(""), path(""), allow_limit(0), deny_limit(0) {}
 	~Location() {}
 };
 

@@ -43,10 +43,7 @@ void	Serv::filterRequest( Request req )
 	else if (!(req.Del().empty()))
 		PrepareResponse("DELETE", req.Del(), req);
 	else
-	{
-		std::cout << "NOT RECOGNIZED" << std::endl;
 		errorPageCheck("501", "Not Implemented", "/501.html", req);
-	}
 }
 
 std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
@@ -292,7 +289,6 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 			std::stringstream ss;
 			ss << response.length();
 			responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-			//std::cout << responseHeaders + response << std::endl;
 			close(cgi_fd);
 		}
 	}

@@ -88,16 +88,16 @@ print('''
 
             <div class="collapse navbar-collapse ml-auto" id="navbarSupportedContent">
               <ul class="navbar-nav  ">
-                <li class="nav-item ">
+                <li class="nav-item">
                   <a class="nav-link" href="../index.html">Home <span class="sr-only">(current)</span></a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                   <a class="nav-link" href="../about.html"> About</a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="../service.html"> Services </a>
                 </li>
-                <li class="nav-item active">
+                <li class="nav-item">
                   <a class="nav-link" href="../guard.html"> Guards </a>
                 </li>
                 <li class="nav-item">

@@ -18,7 +18,7 @@ class Serv
 		void	print(int i) const;
 		int		getSocket();
 		int		cgi_request(Request req, std::string path_info, std::string script_extension);
-		void 	init_cgi_meta_vars(Request req, std::vector<std::string> *meta_vars);
+		void 	init_cgi_meta_vars(Request req, std::vector<std::string> *meta_vars, std::string abs);
 		char	**create_cgi_env(std::vector<std::string> meta_vars);
 		int		execute_script(std::string cmd_path, std::string path_info, char **env, Request req);
 		bool	compareHostPort(std::string host, std::string port);

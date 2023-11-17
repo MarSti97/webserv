@@ -104,10 +104,10 @@ print('''
                 <li class="nav-item">
                   <a class="nav-link" href="../service.html"> Services </a>
                 </li>
-                <li class="nav-item active">
+                <li class="nav-item">
                   <a class="nav-link" href="../guard.html"> Guards </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                   <a class="nav-link" href="../contact.html">Contact us</a>
                 </li>
               </ul>
