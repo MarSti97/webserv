@@ -1,29 +1,29 @@
 #include "./includes/webserv.hpp"
 #include "./includes/Config.hpp"
 
-std::string	parse_attribute(std::istringstream &iss, std::string token, std::string line)
+std::string	parse_attribute(std::istringstream &iss, std::string token, std::string line, size_t counter)
 {
 	std::string parsed;
 	
 	if (iss.eof())
-		throw_parsing_exception(line, 3);
+		throw_parsing_exception(line, 3, counter);
 	iss >> token;
 	if (*(token.end() - 1) == ';' && token.find_first_not_of(";'\"") != std::string::npos && !(iss >> token))
 	{
 		if (*(token.end() - 1) == ';')
 			parsed = token.substr(0, token.size() - 1);
 		else
-			throw_parsing_exception(line, 4);
+			throw_parsing_exception(line, 4, counter);
 	}
 	else
-		throw_parsing_exception(line, 5);
+		throw_parsing_exception(line, 5, counter);
 	return (parsed);
 }
 
-void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_config, std::string line)
+void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_config, std::string line, size_t counter)
 {
 	if (iss.eof())
-		throw_parsing_exception(line, 3);
+		throw_parsing_exception(line, 3, counter);
 	while (iss >> token)
 	{
 		if (*(token.end() - 1) != ';' && token.find_first_not_of(";'\"") != std::string::npos)
@@ -31,37 +31,38 @@ void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_c
 		else if (*(token.end() - 1) == ';' && token.find_first_not_of(";'\"") != std::string::npos && !(iss >> token))
 			temp_config->server_name.push_back(token.substr(0, token.size() - 1));
 		else
-			throw_parsing_exception(line, 5);
+			throw_parsing_exception(line, 5, counter);
 	}
 }
 
-void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config, std::string line)
+void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config, std::string line, size_t counter)
 {
 	std::string error_number;
 	std::string error_pagename;
 	if (iss.eof())
-		throw_parsing_exception(line, 3);
+		throw_parsing_exception(line, 3, counter);
 	while (iss >> token)
 	{
 		if (token.find_first_not_of("0123456789") == std::string::npos && !(iss.eof()))
 			error_number = token;
 		else
-			throw_parsing_exception(line, 5);
+			throw_parsing_exception(line, 5, counter);
 		if (iss >> token && *(token.end() - 1) == ';' && !(iss >> token))
 			error_pagename = token;
 		else
-			throw_parsing_exception(line, 4);
+			throw_parsing_exception(line, 4, counter);
 	}
 	if (temp_config->error_pages[error_number].empty())
 		temp_config->error_pages[error_number] = error_pagename.substr(0, error_pagename.size() - 1);
 	else
-		throw_parsing_exception(line, 1);
+		throw_parsing_exception(line, 1, counter);
 }
 
-void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line, std::string type)
+void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line, size_t counter)
 {
+	std::string type = token;
 	if (iss.eof())
-		throw_parsing_exception(line, 3);
+		throw_parsing_exception(line, 3, counter);
 	while (iss >> token)
 	{
 		if ((token == "GET" || token == "POST" || token == "DELETE") && type == "allow")
@@ -69,10 +70,10 @@ void	parseMethods(std::istringstream &iss, std::string token, Location *temp_loc
 		else if ((token == "GET" || token == "POST" || token == "DELETE") && type == "deny")
 			temp_location->methods[token] = DENIED;
 		else if (iss >> token)
-			throw_parsing_exception(line, 5);
+			throw_parsing_exception(line, 5, counter);
 	}
 	if (*(token.end() - 1) != ';')
-		throw_parsing_exception(line, 4);
+		throw_parsing_exception(line, 4, counter);
 	if ((token == "GET;" || token == "POST;" || token == "DELETE;") && !(iss >> token) && type == "allow")
 	{
 		temp_location->allow_limit = true;
@@ -84,13 +85,13 @@ void	parseMethods(std::istringstream &iss, std::string token, Location *temp_loc
 		temp_location->methods[token.substr(0, token.size() - 1)] = DENIED;
 	}
 	else
-		throw_parsing_exception(line, 5);
+		throw_parsing_exception(line, 5, counter);
 }
 
-bool	check_dup_methods(std::string token, std::string line, Location *temp_location)
+bool	check_dup_methods(std::string token, std::string line, Location *temp_location, size_t counter)
 {
 	if ((token == "allow" && temp_location->allow_limit) || (token == "deny" && temp_location->deny_limit))
-		throw_parsing_exception(line, 1);
+		throw_parsing_exception(line, 1, counter);
 	return true;
 }
 
@@ -122,17 +123,17 @@ void	check_requirements(Config *temp)
 		throw InsufficientInformation();
 }
 
-void	validate_location(Location temp_location, std::vector<Location> locations, std::string line)
+void	validate_location(Location temp_location, std::vector<Location> locations, std::string line, size_t counter)
 {
 	std::vector<Location>::iterator it;
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->path == temp_location.path)
-			throw_parsing_exception(line, 0);
+			throw_parsing_exception("", 0, 0);
 	}
 	if (temp_location.path[0] != '/' || (temp_location.path != "/" && *(temp_location.path.end() - 1) == '/') 
 	|| temp_location.path.find("//") != std::string::npos || temp_location.path.find('\\') != std::string::npos)
-		throw_parsing_exception(line, 6);
+		throw_parsing_exception(line, 6, counter);
 }
 
 bool correctfile(std::string file)
@@ -144,9 +145,19 @@ bool correctfile(std::string file)
 	return true;
 }
 
-void throw_parsing_exception(std::string line, int flag)
+void throw_parsing_exception(std::string line, int flag, size_t counter)
 {
-	printerr("Error while parsing config file\non line: '" + line + "'", 0, RED);
+	std::string linenumber;
+	if (counter != 0)
+	{
+		std::stringstream ss;
+		ss << counter;
+		linenumber = ss.str();
+	}
+	if (line.empty())
+		printerr("Error while parsing config file", -2, RED);
+	else
+		printerr("Error while parsing config file\non line " + linenumber + ": '" + line + "'", -2, RED);
 	switch (flag)
 	{
 		case 0:
