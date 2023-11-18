@@ -124,7 +124,7 @@ int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &si
     int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);
     if (clientsocket != -1)
     {
-        printlog("NEW CLIENT ", clientsocket - 2, GREEN);
+        printlog("NEW CLIENT", clientsocket - 2, GREEN);
         ClientServer(clientsocket, servfd, NEWCLIENT);
         pollfd client_pollfd;
         client_pollfd.fd = clientsocket;

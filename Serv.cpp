@@ -248,7 +248,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				if (method == "DELETE")
 					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				std::cout << "index " << index << std::endl;
+				// std::cout << "index " << index << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
