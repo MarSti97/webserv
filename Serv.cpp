@@ -56,6 +56,7 @@ void	Serv::filterRequest( Request req )
 	{
 		printlog("NOT RECOGNIZED METHOD.", 0, YELLOW);
 		errorPageCheck("501", "Not Implemented", "/501.html", req);
+	}
 }
 
 std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
