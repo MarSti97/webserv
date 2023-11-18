@@ -42,6 +42,7 @@ class Serv
 		std::string createAbsolutePath(std::string path);
 		std::string	CheckCGI( std::string path);
 		std::string getMaxBodySize();
+		std::string getServerHostPort();
 };
 
 #endif

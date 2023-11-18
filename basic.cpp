@@ -6,21 +6,28 @@
 
 int main(int ac, char **av, char **env)
 {
-    if (ac != 2){
-    	return 1;
-	}
 	Servers servs;
     try {
-        if (!correctfile(std::string(av[1])))
-		    throw NotConfigFile();
-        servs = Servers(std::string(av[1]), env);
+        if (ac == 1)
+        {
+            printerr("No configuration file provided. Using default one.", -2, RED);
+            servs = Servers(std::string("example.config"), env);
+        }
+        else if (ac == 2)
+        {
+            if (!correctfile(std::string(av[1])))
+                throw NotConfigFile();
+            servs = Servers(std::string(av[1]), env);
+        }
+        else
+            throw TooManyArguments();
         servs.init();
     }
     catch (const std::exception& e) {
         printerr(e.what(), -2, RED);
         return 0;
     }
-	servs.printAll();
+	//servs.printAll();
 	servs.run();
 
     return 0;
@@ -83,7 +90,7 @@ void	printerr(std::string msg, int arg, std::string color)
     else if (arg != -2)
 	    std::cerr << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl;
     else
-        std::cerr << color << msg << std::endl;
+        std::cerr << color << msg << NOCOLOR << std::endl;
 }
 
 void	printlog(std::string msg, int arg, std::string color)

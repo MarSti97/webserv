@@ -209,11 +209,9 @@ bool Serv::redirection(std::string path, Request req)
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
-	// std::cout << method << std::endl;
 	if (CheckAllowed(method, path) == ALLOWED)
 	{
 		std::string abs = createAbsolutePath(path);
-		// std::cout << abs << std::endl;
 		if (*(abs.begin()) == '/')
 			abs = abs.substr(1);
 		if (req.TransferEncoding() == "chunked")
@@ -237,8 +235,8 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 						deleteMethod(abs, req);
 					else if (theExtension != "") // it is a CGI script
 						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
-					// else if (method == "POST")
-					// 	errorPage()
+					else if (method == "POST")
+						parseSend(getResponse(abs, "", getHeader("204 No Content", "", abs)), req.ClientFd());
 					else // "normal" request
 						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
 				}
@@ -271,10 +269,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		}
 	}
 	else
-	{
-		printerr("METHOD NOT ALLOWED.", 0,YELLOW);
 		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
-	}
 }
 
 bool	Serv::CheckAutoindex(std::string path)
@@ -512,4 +507,9 @@ int Serv::getSocket()
 std::string Serv::getMaxBodySize()
 {
 	return serv_info.max_body_size;
+}
+
+std::string Serv::getServerHostPort()
+{
+	return serv_info.host + ":" + serv_info.port;
 }

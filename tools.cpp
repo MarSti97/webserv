@@ -123,16 +123,9 @@ int getIntSize(int nbr)
 Methods whatstheMethod(Methods meth, std::string word)
 {
 	if (meth == ALLOWED)
-	{
-		// printlog("Method " + word + " allowed.", -1, GREEN);
 		return ALLOWED;
-	}
-	else if (meth == DENIED)
-	{
-		printlog("Method " + word + " not allowed.", -1, RED);
-		return DENIED;
-	}
-    return UNDEFINED;
+	printlog("METHOD " + word + " NOT ALLOWED", -1, RED);
+    return DENIED;
 }
 
 void	handleLostClient(std::vector<pollfd> &fd, int pos)

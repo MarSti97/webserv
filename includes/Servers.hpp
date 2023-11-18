@@ -99,9 +99,15 @@ class InvalidLocationName : public std::exception {
 class NotConfigFile : public std::exception {
 	public :
 		virtual const char* what() const throw() {
-			return "Description: argument not a config file.";
+			return "Error: argument not a config file.";
 		}
 };
 
+class TooManyArguments : public std::exception {
+	public :
+		virtual const char* what() const throw() {
+			return "Error: too many arguments. Please write only the path to a configuration file.";
+		}
+};
 
 #endif

@@ -209,6 +209,7 @@ void	Servers::printAll() const
 
 void Servers::init()
 {
+	printlog("Initializing server", -1, YELLOW);
     validate_config();
     std::vector<Serv>::iterator it;
 	int i = 0;
@@ -219,6 +220,7 @@ void Servers::init()
 		fds[i].fd = it->getSocket();
 		fds[i].events = POLLIN;
 		i++;
+		printlog("Server: " + it->getServerHostPort() + " connection established", -1, YELLOW);
 	}
 }
 
@@ -226,6 +228,7 @@ void Servers::init()
 
 void Servers::run()
 {
+	printlog("Running webserv... ", -1, PURPLE);
 	struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
 	int timeout = 0;
