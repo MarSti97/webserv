@@ -86,7 +86,10 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
             if(to_do == 0)
                 return reo;
             else if (to_do == 2)
+            {
+
                 return Request();
+            }
             // std::cout << "DEBUG: isitFull " << reo.Boundary() << std::endl;
             if (!(reo.Boundary().empty()))
             {
