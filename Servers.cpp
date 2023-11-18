@@ -116,10 +116,9 @@ bool Servers::checkContentSizeToMax(Request req, Serv serv)
 {
 	std::string max_string = serv.getMaxBodySize();
 	std::string len_string = req.Contentlength();
-	printerr("ERROR: " + max_string + " | " + len_string, 0, RED);
 	if (max_string == "" || len_string == "")
 	{
-		printerr("Error: unable to calculate max body size", 0, RED);
+		// printerr("Error: unable to calculate max body size", 0, RED);
 		return true;
 	}
 	long max;

@@ -11,6 +11,7 @@ class Content
         std::string content_type;
         char        *_content;
         size_t	content_size;
+        bool chunkedData;
     
     public:
 		Content();
@@ -24,6 +25,8 @@ class Content
         char    *getContent( void ) const;
         void    setContent( char *newcontent, size_t size );
         std::string getContentType( void ) const;
+        void    setChunkedBool(bool change);
+        bool    getChunkedBool();
 };
 
 #endif

@@ -3,10 +3,11 @@
 
 Content::~Content() {}
 
-Content::Content() : _content(NULL), content_size(0) {}
+Content::Content() : _content(NULL), content_size(0) {chunkedData = false;}
 
 Content::Content(std::string content, std::string boundary)
 {
+    chunkedData = false;
     if (!content.empty() && !boundary.empty())
     {
         size_t dispositionStart = content.find("Content-Disposition: ");
@@ -65,5 +66,15 @@ void    Content::clean()
 {
     // fix and make do delete one selected sockets too
     delete[] _content;
+}
+
+void    Content::setChunkedBool(bool change)
+{
+    this->chunkedData = change;
+}
+
+bool    Content::getChunkedBool()
+{
+    return chunkedData;
 }
 

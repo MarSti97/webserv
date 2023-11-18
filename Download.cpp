@@ -39,8 +39,6 @@ void Download::append_map(int client, char *buf, int bufsize)
     std::map<int, imgDown>::iterator it = fileMap.find(client);
     if (it != fileMap.end())
     {
-        // it->second.file = strjoin(it->second.file, buf, it->second.current_len, bufsize);
-        // std::cout << "WTF" << std::endl;
         int totalLength = it->second.current_len + bufsize;
         char *combinedStr = new char[totalLength + 1]; // +1 for the null-terminator
         combinedStr[totalLength] = '\0'; // +1 for the null-terminator
@@ -87,10 +85,8 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
                 return reo;
             else if (to_do == 2)
             {
-
                 return Request();
             }
-            // std::cout << "DEBUG: isitFull " << reo.Boundary() << std::endl;
             if (!(reo.Boundary().empty()))
             {
                 int headless = removehead(reo.C_request());
