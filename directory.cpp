@@ -19,7 +19,7 @@ std::string	makeDirectoryList(std::string dirpath, std::string rel_path)
 	std::string response;
 	std::string responseHeaders;
 
-	DIR	*directory = opendir(dirpath.c_str() + 1);
+	DIR	*directory = opendir(dirpath.c_str());
 
 	if (directory == NULL)
 	{
@@ -40,7 +40,7 @@ std::string	makeDirectoryList(std::string dirpath, std::string rel_path)
 		size_t i = rel_path.rfind('/');
 		std::string rel_folder = rel_path.substr(i);
 
-		if (stat(full_path.c_str() + 1, &fileStat) == 0)
+		if (stat(full_path.c_str(), &fileStat) == 0)
 		{
 			std::string index_item = "<tr>";
 			index_item.append("<td><a href='" + rel_folder + "/" + std::string(entry->d_name) + "'>" + entry->d_name + "</a></td>");

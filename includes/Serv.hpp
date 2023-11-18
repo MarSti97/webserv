@@ -11,6 +11,7 @@ class Serv
 		int socketfd;
 
 	public :
+		Serv() : serv_info(Config()), socketfd(0) {}
 		Serv(Config info) : serv_info(info) {}
 		~Serv() {}
 
@@ -33,6 +34,7 @@ class Serv
 		void	chunkedResponse(Request req);
 		void	errorPageCheck(std::string code, std::string message, std::string path, Request req);
 		bool	redirection(std::string path, Request req);
+		bool	compareServerName(std::string ServName);
 		std::string	findFolder( std::string folder );
 		std::string	sendby_CGI(int cgi_fd);
 		std::string getResponse(std::string path, std::string file, std::string responseHeaders);

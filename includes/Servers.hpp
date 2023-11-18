@@ -31,7 +31,7 @@ class Servers
 		void	init();
 		void	run();
 		int		checkSockets(int fd);
-		Serv	&getCorrectServ(Request req);
+		Serv	&getCorrectServ(Request req, int clientfd);
 };
 
 

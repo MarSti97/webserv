@@ -17,8 +17,8 @@ void	Servers::validate_config()
 {
 	std::string	line;
 	std::istringstream	file(config);
-	bool		insideServerBlock;
-	bool		insideLocationBlock;
+	bool		insideServerBlock = false;
+	bool		insideLocationBlock = false;
 
 	while (std::getline(file, line))
 	{
@@ -122,18 +122,18 @@ void	Servers::validate_config()
 bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
 {
 	std::string buf(buffer);
-	std::cerr << buf << std::endl;
+	// std::cerr << buf << std::endl;
 	Request req(buffer, n);
 	if (req.Post() != "")
 	{
-		Serv temp = getCorrectServ(req);
+		Serv temp = getCorrectServ(req, clientfd);
 		// expectContinueOrChuncked(buf, temp, clientfd);
 		std::string max_string = temp.getMaxBodySize();
 		std::string len_string = req.Contentlength();
-		std::cerr << "ERROR: " << max_string << " | " << len_string << std::endl;
+		printerr("ERROR: " + max_string + " | " + len_string, 0, RED);
 		if (max_string == "" || len_string == "")
 		{
-			std::cerr << "Error: unable to calculate max body size" << std::endl;
+			printerr("Error: unable to calculate max body size", 0, RED);
 			return true;
 		}
 		long max;
@@ -173,20 +173,24 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
                 {
                     // Connection closed by the client
                     printlog("LOST CLIENT", fd[pos].fd - 2, RED);
+					ClientServer(fd[pos].fd, 0, 2);
                     close(fd[pos].fd);
                     fd.erase(fd.begin() + pos);
                     return Request();
                 }
                 break;
             }
-            else if (errno == EWOULDBLOCK || errno == EAGAIN) {
-            // No data available for non-blocking receive
-                // std::cout << "all recv" << std::endl;
+            else if (counter == 0 && n == -1) {
+				printlog("LOST CLIENT", fd[pos].fd - 2, RED);
+				ClientServer(fd[pos].fd, 0, 2);
+				close(fd[pos].fd);
+				fd.erase(fd.begin() + pos);
+				// return Request();
                 break;
             }
             else {
                 // Handle other receive errors
-                std::cerr << "Error: reading from poll" << std::endl;
+                printerr("Error: reading from poll", 0, RED);
                 perror("read");
                 return Request();
             }
@@ -246,6 +250,41 @@ void Servers::init()
 	}
 }
 
+int ClientServer(int client, int server, int locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
+{
+	static std::map<int, int> connect;
+
+	if (client && server && (locker == 0))
+	{
+		if (connect.find(client) == connect.end())
+		{
+			connect.insert(std::make_pair(client, server));
+			printlog("CLIENT MAPPED", client - 2, BLUE);
+		}
+		else
+			printerr("CLIENT ALREADY MAPPED", client - 2, RED);
+	}
+	else if (client && (locker == 1))
+	{
+		std::map<int, int>::iterator it = connect.find(client);
+		if (it != connect.end())
+			return it->second;
+		else
+			printerr("CLIENT NOT MAPPED", client - 2, PURPLE);
+	}
+	else if (client && (locker == 2))
+	{
+		if (connect.find(client) != connect.end())
+		{
+			connect.erase(client);
+			printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
+		}
+		else
+			printerr("CLIENT ALREADY ERASED FROM MAP", client - 2, RED);
+	}
+	return 0;
+}
+
 void Servers::run()
 {
 	struct sockaddr_in clientinfo;
@@ -265,9 +304,9 @@ void Servers::run()
 			if (ret == -1)
 			{
 				if (errno == EINTR)
-					std::cerr << "Poll was interupted by a signal" << std::endl;
+					printerr("Poll was interupted by a signal", 0, RED);
 				else
-					std::cerr << "Error in poll" << std::endl;
+					printerr("Error in poll", 0, RED);
 				continue;
 			}
 			if (ret == 0 && !checkSockets(fds[i].fd))
@@ -280,7 +319,8 @@ void Servers::run()
 			{
 				if (fds[i].revents & POLLIN)
 				{
-					if (int socketfd = checkSockets(fds[i].fd))
+					int socketfd = checkSockets(fds[i].fd);
+					if (socketfd)
 					{
 						if (acceptConnection(socketfd, &clientinfo, size, &fds))
 							fds[i].events &= ~POLLIN;
@@ -293,14 +333,21 @@ void Servers::run()
 						Request req = parseRecv(fds, i);
 						if (req.getContinue100())
 						{
-							getCorrectServ(req).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
+							getCorrectServ(req, fds[i].fd).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
 							continue;
 						}
 						//if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
 						if (headcheck(req.request()))
 						{
 							req.SetClientFd(fds[i].fd);
-							getCorrectServ(req).filterRequest(req);
+							Serv &kkkk = getCorrectServ(req, fds[i].fd);
+							if (kkkk.getSocket() != 0)
+								kkkk.filterRequest(req);
+							else
+							{
+								kkkk.errorPageCheck("400", "Bad Request", "/400.html", req);
+								kkkk.~Serv();
+							}
 							// int cgi_fd = getCorrectServ(req).filter_request(req);
 						}
 						// else 400 Bad Request
@@ -323,17 +370,21 @@ int	Servers::checkSockets(int fd)
 	return 0;
 }
 
-Serv	&Servers::getCorrectServ(Request req) // this is probably the right place to implement the server_name differentiation
+Serv	&Servers::getCorrectServ(Request req, int clientfd) // this is probably the right place to implement the server_name differentiation
 {
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
-		if (it->compareHostPort(req.Host(), req.Port()))
+		if (it->getSocket() == ClientServer(clientfd, 0, 1))
 		{
-			return *it;
+			if (it->compareHostPort(req.Host(), req.Port()) || it->compareServerName(req.Host()))
+			{
+				return *it;
+			}
 		}
 	}
-	return *servs.end();
+	Serv *servz = new Serv();
+	return *servz;
 }
 
 Servers::~Servers()

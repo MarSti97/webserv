@@ -5,15 +5,20 @@ int Serv::parseSend(std::string response, int fd)
 {
     if (!response.empty())
     {
+		size_t res = response.find("\r\n");
+		if (res != std::string::npos)
+		{
+			printlog("RESPONSE: " + response.substr(0, res) + " TO CLIENT", fd - 2, GREEN); // http = 9;
+		}
         ssize_t n = send(fd, response.c_str(), response.size(), 0);
         if (n < 0)
         {
-            std::cerr << "Error writing to socket" << std::endl;
+            printerr("Error writing to socket", 0, RED);
             return 1;
         }
         if ((unsigned long)n != response.size())
         {
-            std::cout << "bad response sent" << std::endl;
+            printerr("bad response sent", 0, YELLOW);
             return 1;
         }
         return n;
@@ -23,19 +28,24 @@ int Serv::parseSend(std::string response, int fd)
 
 std::string Serv::getResponse(std::string abs, std::string page, std::string responseHeaders)
 {
-    std::string response = readFile(abs.substr(1) + page);
+	if (*(page.begin()) != '/' && !(page.empty()) && *(abs.end() - 1) != '/')
+		abs = abs + "/";
+	// std::cout << abs + page << std::endl;
+    std::string response = readFile(abs + page);
+	// std::cout << responseHeaders + response << std::endl;
     std::stringstream ss;
     ss << response.length();
     responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-    if (response == "" || response.empty())
+    if (response == "" || response.empty()){
         response = readFile(serv_info.root + "/404.html");
+	}
     return responseHeaders + response;
 
 }
 
 void	Serv::filterRequest( Request req )
 {
-	//std::cout << req.request() << std::endl;
+	// std::cout << req.request() << std::endl;
 	if (!(req.Get().empty()))
 		PrepareResponse("GET", req.Get(), req);
 	else if (!(req.Post().empty()))
@@ -43,13 +53,15 @@ void	Serv::filterRequest( Request req )
 	else if (!(req.Del().empty()))
 		PrepareResponse("DELETE", req.Del(), req);
 	else
+	{
+		printlog("NOT RECOGNIZED METHOD.", 0, YELLOW);
 		errorPageCheck("501", "Not Implemented", "/501.html", req);
 }
 
 std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
 {
     size_t i = path.rfind('/');
-	if (path.substr(i).find('.') != std::string::npos)
+	if (path.substr(i).rfind('.') != std::string::npos)
 		return path;
 	else
 		return "";
@@ -62,6 +74,7 @@ std::string Serv::createAbsolutePath(std::string path)
 	std::vector<Location>::iterator it;
 	std::string page;
 	std::string newPath;
+	// std::cout << path << std::endl;
 	size_t i = path.rfind('/');
 	if (path.substr(i).find('.') != std::string::npos)
 	{
@@ -71,12 +84,15 @@ std::string Serv::createAbsolutePath(std::string path)
 	else
 	{
 		page = "";
-		newPath = path;
+		newPath = removeDashIfExists(path);
 	}
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
 		if (!(it->root.empty()) && newPath == it->path)
+		{
+			// std::cout << it->root + page << std::endl;
 			return it->root + page;
+		}
     }
 	return serv_info.root + path;
 }
@@ -110,12 +126,12 @@ std::string	Serv::CheckCGI( std::string path)
     return "";
 }
 
-void Serv::errorPageCheck(std::string code, std::string message, std::string path, Request req)
+void Serv::errorPageCheck(std::string code, std::string message, std::string defaultError, Request req)
 {
 	std::string page = "/" + code + ".html";
 	std::string error = code + " " + message;
 	if (serv_info.error_pages[code].empty())
-		parseSend(getResponse(serv_info.root, page, getHeader(error, "", path)), req.ClientFd());
+		parseSend(getResponse("DefaultError", page, getHeader(error, "", defaultError)), req.ClientFd());
 	else
 		parseSend(getResponse(serv_info.root, serv_info.error_pages[code], getHeader(error, "", serv_info.error_pages[code])), req.ClientFd());
 }
@@ -123,14 +139,14 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string pat
 void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 {
 	// std::cout << "File to be deleted: " << abs << std::endl;
-	if (std::remove(abs.c_str() + 1) == 0) // changed to + 1 because it wasn't getting deleted
+	if (std::remove(abs.c_str()) == 0) // changed to + 1 because it wasn't getting deleted
 	{
 		printlog("Succefully deleted file", -1, GREEN); // the 0 for the arguemnt is shit need to fix
 		parseSend(getResponse(abs, "", getHeader("204 No Content", "", abs)), req.ClientFd());
 	}
 	else
 	{
-		printlog("Failed to delete file", -1, RED);
+		printerr("Failed to delete file", -1, RED);
 		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
 	}
 }
@@ -145,7 +161,7 @@ void Serv::deleteFolderMethod(std::string path, Request req)
 	}
 	else
 	{
-		printlog("Failed to delete folder ", -1, RED);
+		printerr("Failed to delete folder ", -1, RED);
 		errorPageCheck("500", "Internal Server Error", "/500.html", req); // need a page for this
 	}
 }
@@ -170,7 +186,7 @@ void Serv::chunkedResponse(Request req)
 			parseSend(response + content, req.ClientFd());
 		}
 		else
-			errorPageCheck("404", "Not Found", "/404.html", req);
+			errorPageCheck("404", "Not Found", "DefaultError/404.html", req);
 	}
 
 }
@@ -192,57 +208,70 @@ bool Serv::redirection(std::string path, Request req)
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
-	std::cout << method << std::endl;
-	path = removeDashIfExists(path);
+	// std::cout << method << std::endl;
 	if (CheckAllowed(method, path) == ALLOWED)
 	{
 		std::string abs = createAbsolutePath(path);
+		// std::cout << abs << std::endl;
+		if (*(abs.begin()) == '/')
+			abs = abs.substr(1);
 		if (req.TransferEncoding() == "chunked")
 			return chunkedResponse(req);
 		if (redirection(path, req))
 			return ;
-		if (findFolder(abs) != "") // it is a file
-		{
-			if (!access(abs.c_str() + 1, R_OK)) // file exists
+		struct stat path_stat;
+		// std::cout << " aabs" << abs << std::endl;
+		if (access(abs.c_str(), F_OK) != -1)
+		{ // need forbidden for no access.
+			if (stat(abs.c_str(), &path_stat) != 0)
+				perror("Error getting file status");
+			int check = S_ISDIR(path_stat.st_mode);
+			if (check == 0) // it is a file
 			{
-				std::string theExtension = CheckCGI(path);
-				if (method == "DELETE")
-					deleteMethod(abs, req);
-				else if (theExtension != "") // it is a CGI script
-					parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
-				// else if (method == "POST")
-				// 	errorPage()
-				else // "normal" request
-					parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
+				if (!access(abs.c_str(), R_OK))
+				{
+					// std::cout << "FUCK" << std::endl;
+					std::string theExtension = CheckCGI(path);
+					if (method == "DELETE")
+						deleteMethod(abs, req);
+					else if (theExtension != "") // it is a CGI script
+						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
+					// else if (method == "POST")
+					// 	errorPage()
+					else // "normal" request
+						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
+				}
+				else
+					errorPageCheck("403", "Forbidden", "DefaultError/403.html", req);
 			}
-			else // if it does not exist, error 404
-				errorPageCheck("404", "Not Found", abs, req);
-		}
-		else // it is a folder
-		{
-			if (access(abs.c_str() + 1, F_OK) != -1) // folder exists
+			else // it is a folder
 			{
+				abs = removeDashIfExists(abs);
+				path = removeDashIfExists(path);
 				if (method == "DELETE")
 					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				// std::cout << "path " << path << std::endl;
+				// std::cout << "index " << index << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
 				{
-					if (CheckAutoindex(path) && !access(abs.c_str() + 1, R_OK))
+					if (CheckAutoindex(path) && !access(abs.c_str(), R_OK))
 							parseSend(makeDirectoryList(abs, path), req.ClientFd());
 					else
-						errorPageCheck("403", "Forbidden", abs, req); // changed to 403, confirm with nginx
+						errorPageCheck("403", "Forbidden", "DefaultError/403.html", req); // changed to 403, confirm with nginx
 				}
 			}
-			else // if it does not exist, error 404
-				errorPageCheck("404", "Not Found", abs, req);
+		}
+		else // if it does not exist, error 404
+		{
+			// std::cout << "IT'S HERE!!!!" << std::endl;
+			errorPageCheck("404", "Not Found", "DefaultError/404.html", req);
 		}
 	}
 	else
 	{
-		std::cout << "NOT ALLOWED" << std::endl;
+		printerr("METHOD NOT ALLOWED.", 0,YELLOW);
 		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
 	}
 }
@@ -347,15 +376,19 @@ void printMethods(std::map<std::string, Methods> map)
 
 Methods	Serv::CheckAllowed( std::string method, std::string path)
 {
+	//if (*(path.end() - 1) == '/')
+	// std::cout << path << std::endl;
 	size_t i = path.rfind("/");
 	std::string newPath;
-	if (path.substr(i).find(".") != std::string::npos)
+	if (*(path.end() - 1) != '/' && path.substr(i).find(".") != std::string::npos)
 		newPath = path.substr(0, i + 1);
 	else
 		newPath = path;
+	newPath = removeDashIfExists(newPath);
+	// std::cout << newPath << std::endl;
 	while (newPath != "")
 	{
-		std::cout << newPath << std::endl;
+		// std::cout << newPath << std::endl;
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
@@ -363,7 +396,7 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 			{
 				if (it->methods.find(method) != it->methods.end())
 				{
-					std::cout << "NEWPATH: " << newPath << " PATH: " << it->path << " METHOD: " << it->methods[method] << std::endl; 
+					// std::cout << "NEWPATH: " << newPath << " PATH: " << it->path << " METHOD: " << it->methods[method] << std::endl; 
 					return whatstheMethod(it->methods[method], method);
 				}
 			}
@@ -376,8 +409,6 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
     return UNDEFINED;
 }
 
-
-
 int Serv::establish_connection()
 {
     struct addrinfo *addr;
@@ -385,7 +416,7 @@ int Serv::establish_connection()
         std::cerr << "Error: couldn't get address" << std::endl;
         return 1;
     }
-    socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    this->socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
     if (socketfd < 0) {
         return failToStart("Error: socket creation", addr, socketfd);
 	}
@@ -460,6 +491,17 @@ bool Serv::compareHostPort(std::string host, std::string port)
 	return false;
 }
 
+bool Serv::compareServerName(std::string ServName)
+{
+	std::vector<std::string>::iterator name;
+
+	for (name = serv_info.server_name.begin(); name != serv_info.server_name.end(); ++name)
+	{
+		if (ServName == *name)
+			return true;
+	}
+	return false;
+}
 
 int Serv::getSocket()
 {

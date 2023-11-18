@@ -41,6 +41,8 @@
 #define RED "\033[0;91m"
 #define GREEN "\033[0;92m"
 #define YELLOW "\033[0;93m"
+#define BLUE "\033[0;94m"
+#define PURPLE "\033[0;95m"
 #define NOCOLOR "\033[0m"
 
 class Request;
@@ -73,6 +75,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size);
 int     failToStart(std::string error, struct addrinfo *addr, int socketfd);
 void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);
+void	printerr(std::string msg, int arg, std::string color);
 int     acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
 int     GetbyUser(std::string buffer);
 int     end_loop(int end);
@@ -89,6 +92,7 @@ std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 std::string removeDashIfExists(std::string path);
 Methods whatstheMethod(Methods meth, std::string word);
+int ClientServer(int client, int server, int locker);
 
 
 

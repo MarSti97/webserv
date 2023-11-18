@@ -146,7 +146,7 @@ bool correctfile(std::string file)
 
 void throw_parsing_exception(std::string line, int flag)
 {
-	std::cerr << "Error while parsing config file\non line: '" << line << "'" << std::endl;
+	printerr("Error while parsing config file\non line: '" + line + "'", 0, RED);
 	switch (flag)
 	{
 		case 0:
