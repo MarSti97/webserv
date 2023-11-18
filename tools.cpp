@@ -135,18 +135,53 @@ Methods whatstheMethod(Methods meth, std::string word)
     return UNDEFINED;
 }
 
-// char *joinVector(std::vector<std::pair<char *, int> > full, int size)
-// {
-//     char buf[size + 1];
-//     std::vector<std::pair<char *, int> >::iterator it;
-//     int f = 0;
-//     for (it = full.begin(); it != full.end(); ++it)
-//     {
-//         int i = -1;
-//         while (++i < it->second)
-//             buf[f++] = it->first[i];
-//         delete[] it->first;
-//     }
-//     buf[size] = '\0';
-//     return buf;
-// }
+void	handleLostClient(std::vector<pollfd> &fd, int pos)
+{
+	printlog("LOST CLIENT", fd[pos].fd - 2, RED);
+	ClientServer(fd[pos].fd, 0, ERASECLIENT);
+	close(fd[pos].fd);
+	fd.erase(fd.begin() + pos);
+}
+
+int ClientServer(int client, int server, ClientHandle locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
+{
+	static std::map<int, int> connect;
+
+	if (client && server && (locker == NEWCLIENT))
+	{
+		if (connect.find(client) == connect.end())
+		{
+			connect.insert(std::make_pair(client, server));
+			printlog("CLIENT MAPPED", client - 2, BLUE);
+		}
+		else
+			printerr("CLIENT ALREADY MAPPED", client - 2, RED);
+	}
+	else if (client && (locker == CLIENTSOCKET))
+	{
+		std::map<int, int>::iterator it = connect.find(client);
+		if (it != connect.end())
+			return it->second;
+		else
+			printerr("CLIENT NOT MAPPED", client - 2, PURPLE);
+	}
+	else if (client && (locker == ERASECLIENT))
+	{
+		if (connect.find(client) != connect.end())
+		{
+			connect.erase(client);
+			printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
+		}
+		else
+			printerr("CLIENT ALREADY ERASED FROM MAP", client - 2, RED);
+	}
+	return 0;
+}
+
+std::string getFirstLine(std::string content)
+{
+	size_t len = content.find("\r\n");
+	if (len != std::string::npos)
+		return content.substr(0, len);
+	return "No Header Found";
+}

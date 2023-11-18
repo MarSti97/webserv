@@ -126,7 +126,7 @@ int acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &si
     if (clientsocket != -1)
     {
         printlog("NEW CLIENT ", clientsocket - 2, GREEN);
-        ClientServer(clientsocket, servfd, 0);
+        ClientServer(clientsocket, servfd, NEWCLIENT);
         pollfd client_pollfd;
         client_pollfd.fd = clientsocket;
         client_pollfd.events = POLLIN | POLLOUT; // Monitor for read and write

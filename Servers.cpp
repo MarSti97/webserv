@@ -8,11 +8,12 @@ bool	check_duplicate_attr(T attribute, std::string line, size_t counter)
 	return true;
 }
 
-Servers::Servers(std::string file, char **environment) : env(environment), payloadTooLarge_413(false)
+Servers::Servers(std::string file, char **environment) : env(environment)
 {
 	config = readFile(file);
 	(void)env;
 }
+
 void	Servers::validate_config()
 {
 	std::string			line;
@@ -111,49 +112,25 @@ void	Servers::validate_config()
 	
 }
 
-// void	Servers::expectContinueOrChuncked(std::string buf, Serv serv, int clientfd)
-// {
-
-
-// 	std::cout << "CHECK: expect: " << expect << " chunked: " << chunked << std::endl;
-// 	if (chunked == "chunked")
-// 		chunked_data = true;
-// 	if (expect == "100-continue")
-// 	{
-// 		serv.parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
-// 		continue_100 = true;
-// 	}
-// }
-
-bool Servers::checkContentSizeToMax(char *buffer, ssize_t n, int clientfd)
+bool Servers::checkContentSizeToMax(Request req, Serv serv)
 {
-	std::string buf(buffer);
-	// std::cerr << buf << std::endl;
-	Request req(buffer, n);
-	if (req.Post() != "")
+	std::string max_string = serv.getMaxBodySize();
+	std::string len_string = req.Contentlength();
+	printerr("ERROR: " + max_string + " | " + len_string, 0, RED);
+	if (max_string == "" || len_string == "")
 	{
-		Serv temp = getCorrectServ(req, clientfd);
-		// expectContinueOrChuncked(buf, temp, clientfd);
-		std::string max_string = temp.getMaxBodySize();
-		std::string len_string = req.Contentlength();
-		printerr("ERROR: " + max_string + " | " + len_string, 0, RED);
-		if (max_string == "" || len_string == "")
-		{
-			printerr("Error: unable to calculate max body size", 0, RED);
-			return true;
-		}
-		long max;
-		long contentlen;
+		printerr("Error: unable to calculate max body size", 0, RED);
+		return true;
+	}
+	long max;
+	long contentlen;
 
-		std::istringstream(max_string) >> max;
-		std::istringstream(len_string) >> contentlen;
-		if (max < contentlen)
-		{
-			req.SetClientFd(clientfd);
-			temp.errorPageCheck("413", "Payload Too Large", "/413.html", req);
-			payloadTooLarge_413 = true;
-			return false;
-		}
+	std::istringstream(max_string) >> max;
+	std::istringstream(len_string) >> contentlen;
+	if (max < contentlen)
+	{
+		serv.errorPageCheck("413", "Payload Too Large", "/413.html", req);
+		return false;
 	}
 	return true;
 }
@@ -166,47 +143,36 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
     ssize_t n;
     int counter = 0;
     int buf_size = 0;
-	// bool first = true;
     while (1)
     {
         bzero(buffer, sizeof(buffer));
         n = recv(fd[pos].fd, buffer, 4096, 0);
         if (n <= 0)
         {
-            if (n == 0)
+            if (n <= 0)
             {
-                if (!counter)
-                {
-                    // Connection closed by the client
-                    printlog("LOST CLIENT", fd[pos].fd - 2, RED);
-					ClientServer(fd[pos].fd, 0, 2);
-                    close(fd[pos].fd);
-                    fd.erase(fd.begin() + pos);
+                if (!counter) { // Connection closed by the client
+                    handleLostClient(fd, pos);
+					if (n == -1)
+						break;
                     return Request();
                 }
                 break;
             }
-            else if (counter == 0 && n == -1) {
-				printlog("LOST CLIENT", fd[pos].fd - 2, RED);
-				ClientServer(fd[pos].fd, 0, 2);
-				close(fd[pos].fd);
-				fd.erase(fd.begin() + pos);
-				// return Request();
-                break;
-            }
-            else {
-                // Handle other receive errors
-                printerr("Error: reading from poll", 0, RED);
-                perror("read");
-                return Request();
-            }
+			// Handle other receive errors
+			printerr("Error: reading from poll", 0, RED);
+			perror("read");
+			return Request();
         }
         else
         {
 			if (counter == 0)
 			{
-				if (!checkContentSizeToMax(buffer, n, fd[pos].fd))
-					return Request();
+				Request tempReq(buffer, n);
+				printlog("REQUEST: " + getFirstLine(tempReq.request()), -1, CYAN);
+				if (tempReq.Post() != "")
+					if (!getCorrectServ(tempReq, fd[pos].fd, MAXCHECK))
+						return Request();
 			}
             char *bug = new char[n + 1];
             for (int o = 0; o < n; ++o)
@@ -256,40 +222,7 @@ void Servers::init()
 	}
 }
 
-int ClientServer(int client, int server, int locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
-{
-	static std::map<int, int> connect;
 
-	if (client && server && (locker == 0))
-	{
-		if (connect.find(client) == connect.end())
-		{
-			connect.insert(std::make_pair(client, server));
-			printlog("CLIENT MAPPED", client - 2, BLUE);
-		}
-		else
-			printerr("CLIENT ALREADY MAPPED", client - 2, RED);
-	}
-	else if (client && (locker == 1))
-	{
-		std::map<int, int>::iterator it = connect.find(client);
-		if (it != connect.end())
-			return it->second;
-		else
-			printerr("CLIENT NOT MAPPED", client - 2, PURPLE);
-	}
-	else if (client && (locker == 2))
-	{
-		if (connect.find(client) != connect.end())
-		{
-			connect.erase(client);
-			printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
-		}
-		else
-			printerr("CLIENT ALREADY ERASED FROM MAP", client - 2, RED);
-	}
-	return 0;
-}
 
 void Servers::run()
 {
@@ -337,31 +270,43 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
-						if (req.getContinue100())
-						{
-							getCorrectServ(req, fds[i].fd).parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", fds[i].fd);
-							continue;
-						}
-						//if (!(req.Get().empty() && req.Post().empty() && req.Del().empty()))
-						if (headcheck(req.request()))
-						{
-							req.SetClientFd(fds[i].fd);
-							Serv &kkkk = getCorrectServ(req, fds[i].fd);
-							if (kkkk.getSocket() != 0)
-								kkkk.filterRequest(req);
-							else
-							{
-								kkkk.errorPageCheck("400", "Bad Request", "/400.html", req);
-								kkkk.~Serv();
-							}
-							// int cgi_fd = getCorrectServ(req).filter_request(req);
-						}
-						// else 400 Bad Request
+						getCorrectServ(req, fds[i].fd, DEFAULT);
 					}
 				}
 			}
         }
     }
+}
+
+bool	Servers::getCorrectServ(Request req, int clientfd, ServSelect option) // this is probably the right place to implement the server_name differentiation
+{
+	std::vector<Serv>::iterator it;
+	for (it = servs.begin(); it != servs.end(); ++it)
+	{
+		if (it->getSocket() == ClientServer(clientfd, 0, CLIENTSOCKET))
+		{
+			if (it->compareHostPort(req.Host(), req.Port()) || it->compareServerName(req.Host()))
+			{
+				req.SetClientFd(clientfd);
+				if (option == MAXCHECK)
+				{
+					if (!checkContentSizeToMax(req, *it))
+						return false;
+				}
+				else if (req.getContinue100())
+					it->parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
+				else if (headcheck(req.request()))
+				{
+					if (it->getSocket() != 0)
+						it->filterRequest(req);
+					else
+						it->errorPageCheck("400", "Bad Request", "/400.html", req);
+				}
+				break ;
+			}
+		}
+	}
+	return true;
 }
 
 int	Servers::checkSockets(int fd)
@@ -374,23 +319,6 @@ int	Servers::checkSockets(int fd)
 			return fd;
 	}
 	return 0;
-}
-
-Serv	&Servers::getCorrectServ(Request req, int clientfd) // this is probably the right place to implement the server_name differentiation
-{
-	std::vector<Serv>::iterator it;
-	for (it = servs.begin(); it != servs.end(); ++it)
-	{
-		if (it->getSocket() == ClientServer(clientfd, 0, 1))
-		{
-			if (it->compareHostPort(req.Host(), req.Port()) || it->compareServerName(req.Host()))
-			{
-				return *it;
-			}
-		}
-	}
-	Serv *servz = new Serv();
-	return *servz;
 }
 
 Servers::~Servers()

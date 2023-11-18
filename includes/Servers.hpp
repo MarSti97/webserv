@@ -6,6 +6,12 @@
 class Request;
 class Serv;
 
+enum ServSelect
+{
+	DEFAULT,
+	MAXCHECK
+};
+
 class Servers
 {
 	private :
@@ -13,12 +19,10 @@ class Servers
 		std::vector<Serv> servs;
 		std::string config;
     	std::vector<pollfd> fds;
-		bool payloadTooLarge_413;
-		// bool continue_100;
-		// bool chunked_data;
 
 		void validate_config();
-		bool checkContentSizeToMax(char *buffer, ssize_t n, int clientfd);
+		bool checkContentSizeToMax(Request req, Serv serv);
+		// bool checkContentSizeToMax(char *buffer, ssize_t n, int clientfd);
 		void expectContinueOrChuncked(std::string buf, Serv serv, int clientfd);
 	
 	public : 
@@ -31,7 +35,7 @@ class Servers
 		void	init();
 		void	run();
 		int		checkSockets(int fd);
-		Serv	&getCorrectServ(Request req, int clientfd);
+		bool	getCorrectServ(Request req, int clientfd, ServSelect option);
 };
 
 

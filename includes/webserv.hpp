@@ -43,6 +43,7 @@
 #define YELLOW "\033[0;93m"
 #define BLUE "\033[0;94m"
 #define PURPLE "\033[0;95m"
+#define CYAN "\033[0;96m"
 #define NOCOLOR "\033[0m"
 
 class Request;
@@ -81,19 +82,26 @@ int     GetbyUser(std::string buffer);
 int     end_loop(int end);
 
 // tools
+enum ClientHandle
+{
+    NEWCLIENT,
+    CLIENTSOCKET,
+    ERASECLIENT
+};
+
 int     removehead(char *file);
 bool    compare(const char *find, char* str);
 int     removeheadnoimg(char *file, int size);
 bool    deleteFolderRecusively(std::string path);
 bool 	headcheck(std::string buf);
-// char    *joinVector(std::vector<std::pair<char *, int> > full, int size);
 int     getIntSize(int nbr);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 std::string removeDashIfExists(std::string path);
 Methods whatstheMethod(Methods meth, std::string word);
-int ClientServer(int client, int server, int locker);
-
+int ClientServer(int client, int server, ClientHandle locker);
+void	handleLostClient(std::vector<pollfd> &fd, int pos);
+std::string getFirstLine(std::string content);
 
 
 #endif
