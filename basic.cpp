@@ -62,7 +62,6 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
     size_t oi = findbuffer.find("POST ");
     if (oi != std::string::npos || !flag)
     {
-        // std::cout << "COME HERE " << std::endl;
         if (oi != std::string::npos)
         {
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);

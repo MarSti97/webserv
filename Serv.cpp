@@ -30,7 +30,7 @@ std::string Serv::getResponse(std::string abs, std::string page, std::string res
 {
 	if (*(page.begin()) != '/' && !(page.empty()) && *(abs.end() - 1) != '/')
 		abs = abs + "/";
-	std::cout << abs + page << std::endl;
+	// std::cout << abs + page << std::endl;
     std::string response = readFile(abs + page);
 	// std::cout << responseHeaders + response << std::endl;
     std::stringstream ss;
@@ -45,7 +45,7 @@ std::string Serv::getResponse(std::string abs, std::string page, std::string res
 
 void	Serv::filterRequest( Request req )
 {
-	std::cout << req.request() << std::endl;
+	// std::cout << req.request() << std::endl;
 	if (!(req.Get().empty()))
 		PrepareResponse("GET", req.Get(), req);
 	else if (!(req.Post().empty()))
@@ -75,7 +75,6 @@ std::string Serv::createAbsolutePath(std::string path)
 	std::vector<Location>::iterator it;
 	std::string page;
 	std::string newPath;
-	// std::cout << path << std::endl;
 	size_t i = path.rfind('/');
 	if (path.substr(i).find('.') != std::string::npos)
 	{
@@ -139,7 +138,6 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string def
 
 void Serv::deleteMethod(std::string abs, Request req) // need to test this!
 {
-	// std::cout << "File to be deleted: " << abs << std::endl;
 	if (std::remove(abs.c_str()) == 0) // changed to + 1 because it wasn't getting deleted
 	{
 		printlog("Succefully deleted file", -1, GREEN); // the 0 for the arguemnt is shit need to fix
@@ -169,7 +167,6 @@ void Serv::deleteFolderMethod(std::string path, Request req)
 
 void Serv::chunkedResponse(Request req)
 {
-	// std::cout << "ENTER CHUNKED RESPONSE!" << std::endl;
 	size_t max;
 	std::istringstream(serv_info.max_body_size) >> max;
 	if (req.content.getContentSize() > max)
@@ -179,7 +176,6 @@ void Serv::chunkedResponse(Request req)
 		std::string content(req.content.getContent());
 		if (content != "")
 		{
-			// std::cout << "Are we here?" << std::endl;
 			std::stringstream ss;
     		ss << req.content.getContentSize();
 			std::string response = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: " + ss.str() + "\r\n\r\n";
@@ -189,7 +185,8 @@ void Serv::chunkedResponse(Request req)
 		else
 			errorPageCheck("404", "Not Found", "DefaultError/404.html", req);
 	}
-
+	if (req.content.getChunkedBool())
+		req.content.clean();
 }
 
 bool Serv::redirection(std::string path, Request req)
@@ -197,7 +194,7 @@ bool Serv::redirection(std::string path, Request req)
 	std::vector<Location>::iterator it;
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
+		// std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
 		if (it->path == path && !(it->redirect_path.empty()))
 		{
 			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n", req.ClientFd());
@@ -231,7 +228,6 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 			{
 				if (!access(abs.c_str(), R_OK))
 				{
-					// std::cout << "FUCK" << std::endl;
 					std::string theExtension = CheckCGI(path);
 					if (method == "DELETE")
 						deleteMethod(abs, req);
@@ -266,7 +262,6 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		}
 		else // if it does not exist, error 404
 		{
-			// std::cout << "IT'S HERE!!!!" << std::endl;
 			errorPageCheck("404", "Not Found", "DefaultError/404.html", req);
 		}
 	}
@@ -274,6 +269,8 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 	{
 		printerr("METHOD NOT ALLOWED.", 0,YELLOW);
 		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
+		if (req.content.getChunkedBool())
+			req.content.clean();
 	}
 }
 
@@ -355,10 +352,10 @@ bool	Serv::ext_CGI(std::string path_info)
 void printMethods(std::map<std::string, Methods> map)
 {
 	std::map<std::string, Methods>::const_iterator its;
-	std::cout << "PRINTING: methods" << std::endl;
+	// std::cout << "PRINTING: methods" << std::endl;
 	for (its = map.begin(); its != map.end(); its++)
 	{
-		std::cout << "Method: " << its->first << " : "; 
+		// std::cout << "Method: " << its->first << " : "; 
 		switch (its->second)
 		{
 			case ALLOWED :
@@ -386,10 +383,8 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 	else
 		newPath = path;
 	newPath = removeDashIfExists(newPath);
-	// std::cout << newPath << std::endl;
 	while (newPath != "")
 	{
-		// std::cout << newPath << std::endl;
 		std::vector<Location>::iterator it;
 		for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
 		{
@@ -397,7 +392,6 @@ Methods	Serv::CheckAllowed( std::string method, std::string path)
 			{
 				if (it->methods.find(method) != it->methods.end())
 				{
-					// std::cout << "NEWPATH: " << newPath << " PATH: " << it->path << " METHOD: " << it->methods[method] << std::endl; 
 					return whatstheMethod(it->methods[method], method);
 				}
 			}

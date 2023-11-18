@@ -46,7 +46,6 @@ std::string	getINFOone(std::string request, const char *what, int pos)
 	size_t getStart = request.find(what);
     if (getStart != std::string::npos)
     {
-		// std::cout << "CORRECT" << std::endl;
         getStart += pos;
         size_t getEnd = request.find(" ", getStart);
         size_t getEnd2 = request.find("?", getStart);
@@ -63,7 +62,6 @@ std::string	getINFOtwo(std::string request, const char *what, int pos)
     if (hostStart != std::string::npos)
     {
         hostStart += pos;
-        // std::cerr << "CORRECT" << std::endl;
         size_t hostEnd = request.find("\r", hostStart);
         return (request.substr(hostStart, hostEnd - hostStart));
     }

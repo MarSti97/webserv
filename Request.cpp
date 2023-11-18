@@ -193,7 +193,6 @@ Request::Request( char *buffer, size_t size ) : continue_100(false)
     if (refererStart != std::string::npos)
     {
         refererStart += 9;
-        // std::cerr << "10" << std::endl;
         size_t refererend = _request.find(":", refererStart);
         size_t refererend2 = _request.find(":", refererend + 1);
         size_t refererend3 = _request.find("/", refererend2);
@@ -211,7 +210,6 @@ Request::Request( char *buffer, size_t size ) : continue_100(false)
     if (cont_typeStart != std::string::npos)
     {
         cont_typeStart += 14;
-        // std::cerr << "16" << std::endl;
         size_t cont_typeEnd = _request.find(";", cont_typeStart);
         size_t cont_typeEnd2 = _request.find("\r", cont_typeStart);
         if (cont_typeEnd2 < cont_typeEnd)
@@ -337,6 +335,7 @@ int    Request::processChunked(int current_len, Download &down, int client)
         }
         temp[counter] = '\0';
         content.setContent(temp, counter);
+        content.setChunkedBool(true);
         content.setContentSize(counter);
         printlog("Successfully unchunked request", -1, GREEN);
         down.eraseClient(client);

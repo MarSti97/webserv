@@ -103,7 +103,7 @@ void	Servers::validate_config()
 				insideServerBlock = false;		
 				check_requirements(&temp_config);
 				servs.push_back(Serv(temp_config));
-				std::cout << "NUMBER OF LINES " << counter << std::endl;
+				// std::cout << "NUMBER OF LINES " << counter << std::endl;
 			}
 			else
 				throw_parsing_exception(line, 2, counter);
@@ -116,10 +116,9 @@ bool Servers::checkContentSizeToMax(Request req, Serv serv)
 {
 	std::string max_string = serv.getMaxBodySize();
 	std::string len_string = req.Contentlength();
-	printerr("ERROR: " + max_string + " | " + len_string, 0, RED);
 	if (max_string == "" || len_string == "")
 	{
-		printerr("Error: unable to calculate max body size", 0, RED);
+		// printerr("Error: unable to calculate max body size", 0, RED);
 		return true;
 	}
 	long max;

@@ -4,8 +4,6 @@ Disposition::Disposition(std::string disposition)
 {
     if (!disposition.empty())
     {
-        // std::cerr << "HERE2" << std::endl;
-
         size_t typeStart = disposition.find("name=");
         size_t typeEnd = disposition.find("\"", typeStart);
         if (typeEnd != 0)
