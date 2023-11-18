@@ -17,7 +17,7 @@ int main(int ac, char **av, char **env)
         servs.init();
     }
     catch (const std::exception& e) {
-        printerr(e.what(), 0, RED);
+        printerr(e.what(), -2, RED);
         return 0;
     }
 	servs.printAll();
@@ -80,8 +80,10 @@ void	printerr(std::string msg, int arg, std::string color)
 {
     if (arg == -1)
 	    std::cerr << color << makeStamp() << " " << msg << " " << NOCOLOR << std::endl; 
+    else if (arg != -2)
+	    std::cerr << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl;
     else
-	    std::cerr << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl; 
+        std::cerr << color << msg << std::endl;
 }
 
 void	printlog(std::string msg, int arg, std::string color)
