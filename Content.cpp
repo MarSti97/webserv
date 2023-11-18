@@ -41,7 +41,8 @@ void Content::setContent( char *newcontent, size_t size )
     hass[size] = '\0';
     for (size_t i = 0; i < size; ++i)
     {
-        hass[i] = newcontent[i];
+        if (newcontent != NULL)
+            hass[i] = newcontent[i];
     }
     _content = hass;
 }

@@ -74,6 +74,7 @@ Request postThings(std::string findbuffer, char *buffer, int fd, int size)
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
 	        size_t headerlength = findbuffer.find( "\r\n\r\n");
+            std::cout << (atoi(contentlength.c_str()) + (headerlength + 4)) << std::endl;
             instance.add_map(fd, imgDown((atoi(contentlength.c_str()) + (headerlength + 4)), size, buffer, boundary));
         }
         else

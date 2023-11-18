@@ -6,10 +6,6 @@ int Serv::parseSend(std::string response, int fd)
     if (!response.empty())
     {
 		size_t res = response.find("\r\n");
-		if (res != std::string::npos)
-		{
-			printlog("RESPONSE: " + response.substr(0, res) + " TO CLIENT", fd - 2, GREEN); // http = 9;
-		}
         ssize_t n = send(fd, response.c_str(), response.size(), 0);
         if (n < 0)
         {
@@ -21,6 +17,8 @@ int Serv::parseSend(std::string response, int fd)
             printerr("bad response sent", 0, YELLOW);
             return 1;
         }
+		if (res != std::string::npos)
+			printlog("RESPONSE: " + response.substr(0, res) + " TO CLIENT", fd - 2, GREEN); // http = 9;
         return n;
     }
     return 0;
@@ -264,6 +262,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		}
 	}
 	else
+	{
 		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
 		if (req.content.getChunkedBool())
 			req.content.clean();
@@ -302,8 +301,11 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 			perror("Error reading from file descriptor");
 			error_flag = 500;
 		}
-		if (response.empty())
+		else if (response.empty())
+		{
+			std::cout << "EMPTY RESPONSE!!!!" << std::endl;
 			error_flag = 204;
+		}
 		else
 		{
 			responseHeaders = "HTTP/1.1 200 OK\r\n";
@@ -323,7 +325,7 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 			response = getResponse(serv_info.root, serv_info.error_pages["500"], getHeader("500 Internal Server Error", "", serv_info.error_pages["500"]));
 	}
 	else if (error_flag == 204)
-		responseHeaders = "HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n";
+		responseHeaders = "HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n\r\n";
 	return responseHeaders + response;
 }
 

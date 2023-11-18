@@ -152,9 +152,9 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
             {
                 if (!counter) { // Connection closed by the client
                     handleLostClient(fd, pos);
-					// if (n == -1)
-					break;
-                    // return Request();
+					if (n == -1)
+						break;
+                    return Request();
                 }
                 break;
             }
