@@ -103,7 +103,7 @@ void	Servers::validate_config()
 				insideServerBlock = false;		
 				check_requirements(&temp_config);
 				servs.push_back(Serv(temp_config));
-				std::cout << "NUMBER OF LINES " << counter << std::endl;
+				// std::cout << "NUMBER OF LINES " << counter << std::endl;
 			}
 			else
 				throw_parsing_exception(line, 2, counter);
@@ -153,9 +153,9 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
             {
                 if (!counter) { // Connection closed by the client
                     handleLostClient(fd, pos);
-					if (n == -1)
-						break;
-                    return Request();
+					// if (n == -1)
+					break;
+                    // return Request();
                 }
                 break;
             }
@@ -169,7 +169,7 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 			if (counter == 0)
 			{
 				Request tempReq(buffer, n);
-				printlog("REQUEST: " + getFirstLine(tempReq.request()), -1, CYAN);
+				printlog("REQUEST: " + getFirstLine(tempReq.request()) + " FROM CLIENT", fds[pos].fd - 2, CYAN);
 				if (tempReq.Post() != "")
 					if (!getCorrectServ(tempReq, fd[pos].fd, MAXCHECK))
 						return Request();
@@ -270,7 +270,8 @@ void Servers::run()
 						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
-						getCorrectServ(req, fds[i].fd, DEFAULT);
+						if (!(req.request().empty()))
+							getCorrectServ(req, fds[i].fd, DEFAULT);
 					}
 				}
 			}

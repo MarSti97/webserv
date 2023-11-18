@@ -30,7 +30,7 @@ std::string Serv::getResponse(std::string abs, std::string page, std::string res
 {
 	if (*(page.begin()) != '/' && !(page.empty()) && *(abs.end() - 1) != '/')
 		abs = abs + "/";
-	std::cout << abs + page << std::endl;
+	// std::cout << abs + page << std::endl;
     std::string response = readFile(abs + page);
 	// std::cout << responseHeaders + response << std::endl;
     std::stringstream ss;
@@ -45,7 +45,7 @@ std::string Serv::getResponse(std::string abs, std::string page, std::string res
 
 void	Serv::filterRequest( Request req )
 {
-	std::cout << req.request() << std::endl;
+	// std::cout << req.request() << std::endl;
 	if (!(req.Get().empty()))
 		PrepareResponse("GET", req.Get(), req);
 	else if (!(req.Post().empty()))
@@ -197,7 +197,7 @@ bool Serv::redirection(std::string path, Request req)
 	std::vector<Location>::iterator it;
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
+		// std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
 		if (it->path == path && !(it->redirect_path.empty()))
 		{
 			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n", req.ClientFd());
@@ -252,7 +252,7 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				if (method == "DELETE")
 					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				std::cout << "index " << index << std::endl;
+				// std::cout << "index " << index << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
 				else
