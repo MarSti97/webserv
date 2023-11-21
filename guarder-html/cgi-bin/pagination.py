@@ -1,6 +1,9 @@
 import os
 import re
 
+if os.environ.get("REQUEST_METHOD") != "GET":
+  exit()
+
 # List of divs
 divs = ['''<div class = "container" style="background-color: #db9595"><h1>#db9595</h1></div>''',
          '''<div class = "container" style="background-color: #dba395"><h1>#dba395</h1></div>''', 
@@ -33,7 +36,7 @@ print('''
   <meta name="keywords" content="" />
   <meta name="description" content="" />
   <meta name="author" content="" />
-  <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
+  <link rel="shortcut icon" href="../images/favicon.png" type="image/x-icon">
 
     <title>Webserv</title>
 

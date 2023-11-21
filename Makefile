@@ -1,5 +1,6 @@
-SRC = basic.cpp open_config.cpp parse_config.cpp Content.cpp Servers.cpp Serv.cpp cgi.cpp Download.cpp\
-directory.cpp tools.cpp Disposition.cpp Request.cpp
+SRC = Main.cpp ParseConfig.cpp ValidateConfig.cpp Content.cpp Servers.cpp Serv.cpp Cgi.cpp Download.cpp\
+Directory.cpp Tools.cpp Disposition.cpp Request.cpp ResponseCheck.cpp ResponseTools.cpp Response.cpp\
+ServTools.cpp FilterServers.cpp FilterRequest.cpp DeleteMethod.cpp
 BIN = bin
 OBJ = $(SRC:%.cpp=${BIN}/%.o)
 FLAGS = -Wall -Werror -Wextra -Wshadow -g -std=c++98
@@ -26,7 +27,7 @@ run : all
 	@./$(NAME) example.config 2> errors.txt
 
 valgrind : all
-	@valgrind ./$(NAME) example.config
+	@valgrind ./$(NAME) Config/example.config
 
 clean : 
 	@rm -rf $(OBJ) $(BIN)

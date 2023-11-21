@@ -76,35 +76,6 @@ std::string removeDashIfExists(std::string path)
     return path;
 }
 
-bool deleteFolderRecusively(std::string path)
-{
-	struct dirent *entry;
-	DIR *dir = opendir(path.c_str());
-	if (dir == NULL)
-		printerr("Error: couldnt open dir for delete method: " + path, 0, RED);
-	else
-	{
-		while ((entry = readdir(dir)) != NULL)
-		{
-			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            	continue;
-			if (entry->d_type == DT_DIR)
-				deleteFolderRecusively(path + "/" + entry->d_name); // does d_name have / already?
-			else
-			{
-				std::string fileToDelete = path + "/" + entry->d_name;
-				if (std::remove(fileToDelete.c_str()) != 0)
-					printerr("Error: could not delete file within directory: " + fileToDelete, 0, RED);
-			}
-		}
-		closedir(dir);
-		if (rmdir(path.c_str()) != 0)
-			return false;
-		return true;
-	}
-	return false;
-}
-
 int getIntSize(int nbr)
 {
     if (nbr == 0)
@@ -126,48 +97,6 @@ Methods whatstheMethod(Methods meth, std::string word)
     return DENIED;
 }
 
-void	handleLostClient(std::vector<pollfd> &fd, int pos)
-{
-	printlog("LOST CLIENT", fd[pos].fd - 2, RED);
-	ClientServer(fd[pos].fd, 0, ERASECLIENT);
-	close(fd[pos].fd);
-	fd.erase(fd.begin() + pos);
-}
-
-int ClientServer(int client, int server, ClientHandle locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
-{
-	static std::map<int, int> connect;
-
-	if (client && server && (locker == NEWCLIENT))
-	{
-		if (connect.find(client) == connect.end())
-		{
-			connect.insert(std::make_pair(client, server));
-			printlog("CLIENT MAPPED", client - 2, BLUE);
-		}
-		else
-			printerr("CLIENT ALREADY MAPPED", client - 2, RED);
-	}
-	else if (client && (locker == CLIENTSOCKET))
-	{
-		std::map<int, int>::iterator it = connect.find(client);
-		if (it != connect.end())
-			return it->second;
-		else
-			printerr("CLIENT NOT MAPPED", client - 2, PURPLE);
-	}
-	else if (client && (locker == ERASECLIENT))
-	{
-		if (connect.find(client) != connect.end())
-		{
-			connect.erase(client);
-			printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
-		}
-		else
-			printerr("CLIENT ALREADY ERASED FROM MAP", client - 2, RED);
-	}
-	return 0;
-}
 
 std::string getFirstLine(std::string content)
 {
@@ -175,4 +104,46 @@ std::string getFirstLine(std::string content)
 	if (len != std::string::npos)
 		return content.substr(0, len);
 	return "No Header Found";
+}
+
+void	printerr(std::string msg, int arg, std::string color)
+{
+    if (arg == -1)
+	    std::cerr << color << makeStamp() << " " << msg << " " << NOCOLOR << std::endl; 
+    else if (arg != -2)
+	    std::cerr << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl;
+    else
+        std::cerr << color << msg << NOCOLOR << std::endl;
+}
+
+void	printlog(std::string msg, int arg, std::string color)
+{
+    if (arg == -1)
+	    std::cout << color << makeStamp() << " " << msg << " " << NOCOLOR << std::endl; 
+    else
+	    std::cout << color << makeStamp() << " " << msg << " " << arg << NOCOLOR << std::endl; 
+}
+
+std::string makeStamp( void )
+{
+    time_t currentTime;
+    struct tm *localTimeInfo;
+
+    // Get the current time
+    time(&currentTime);
+
+    // Convert the current time to a local time structure
+    localTimeInfo = localtime(&currentTime);
+    std::stringstream hours, minutes, day, month, year;
+    // ss << length;
+    std::string lengthStr = hours.str();
+    // Extract the individual components of the time
+    hours << localTimeInfo->tm_hour;
+    minutes << localTimeInfo->tm_min;
+    day << localTimeInfo->tm_mday;
+    month << localTimeInfo->tm_mon + 1; // Months are 0-based
+    year << localTimeInfo->tm_year + 1900; // Years are counted from 1900
+
+    // Print the formatted timestamp
+    return hours.str() + ':' + minutes.str() + '/' + day.str() + '-' + month.str() + '-' + year.str();
 }

@@ -247,6 +247,11 @@ Request::Request( char *buffer, size_t size ) : continue_100(false)
     }
     if (!boundary.empty())
         this->content = Content(contentdisposition, boundary);
+    else
+    {
+        if (atoi(contentlength.c_str()) != 0)
+            content.setContentSize(atoi(contentlength.c_str()));
+    }
 }
 
 int Request::EndBoundary( char *str, size_t len, char *bound)
@@ -290,7 +295,7 @@ int    Request::processChunked(int current_len, Download &down, int client)
     if ((size_t)head == std::string::npos)
     {
         printerr("Error: No head on request", 0, RED);
-        return 0;
+        return 3;
     }
     head += 4;
     if (expect == "100-continue")
@@ -301,10 +306,12 @@ int    Request::processChunked(int current_len, Download &down, int client)
             return 0;
         }
     }
+    // std::cout << _request << std::endl;
     if (transferencoding == "chunked")
     {
         if (_request.rfind("0\r\n\r\n") == std::string::npos)
             return 2;
+        // std::cout << head << " ass" << std::endl;
         std::vector<std::pair<char *, int> > res;
         int chunk_size = nextSize(_request, head);
         int counter = 0;

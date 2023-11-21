@@ -35,6 +35,10 @@ class Serv
 		void	errorPageCheck(std::string code, std::string message, std::string path, Request req);
 		bool	redirection(std::string path, Request req);
 		bool	compareServerName(std::string ServName);
+		bool	deleteFolderRecusively(std::string path);
+		int		failToStart(std::string error, struct addrinfo *addr, int socket);
+		std::string	getHeader( std::string ARG, std::string extra, std::string filePath );
+		std::string findcommand(std::string command);
 		std::string	findFolder( std::string folder );
 		std::string	sendby_CGI(int cgi_fd);
 		std::string getResponse(std::string path, std::string file, std::string responseHeaders);

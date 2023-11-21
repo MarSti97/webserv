@@ -12,10 +12,16 @@ enum ServSelect
 	MAXCHECK
 };
 
+enum ClientHandle
+{
+    NEWCLIENT,
+    CLIENTSOCKET,
+    ERASECLIENT
+};
+
 class Servers
 {
 	private :
-		char **env;
 		std::vector<Serv> servs;
 		std::string config;
     	std::vector<pollfd> fds;
@@ -27,7 +33,7 @@ class Servers
 	
 	public : 
 		Servers() {}
-		Servers(std::string file, char **environment);
+		Servers(std::string file);
 		~Servers(); //{std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
 
 		Request parseRecv(std::vector<pollfd> &fds, int pos);
@@ -36,6 +42,11 @@ class Servers
 		void	run();
 		int		checkSockets(int fd);
 		bool	getCorrectServ(Request req, int clientfd, ServSelect option);
+		void	handleLostClient(std::vector<pollfd> &fd, int pos);
+		int		acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fd);
+		int		ClientServer(int client, int server, ClientHandle locker);
+		Request	postThings(std::string findbuffer, char *buffer, int fd, int size);
+		bool 	headcheck(std::string buf);
 };
 
 

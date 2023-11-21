@@ -1,9 +1,10 @@
-
 import os
 import cgi
 import sys
 import re
 
+if os.environ.get("REQUEST_METHOD") != "POST":
+  exit()
 
 # test an infinite loop by uncommenting the following lines
 # while True:
@@ -24,7 +25,7 @@ print('''
   <meta name="keywords" content="" />
   <meta name="description" content="" />
   <meta name="author" content="" />
-  <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
+  <link rel="shortcut icon" href="../images/favicon.png" type="image/x-icon">
 
     <title>Webserv</title>
 

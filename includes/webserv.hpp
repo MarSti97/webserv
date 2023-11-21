@@ -60,9 +60,7 @@ bool 	check_new_attribute(std::string token);
 bool    correctfile(std::string file);
 
 std::string makeStamp( void );
-std::string findcommand(std::string command);
 std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
-std::string getHeader( std::string ARG, std::string extra, std::string filePath );
 std::string	parse_attribute(std::istringstream &iss, std::string token, std::string line, size_t counter);
 void	validate_location(Location temp_location, std::vector<Location> locations, std::string line, size_t counter);
 void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line, size_t counter);
@@ -72,35 +70,21 @@ void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_co
 void 	throw_parsing_exception(std::string line, int flag, size_t counter);
 bool	check_dup_methods(std::string token, std::string line, Location *temp_location, size_t counter);
 
-Request postThings(std::string findbuffer, char *buffer, int fd, int size);
-int     failToStart(std::string error, struct addrinfo *addr, int socketfd);
 void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);
 void	printerr(std::string msg, int arg, std::string color);
-int     acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fds);
-int     GetbyUser(std::string buffer);
 int     end_loop(int end);
 
 // tools
-enum ClientHandle
-{
-    NEWCLIENT,
-    CLIENTSOCKET,
-    ERASECLIENT
-};
 
 int     removehead(char *file);
 bool    compare(const char *find, char* str);
 int     removeheadnoimg(char *file, int size);
-bool    deleteFolderRecusively(std::string path);
-bool 	headcheck(std::string buf);
 int     getIntSize(int nbr);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 std::string removeDashIfExists(std::string path);
 Methods whatstheMethod(Methods meth, std::string word);
-int ClientServer(int client, int server, ClientHandle locker);
-void	handleLostClient(std::vector<pollfd> &fd, int pos);
 std::string getFirstLine(std::string content);
 
 

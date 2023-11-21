@@ -2,11 +2,8 @@ import cgi
 import os
 import sys
 
-# if not os.environ.get("BODY_FILENAME"):
-# 	print("EXITING!")
-# 	exit()
-# Set the directory where you want to store the uploaded images
-print("ENTERED SCRIPT")
+if os.environ.get("REQUEST_METHOD") != "POST":
+  exit()
 upload_dir = 'uploads/'
 
 # Create the upload directory if it doesn't exist
@@ -35,7 +32,7 @@ print('''
   <meta name="keywords" content="" />
   <meta name="description" content="" />
   <meta name="author" content="" />
-  <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
+  <link rel="shortcut icon" href="../images/favicon.png" type="image/x-icon">
 
     <title>Webserv</title>
 

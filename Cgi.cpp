@@ -58,7 +58,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		argv[1] = const_cast<char *>((script_name).c_str());
 		argv[2] = NULL;
 
-		std::cout << "CALLED SCRIPT ON CGI" << std::endl;
+		// std::cout << "CALLED SCRIPT ON CGI" << std::endl;
 		dup2(input_fd[0], STDIN_FILENO);
 		close(input_fd[1]);
 		close(input_fd[0]);		
@@ -157,4 +157,35 @@ char	**Serv::create_cgi_env(std::vector<std::string> meta_vars)
 	}
 	cgi_env[i] = NULL;
 	return cgi_env;
+}
+
+std::string Serv::findcommand(std::string command)
+{
+	std::string pathStr = std::getenv("PATH");
+    
+    if (pathStr.empty())
+        return NULL;
+    
+    // Tokenize the PATH variable using ':' (Unix-like systems) or ';' (Windows)
+    char delimiter = ':';
+    
+    std::vector<std::string> pathDirs;
+    size_t start = 0;
+    size_t end = pathStr.find(delimiter);
+    
+    while (end != std::string::npos) {
+        std::string dir = pathStr.substr(start, end - start);
+        pathDirs.push_back(dir);
+        start = end + 1;
+        end = pathStr.find(delimiter, start);
+    }
+    std::string lastDir = pathStr.substr(start);
+    pathDirs.push_back(lastDir);
+    std::vector<std::string>::iterator it;
+    for (it = pathDirs.begin(); it != pathDirs.end(); it++)
+    {
+        if (access((*it + command).c_str(), F_OK) == 0)
+            break ;
+    }
+	return (*it + command);
 }
