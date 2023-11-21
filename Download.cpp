@@ -82,7 +82,10 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
             Request reo(it->second.file, it->second.current_len);
             int to_do = reo.processChunked(it->second.current_len, *this, client);
             if(to_do == 0 || reo.content.getContentSize() == 0)
+			{
+                eraseClient(client);
                 return reo;
+			}
             else if (to_do == 2)
             {
                 return Request();
@@ -99,7 +102,7 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
                 return reo;
             }
             size_t size = removeheadnoimg(it->second.file, it->second.current_len);
-            std::cout << reo.request() << std::endl;
+            // std::cout << reo.request() << std::endl;
             reo.content.setContent(reo.C_request() + size, strlen(reo.C_request() + size));
             reo.content.setContentSize(it->second.current_len - size);
             eraseClient(client);

@@ -58,6 +58,7 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 		argv[1] = const_cast<char *>((script_name).c_str());
 		argv[2] = NULL;
 
+		std::cout << "CALLED SCRIPT ON CGI" << std::endl;
 		dup2(input_fd[0], STDIN_FILENO);
 		close(input_fd[1]);
 		close(input_fd[0]);		
@@ -92,10 +93,12 @@ int	Serv::execute_script(std::string cmd_path, std::string path_info, char **env
 			}
 			pid_t result = waitpid(pid, &status, WNOHANG);
             if (result > 0) {
+				//std::cout << "EXITED WITH CODE 0!!!" << std::endl;				
                 return output_fd[0];
             }
 		}
 	}
+	//std::cout << "SHOULD EXIT HERE!!!" << std::endl;
 	return (-1);
 }
 

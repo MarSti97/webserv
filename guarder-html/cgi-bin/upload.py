@@ -2,7 +2,11 @@ import cgi
 import os
 import sys
 
+# if not os.environ.get("BODY_FILENAME"):
+# 	print("EXITING!")
+# 	exit()
 # Set the directory where you want to store the uploaded images
+print("ENTERED SCRIPT")
 upload_dir = 'uploads/'
 
 # Create the upload directory if it doesn't exist

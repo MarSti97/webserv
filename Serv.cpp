@@ -204,6 +204,7 @@ bool Serv::redirection(std::string path, Request req)
 
 void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 {
+	printlog("REQUEST: " + getFirstLine(req.request()) + " FROM CLIENT", req.ClientFd() - 2, CYAN);
 	if (CheckAllowed(method, path) == ALLOWED)
 	{
 		std::string abs = createAbsolutePath(path);

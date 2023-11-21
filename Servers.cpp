@@ -168,7 +168,7 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 			if (counter == 0)
 			{
 				Request tempReq(buffer, n);
-				printlog("REQUEST: " + getFirstLine(tempReq.request()) + " FROM CLIENT", fds[pos].fd - 2, CYAN);
+				//printlog("REQUEST: " + getFirstLine(tempReq.request()) + " FROM CLIENT", fds[pos].fd - 2, CYAN);
 				if (tempReq.Post() != "")
 					if (!getCorrectServ(tempReq, fd[pos].fd, MAXCHECK))
 						return Request();
