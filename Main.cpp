@@ -6,7 +6,7 @@ int main(int ac, char **av)
     try {
         if (ac == 1)
         {
-            printerr("No configuration file provided. Using default one.", -2, RED);
+            printerr("No configuration file provided. Using default one (Config/example.config)", -2, RED);
             servs = Servers(std::string("Config/example.config"));
         }
         else if (ac == 2)

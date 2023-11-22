@@ -72,7 +72,7 @@ int Servers::acceptConnection(int socketfd, struct sockaddr_in *clientinfo, sock
     int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);
     if (clientsocket != -1)
     {
-        printlog("NEW CLIENT", clientsocket - 2, GREEN);
+        printlog("NEW CONNECTION WITH CLIENT", clientsocket - 2, GREEN);
         ClientServer(clientsocket, servfd, NEWCLIENT);
         pollfd client_pollfd;
         client_pollfd.fd = clientsocket;
@@ -107,7 +107,7 @@ int	Servers::ClientServer(int client, int server, ClientHandle locker) // 0 to a
 		if (connect.find(client) == connect.end())
 		{
 			connect.insert(std::make_pair(client, server));
-			printlog("CLIENT MAPPED", client - 2, BLUE);
+			//printlog("CLIENT MAPPED", client - 2, BLUE);
 		}
 		else
 			printerr("CLIENT ALREADY MAPPED", client - 2, RED);
@@ -125,7 +125,7 @@ int	Servers::ClientServer(int client, int server, ClientHandle locker) // 0 to a
 		if (connect.find(client) != connect.end())
 		{
 			connect.erase(client);
-			printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
+			//printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
 		}
 		else
 			printerr("CLIENT ALREADY ERASED FROM MAP", client - 2, RED);

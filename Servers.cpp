@@ -64,7 +64,7 @@ void Servers::run()
 					}
 					else if (fds[i].revents & POLLOUT)
 					{
-						printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
+						//printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 
 						Request req = parseRecv(fds, i);
 						if (!(req.request().empty()))
@@ -109,6 +109,7 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
         {
 			if (counter == 0)
 			{
+				printlog("NEW REQUEST FROM CLIENT", fds[pos].fd - 2, YELLOW);
 				Request tempReq(buffer, n);
 				//printlog("REQUEST: " + getFirstLine(tempReq.request()) + " FROM CLIENT", fds[pos].fd - 2, CYAN);
 				if (tempReq.Post() != "")
@@ -144,7 +145,7 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 
 void	Servers::handleLostClient(std::vector<pollfd> &fd, int pos)
 {
-	printlog("LOST CLIENT", fd[pos].fd - 2, RED);
+	printlog("CONNECTION CLOSED WITH CLIENT", fd[pos].fd - 2, RED);
 	ClientServer(fd[pos].fd, 0, ERASECLIENT);
 	close(fd[pos].fd);
 	fd.erase(fd.begin() + pos);

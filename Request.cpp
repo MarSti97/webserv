@@ -344,7 +344,7 @@ int    Request::processChunked(int current_len, Download &down, int client)
         content.setContent(temp, counter);
         content.setChunkedBool(true);
         content.setContentSize(counter);
-        printlog("Successfully unchunked request", -1, GREEN);
+        //printlog("Successfully unchunked request", -1, GREEN);
         down.eraseClient(client);
         return 0;
     }

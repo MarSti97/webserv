@@ -140,9 +140,9 @@ bool correctfile(std::string file)
 {
 	size_t point = file.find(".");
 	if (point != std::string::npos)
-		if (file.substr(point) != ".config")
-			return false;
-	return true;
+		if (file.substr(point) == ".config")
+			return true;
+	return false;
 }
 
 void throw_parsing_exception(std::string line, int flag, size_t counter)
