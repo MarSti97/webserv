@@ -32,7 +32,7 @@ void	Serv::filterRequest( Request req )
 		PrepareResponse("DELETE", req.Del(), req);
 	else
 	{
-		printlog("NOT RECOGNIZED METHOD.", 0, YELLOW);
+		//printlog("NOT RECOGNIZED METHOD.", 0, YELLOW);
 		errorPageCheck("501", "Not Implemented", "/501.html", req);
 	}
 }
@@ -64,11 +64,11 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					if (method == "DELETE")
 						deleteMethod(abs, req);
 					else if (theExtension != "") // it is a CGI script
-						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd());
+						parseSend(sendby_CGI(cgi_request(req, abs, theExtension)), req.ClientFd(), req);
 					else if (method == "POST")
-						parseSend(getResponse(abs, "", getHeader("204 No Content", "", abs)), req.ClientFd());
+						parseSend(getResponse(abs, "", getHeader("204 No Content", "", abs)), req.ClientFd(), req);
 					else // "normal" request
-						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd());
+						parseSend(getResponse(abs, "", getHeader("200 OK", "", abs)), req.ClientFd(), req);
 				}
 				else
 					errorPageCheck("403", "Forbidden", "DefaultError/403.html", req);
@@ -82,11 +82,11 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				std::string index = CheckIndex(path);
 				// std::cout << "index " << index << std::endl;
 				if (!(index.empty()))
-					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd());
+					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd(), req);
 				else
 				{
 					if (CheckAutoindex(path) && !access(abs.c_str(), R_OK))
-							parseSend(makeDirectoryList(abs, path), req.ClientFd());
+							parseSend(makeDirectoryList(abs, path), req.ClientFd(), req);
 					else
 						errorPageCheck("403", "Forbidden", "DefaultError/403.html", req); // changed to 403, confirm with nginx
 				}
@@ -110,7 +110,7 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string def
 	std::string page = "/" + code + ".html";
 	std::string error = code + " " + message;
 	if (serv_info.error_pages[code].empty())
-		parseSend(getResponse("DefaultError", page, getHeader(error, "", defaultError)), req.ClientFd());
+		parseSend(getResponse("DefaultError", page, getHeader(error, "", defaultError)), req.ClientFd(), req);
 	else
-		parseSend(getResponse(serv_info.root.substr(1), serv_info.error_pages[code], getHeader(error, "", serv_info.error_pages[code])), req.ClientFd());
+		parseSend(getResponse(serv_info.root.substr(1), serv_info.error_pages[code], getHeader(error, "", serv_info.error_pages[code])), req.ClientFd(), req);
 }

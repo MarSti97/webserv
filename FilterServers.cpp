@@ -14,6 +14,7 @@ int	Servers::checkSockets(int fd)
 
 bool	Servers::getCorrectServ(Request req, int clientfd, ServSelect option) // this is probably the right place to implement the server_name differentiation
 {
+	req.SetClientFd(clientfd);
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
@@ -21,23 +22,21 @@ bool	Servers::getCorrectServ(Request req, int clientfd, ServSelect option) // th
 		{
 			if (it->compareHostPort(req.Host(), req.Port()) || it->compareServerName(req.Host()))
 			{
-				req.SetClientFd(clientfd);
 				if (option == MAXCHECK)
 				{
 					if (!checkContentSizeToMax(req, *it))
 						return false;
 				}
 				else if (req.getContinue100())
-					it->parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd);
+					it->parseSend("HTTP/1.1 100 Continue\r\nConnection: keep-alive\r\n", clientfd, req);
 				else if (headcheck(req.request()))
-				{
-					if (it->getSocket() != 0)
-						it->filterRequest(req);
-					else
-						it->errorPageCheck("400", "Bad Request", "/400.html", req);
-				}
-				break ;
+					it->filterRequest(req);
+				else
+					it->errorPageCheck("400", "Bad Request", "/400.html", req);
+				break;
 			}
+			else
+				it->errorPageCheck("400", "Bad Request", "/400.html", req);
 		}
 	}
 	return true;
@@ -88,17 +87,17 @@ int Servers::acceptConnection(int socketfd, struct sockaddr_in *clientinfo, sock
         else if (errno == ECONNABORTED) {
             // Handle client disconnect gracefully
             // You can log the disconnection and continue with the loop
-            printerr("CLIENT DISCONNECTED" , 0, RED);
+            printerr("CLIENT DISCONNECTED" , -1, RED);
             return 1;
         }
-        printerr("Error: client connection failed", 0, RED);
+        printerr("Error: client connection failed", -1, RED);
         // close(socketfd);
             return 1;
     }
     return 0;
 }
 
-int	Servers::ClientServer(int client, int server, ClientHandle locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
+int	ClientServer(int client, int server, ClientHandle locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
 {
 	static std::map<int, int> connect;
 

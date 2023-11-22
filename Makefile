@@ -27,7 +27,7 @@ run : all
 	@./$(NAME) example.config 2> errors.txt
 
 valgrind : all
-	@valgrind ./$(NAME) Config/example.config
+	@valgrind --leak-check=full --show-leak-kinds=all ./$(NAME) Config/example.config
 
 clean : 
 	@rm -rf $(OBJ) $(BIN)

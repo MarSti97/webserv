@@ -129,7 +129,7 @@ void	validate_location(Location temp_location, std::vector<Location> locations, 
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->path == temp_location.path)
-			throw_parsing_exception("", 0, 0);
+			throw_parsing_exception(line, 0, counter);
 	}
 	if (temp_location.path[0] != '/' || (temp_location.path != "/" && *(temp_location.path.end() - 1) == '/') 
 	|| temp_location.path.find("//") != std::string::npos || temp_location.path.find('\\') != std::string::npos)

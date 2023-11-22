@@ -2,9 +2,12 @@
 
 int Serv::establish_connection()
 {
+    std::istringstream iss(serv_info.port);
+    int port = 0;
+    iss >> port;
     struct addrinfo *addr;
-    if (getaddrinfo(serv_info.host.c_str(), serv_info.port.c_str(), NULL, &addr) < 0){ // port 80 to not write everytime the port with the address
-        std::cerr << "Error: couldn't get address" << std::endl;
+    if (port == 0 || port > 65535 || getaddrinfo(serv_info.host.c_str(), serv_info.port.c_str(), NULL, &addr) < 0){
+        std::cerr << "Error: couldn't get address. Not allowed to use: " << serv_info.host << ":" << serv_info.port << std::endl;
         return 1;
     }
     this->socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
@@ -31,7 +34,7 @@ int Serv::establish_connection()
 
 int Serv::failToStart(std::string error, struct addrinfo *addr, int socket)
 {
-    printerr(error, 0, RED);
+    printerr(error, -1, RED);
     freeaddrinfo(addr);
     if (socket > 0)
         close(socket);

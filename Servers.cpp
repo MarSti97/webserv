@@ -7,21 +7,38 @@ void Servers::init()
 {
 	printlog("Initializing server", -1, YELLOW);
     validate_config();
-    std::vector<Serv>::iterator it;
+    std::vector<Serv>::reverse_iterator it;
 	int i = 0;
-    for (it = servs.begin(); it != servs.end(); ++it)
+    for (it = servs.rbegin(); it != servs.rend();)
 	{
-        it->establish_connection(); // FIX:: should program exit if one fails or continue with non failed ones
-		fds.push_back(pollfd());
-		fds[i].fd = it->getSocket();
-		fds[i].events = POLLIN;
-		i++;
-		printlog("Server: " + it->getServerHostPort() + " connection established", -1, YELLOW);
+		//std::cout << servs.size() << std::endl;
+        if (it->establish_connection())
+			it = std::vector<Serv>::reverse_iterator(servs.erase(--it.base()));
+		else
+		{
+			it->fds = &this->fds;
+			fds.push_back(pollfd());
+			fds[i].fd = it->getSocket();
+			fds[i].events = POLLIN;
+			i++;
+			printlog("Server: " + it->getServerHostPort() + " connection established", -1, YELLOW);
+			++it;
+			// if (servs.empty())
+			// {
+			// 	std::vector<Serv>().swap(servs);
+			// 	break;
+			// }
+		}
 	}
+	// std::vector<int>::iterator ot;
+	// for (ot = todelete.begin(); ot != todelete.end(); ++ot)
+	// 	servs.erase(std::find(servs.begin(), servs.end(), (const Serv)(servs[*ot])));
 }
 
 void Servers::run()
 {
+	if (servs.empty())
+		return;
 	printlog("Running webserv... ", -1, PURPLE);
 	struct sockaddr_in clientinfo;
     socklen_t size = sizeof(clientinfo);
@@ -33,6 +50,7 @@ void Servers::run()
         // std::cout << fds.size() << std::endl;
         for (size_t i = 0; i < fds.size(); ++i)
         {
+			// std::cout << "erased?22" << std::endl;
 			timeout = 0;
 			if (i >= servs.size())
 				timeout = 10000;
@@ -40,9 +58,9 @@ void Servers::run()
 			if (ret == -1)
 			{
 				if (errno == EINTR)
-					printerr("Poll was interupted by a signal", 0, RED);
+					printerr("Poll was interupted by a signal", -1, RED);
 				else
-					printerr("Error in poll", 0, RED);
+					printerr("Error in poll", -1, RED);
 				continue;
 			}
 			if (ret == 0 && !checkSockets(fds[i].fd))
@@ -65,7 +83,6 @@ void Servers::run()
 					else if (fds[i].revents & POLLOUT)
 					{
 						//printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
-
 						Request req = parseRecv(fds, i);
 						if (!(req.request().empty()))
 							getCorrectServ(req, fds[i].fd, DEFAULT);
@@ -90,26 +107,23 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
         n = recv(fd[pos].fd, buffer, 4096, 0);
         if (n <= 0)
         {
-            if (n <= 0)
-            {
-                if (!counter) { // Connection closed by the client
-                    handleLostClient(fd, pos);
-					if (n == -1)
-						break;
-                    return Request();
-                }
-                break;
-            }
-			// Handle other receive errors
-			printerr("Error: reading from poll", 0, RED);
-			perror("read");
-			return Request();
+			if (!counter)
+			{
+				if (n == -1) 
+				{
+					printerr("ERROR: READING FROM CLIENT", fd[pos].fd - 2, RED);
+					perror("read");
+				}
+				handleLostClient(fd, pos);
+				return Request();
+			}
+			break;
         }
         else
         {
 			if (counter == 0)
 			{
-				printlog("NEW REQUEST FROM CLIENT", fds[pos].fd - 2, YELLOW);
+				printlog("NEW REQUEST FROM CLIENT", fd[pos].fd - 2, YELLOW);
 				Request tempReq(buffer, n);
 				//printlog("REQUEST: " + getFirstLine(tempReq.request()) + " FROM CLIENT", fds[pos].fd - 2, CYAN);
 				if (tempReq.Post() != "")
@@ -143,12 +157,23 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
     return req;
 }
 
-void	Servers::handleLostClient(std::vector<pollfd> &fd, int pos)
+void	handleLostClient(std::vector<pollfd> &fd, int pos)
 {
 	printlog("CONNECTION CLOSED WITH CLIENT", fd[pos].fd - 2, RED);
 	ClientServer(fd[pos].fd, 0, ERASECLIENT);
 	close(fd[pos].fd);
 	fd.erase(fd.begin() + pos);
+}
+
+Servers &Servers::operator=(Servers const &other)
+{
+	if (this != &other)
+	{
+		servs = other.servs;
+		config = other.config;
+		fds = other.fds;
+	}
+	return *this;
 }
 
 Servers::~Servers()

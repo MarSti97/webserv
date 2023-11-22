@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <algorithm>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
@@ -29,6 +30,7 @@
 #include <sys/wait.h>
 #include <ctime>
 #include <cstdlib>
+#include <iterator>
 
 #include "Disposition.hpp"
 #include "Content.hpp"
@@ -48,6 +50,13 @@
 
 class Request;
 class Download;
+
+enum ClientHandle
+{
+    NEWCLIENT,
+    CLIENTSOCKET,
+    ERASECLIENT
+};
 
 // open_config
 std::string	readFile( std::string filePath );
@@ -69,6 +78,8 @@ void	parseServerNames(std::istringstream &iss, std::string token, Config *temp_c
 void	parseErrorPages(std::istringstream &iss, std::string token, Config *temp_config, std::string line, size_t counter);
 void 	throw_parsing_exception(std::string line, int flag, size_t counter);
 bool	check_dup_methods(std::string token, std::string line, Location *temp_location, size_t counter);
+void	handleLostClient(std::vector<pollfd> &fd, int pos);
+int		ClientServer(int client, int server, ClientHandle locker);
 
 void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);

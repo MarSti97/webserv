@@ -64,7 +64,7 @@ bool	Serv::CheckAutoindex(std::string path)
 	std::vector<Location>::iterator it;
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		if (it->path == path && !(it->autoindex.empty()))
+		if (it->path == path && (it->autoindex == "on"))
 			return true;
     }
     return false;

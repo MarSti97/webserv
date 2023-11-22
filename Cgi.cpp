@@ -143,7 +143,7 @@ char	**Serv::create_cgi_env(std::vector<std::string> meta_vars)
 	char **cgi_env = new char*[18 + 1];
 	if (!cgi_env)
 	{
-		printerr("Error allocating memory for the CGI env", 0, RED);
+		printerr("Error allocating memory for the CGI env", -1, RED);
 		return NULL;
 	}
 

@@ -15,6 +15,7 @@ class Serv
 		Serv(Config info) : serv_info(info) {}
 		~Serv() {}
 
+		std::vector<pollfd> *fds;
 		int		establish_connection();
 		void	print(int i) const;
 		int		getSocket();
@@ -27,7 +28,7 @@ class Serv
 		void	PrepareResponse( std::string method, std::string path, Request req );
 		Methods	CheckAllowed( std::string method, std::string path);
 		bool	ext_CGI(std::string path_info);
-		int		parseSend(std::string response, int fd);
+		int		parseSend(std::string response, int fd, Request req);
 		bool	CheckAutoindex( std::string path);
 		void	deleteMethod(std::string abs, Request req);
 		void	deleteFolderMethod(std::string path, Request req);

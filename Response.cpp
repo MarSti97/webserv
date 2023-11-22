@@ -6,12 +6,14 @@ std::string	Serv::getResponse(std::string abs, std::string page, std::string res
 		abs = abs + "/";
 	// std::cout << abs + page << std::endl;
     std::string response = readFile(abs + page);
-	// std::cout << responseHeaders + response << std::endl;
     std::stringstream ss;
     ss << response.length();
     responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
     if (response == "" || response.empty()){
-        response = readFile(serv_info.root + "/404.html");
+		// std::cout << response << "ass" << std::endl;
+        // response = readFile(serv_info.root + "../DefaultError/404.html");
+		// errorPageCheck("404", "Not Found", "../DefaultError/404.html", )
+		return "";
 	}
     return responseHeaders + response;
 
@@ -77,26 +79,39 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 	return responseHeaders + response;
 }
 
-int Serv::parseSend(std::string response, int fd)
+int Serv::parseSend(std::string response, int fd, Request req)
 {
     if (!response.empty())
     {
 		size_t res = response.find("\r\n");
         ssize_t n = send(fd, response.c_str(), response.size(), 0);
-        if (n < 0)
-        {
-            printerr("Error writing to socket", 0, RED);
-            return 1;
-        }
+		if (n <= 0)
+		{
+			if (n < 0)
+				printerr("Error writing to socket", fd - 2, RED);
+			int f = 0;
+			std::vector<pollfd>::iterator it;
+			for (it = fds->begin(); it != fds->end(); ++it)
+			{
+				if ((*it).fd == fd)
+					break;
+				f++;
+			}
+			if (it != fds->end())
+				handleLostClient(*fds, f);
+			return -1;
+		}
         if ((unsigned long)n != response.size())
         {
-            printerr("bad response sent", 0, YELLOW);
-            return 1;
+            printerr("bad response sent", fd - 2, YELLOW);
+            return -1;
         }
 		if (res != std::string::npos)
 			printlog("RESPONSE: " + response.substr(0, res) + " TO CLIENT", fd - 2, GREEN); // http = 9;
         return n;
     }
+	else
+		errorPageCheck("404", "Not Found", "../DefaultError/404.html", req);
     return 0;
 }
 
@@ -118,7 +133,7 @@ void Serv::chunkedResponse(Request req)
     		ss << req.content.getContentSize();
 			std::string response = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: " + ss.str() + "\r\n\r\n";
 			// std::cout << "CONTENT: " << response << content << std::endl;
-			parseSend(response + content, req.ClientFd());
+			parseSend(response + content, req.ClientFd(), req);
 		}
 		else
 			errorPageCheck("404", "Not Found", "DefaultError/404.html", req);
@@ -135,7 +150,7 @@ bool Serv::redirection(std::string path, Request req)
 		// std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
 		if (it->path == path && !(it->redirect_path.empty()))
 		{
-			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n", req.ClientFd());
+			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n", req.ClientFd(), req);
 			return true;
 		}
     }
