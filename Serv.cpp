@@ -7,7 +7,7 @@ int Serv::establish_connection()
     iss >> port;
     struct addrinfo *addr;
     if (port == 0 || port > 65535 || getaddrinfo(serv_info.host.c_str(), serv_info.port.c_str(), NULL, &addr) < 0){
-        std::cerr << "Error: couldn't get address. Not allowed to use: " << serv_info.host << ":" << serv_info.port << std::endl;
+        printerr("Error: couldn't get address. Not allowed to use: " + serv_info.host + ":" + serv_info.port, -1, RED);
         return 1;
     }
     this->socketfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
