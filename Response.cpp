@@ -49,7 +49,6 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 		}
 		else if (response.empty())
 		{
-			// std::cout << "EMPTY RESPONSE!!!!" << std::endl;
 			error_flag = 204;
 		}
 		else
@@ -66,7 +65,7 @@ std::string	Serv::sendby_CGI(int cgi_fd)
 	if (error_flag == 500 || cgi_fd <= 2)
 	{
 		if (serv_info.error_pages["500"].empty())
-			response = getResponse(serv_info.root, "/500.html", getHeader("500 Internal Server Error", "", "/500.html"));
+			response = getResponse(serv_info.root, "DefaultError/500.html", getHeader("500 Internal Server Error", "", "DefaultError/500.html"));
 		else
 			response = getResponse(serv_info.root, serv_info.error_pages["500"], getHeader("500 Internal Server Error", "", serv_info.error_pages["500"]));
 	}
@@ -116,7 +115,7 @@ void Serv::chunkedResponse(Request req)
 	size_t max;
 	std::istringstream(serv_info.max_body_size) >> max;
 	if (req.content.getContentSize() > max)
-		errorPageCheck("413", "Payload Too Large", "/413.html", req);
+		errorPageCheck("413", "Payload Too Large", "DefaultError/413.html", req);
 	else
 	{
 
@@ -128,7 +127,6 @@ void Serv::chunkedResponse(Request req)
 			std::stringstream ss;
     		ss << req.content.getContentSize();
 			std::string response = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: " + ss.str() + "\r\n\r\n";
-			// std::cout << "CONTENT: " << response << content << std::endl;
 			parseSend(response + content, req.ClientFd(), req);
 		}
 		else
@@ -143,7 +141,6 @@ bool Serv::redirection(std::string path, Request req)
 	std::vector<Location>::iterator it;
     for (it = serv_info.location.begin(); it != serv_info.location.end(); ++it)
     {
-		// std::cout << "HERE: " << path << " | " << it->redirect_path << std::endl;
 		if (it->path == path && !(it->redirect_path.empty()))
 		{
 			parseSend("HTTP/1.1 301 Moved Permanently\r\nLocation:" + it->redirect_path + "\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n", req.ClientFd(), req);

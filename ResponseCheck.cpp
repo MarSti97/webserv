@@ -27,7 +27,6 @@ std::string Serv::createAbsolutePath(std::string path)
     {
 		if (!(it->root.empty()) && newPath == it->path)
 		{
-			// std::cout << it->root + page << std::endl;
 			return it->root + page;
 		}
     }
@@ -77,8 +76,6 @@ bool	Serv::CheckAutoindex(std::string path)
 
 Methods	Serv::CheckAllowed( std::string method, std::string path)
 {
-	//if (*(path.end() - 1) == '/')
-	// std::cout << path << std::endl;
 	size_t i = path.rfind("/");
 	std::string newPath;
 	if (*(path.end() - 1) != '/' && path.substr(i).find(".") != std::string::npos)

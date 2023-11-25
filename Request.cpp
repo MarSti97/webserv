@@ -149,10 +149,6 @@ void    Request::SetClientFd( int fd )
 
 Request::Request( char *buffer, size_t size ) : continue_100(false)
 {
-    // char reqqu[size + 1];
-    // memcpy(reqqu, buffer, size);
-    // delete[] buffer;
-    // reqqu[size] = '\0';
     this->c_request = buffer;
     this->_request = std::string(c_request, size);
     content.setContentSize(0);
@@ -225,7 +221,6 @@ Request::Request( char *buffer, size_t size ) : continue_100(false)
     if (dispositionStart != std::string::npos)
     {
         dispositionStart += boundary.size() + 2;
-        // size_t dispositionEnd = _request.find("\r\n\r\n");
         this->contentdisposition = _request.substr(dispositionStart);
     }
 
@@ -267,7 +262,6 @@ int Request::EndBoundary( char *str, size_t len, char *bound)
 
 void    Request::clean_content()
 {
-    // fix and make do delete one selected sockets too
     content.clean();
 }
 
@@ -281,13 +275,6 @@ int nextSize(std::string str, int pos)
     int size = strtol(chunk_size.c_str(), &end_ptr, 16);
     return size;
 }
-
-// bool    findEnd(std::string content)
-// {
-//     if (content.rfind("0\r\n\r\n") != std::string::npos)
-//         return true;
-//     return false;
-// }
 
 int    Request::processChunked(int current_len, Download &down, int client)
 {
@@ -306,12 +293,10 @@ int    Request::processChunked(int current_len, Download &down, int client)
             return 0;
         }
     }
-    // std::cout << _request << std::endl;
     if (transferencoding == "chunked")
     {
         if (_request.rfind("0\r\n\r\n") == std::string::npos)
             return 2;
-        // std::cout << head << " ass" << std::endl;
         std::vector<std::pair<char *, int> > res;
         int chunk_size = nextSize(_request, head);
         int counter = 0;
@@ -344,7 +329,6 @@ int    Request::processChunked(int current_len, Download &down, int client)
         content.setContent(temp, counter);
         content.setChunkedBool(true);
         content.setContentSize(counter);
-        //printlog("Successfully unchunked request", -1, GREEN);
         down.eraseClient(client);
         return 0;
     }
@@ -359,6 +343,3 @@ bool Request::getContinue100() const
 Request::~Request() {}
 
 Request::Request() : c_request(NULL), eof(0), continue_100(false) {}
-
-//#textmate (mate);
-//snippets

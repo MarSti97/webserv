@@ -5,14 +5,13 @@ int	Servers::checkSockets(int fd)
 	std::vector<Serv>::iterator it;
 	for (it = servs.begin(); it != servs.end(); ++it)
 	{
-		// std::cout << "COMP:: " << it->getSocket() << " " << fd << std::endl; 
 		if (it->getSocket() == fd)
 			return fd;
 	}
 	return 0;
 }
 
-bool	Servers::getCorrectServ(Request req, int clientfd, ServSelect option) // this is probably the right place to implement the server_name differentiation
+bool	Servers::getCorrectServ(Request req, int clientfd, ServSelect option)
 {
 	req.SetClientFd(clientfd);
 	std::vector<Serv>::iterator it;
@@ -32,11 +31,11 @@ bool	Servers::getCorrectServ(Request req, int clientfd, ServSelect option) // th
 				else if (headcheck(req.request()))
 					it->filterRequest(req);
 				else
-					it->errorPageCheck("400", "Bad Request", "/400.html", req);
+					it->errorPageCheck("400", "Bad Request", "DefaultError/400.html", req);
 				break;
 			}
 			else
-				it->errorPageCheck("400", "Bad Request", "/400.html", req);
+				it->errorPageCheck("400", "Bad Request", "DefaultError/400.html", req);
 		}
 	}
 	return true;
@@ -48,7 +47,6 @@ bool Servers::checkContentSizeToMax(Request req, Serv serv)
 	std::string len_string = req.Contentlength();
 	if (max_string == "" || len_string == "")
 	{
-		// printerr("Error: unable to calculate max body size", 0, RED);
 		return true;
 	}
 	long max;
@@ -58,7 +56,7 @@ bool Servers::checkContentSizeToMax(Request req, Serv serv)
 	std::istringstream(len_string) >> contentlen;
 	if (max < contentlen)
 	{
-		serv.errorPageCheck("413", "Payload Too Large", "/413.html", req);
+		serv.errorPageCheck("413", "Payload Too Large", "DefaultError/413.html", req);
 		return false;
 	}
 	return true;
@@ -66,7 +64,6 @@ bool Servers::checkContentSizeToMax(Request req, Serv serv)
 
 int Servers::acceptConnection(int socketfd, struct sockaddr_in *clientinfo, socklen_t &size, std::vector<pollfd> *fd)
 {
-    // Accept incoming connection and add the client socket to the fd array
     int servfd = socketfd;
     int clientsocket = accept(socketfd, (struct sockaddr *)&clientinfo, &size);
     if (clientsocket != -1)
@@ -85,19 +82,17 @@ int Servers::acceptConnection(int socketfd, struct sockaddr_in *clientinfo, sock
             return 1;
         }
         else if (errno == ECONNABORTED) {
-            // Handle client disconnect gracefully
-            // You can log the disconnection and continue with the loop
+            // Handle client disconnect
             printerr("CLIENT DISCONNECTED" , -1, RED);
             return 1;
         }
         printerr("Error: client connection failed", -1, RED);
-        // close(socketfd);
             return 1;
     }
     return 0;
 }
 
-int	ClientServer(int client, int server, ClientHandle locker) // 0 to add a new client, 1 for returning the socket that the client is connected to, 2 to erase the client from the map.
+int	ClientServer(int client, int server, ClientHandle locker)
 {
 	static std::map<int, int> connect;
 
@@ -106,7 +101,6 @@ int	ClientServer(int client, int server, ClientHandle locker) // 0 to add a new 
 		if (connect.find(client) == connect.end())
 		{
 			connect.insert(std::make_pair(client, server));
-			//printlog("CLIENT MAPPED", client - 2, BLUE);
 		}
 		else
 			printerr("CLIENT ALREADY MAPPED", client - 2, RED);
@@ -124,7 +118,6 @@ int	ClientServer(int client, int server, ClientHandle locker) // 0 to add a new 
 		if (connect.find(client) != connect.end())
 		{
 			connect.erase(client);
-			//printlog("CLIENT ERASED FROM MAP", client - 2, PURPLE);
 		}
 		else
 			printerr("CLIENT ALREADY ERASED FROM MAP", client - 2, RED);

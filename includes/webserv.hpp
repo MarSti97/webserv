@@ -58,19 +58,8 @@ enum ClientHandle
     ERASECLIENT
 };
 
-// open_config
-std::string	readFile( std::string filePath );
-void initializeMimeTypes(std::map<std::string, std::string> &mimeTypes);
-std::string getMimeType(const std::string& filePath);
-
-// parse_config
-std::string	parse_attribute(std::istringstream &iss, std::string token);
-bool 	check_new_attribute(std::string token);
+void    initializeMimeTypes(std::map<std::string, std::string> &mimeTypes);
 bool    correctfile(std::string file);
-
-std::string makeStamp( void );
-std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
-std::string	parse_attribute(std::istringstream &iss, std::string token, std::string line, size_t counter);
 void	validate_location(Location temp_location, std::vector<Location> locations, std::string line, size_t counter);
 void	parseMethods(std::istringstream &iss, std::string token, Location *temp_location, std::string line, size_t counter);
 void	check_requirements(Config *temp);
@@ -80,22 +69,25 @@ void 	throw_parsing_exception(std::string line, int flag, size_t counter);
 bool	check_dup_methods(std::string token, std::string line, Location *temp_location, size_t counter);
 void	handleLostClient(std::vector<pollfd> &fd, int pos);
 int		ClientServer(int client, int server, ClientHandle locker);
-
 void	ctrlc(int signum);
 void	printlog(std::string msg, int arg, std::string color);
 void	printerr(std::string msg, int arg, std::string color);
 int     end_loop(int end);
-
-// tools
-
 int     removehead(char *file);
 bool    compare(const char *find, char* str);
 int     removeheadnoimg(char *file, int size);
 int     getIntSize(int nbr);
+
+Methods whatstheMethod(Methods meth, std::string word);
+
+std::string	readFile( std::string filePath );
+std::string getMimeType(const std::string& filePath);
+std::string makeStamp( void );
+std::string	makeDirectoryList(std::string dirpath, std::string rel_path);
+std::string	parse_attribute(std::istringstream &iss, std::string token, std::string line, size_t counter);
 std::string	getINFOone(std::string request, const char *what, int pos);
 std::string	getINFOtwo(std::string request, const char *what, int pos);
 std::string removeDashIfExists(std::string path);
-Methods whatstheMethod(Methods meth, std::string word);
 std::string getFirstLine(std::string content);
 
 

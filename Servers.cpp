@@ -1,7 +1,10 @@
 #include "./includes/webserv.hpp"
 
 Servers::Servers(std::string file) : config(readFile(file))
-{}
+{
+	if (config == "")
+		throw NotConfigFile();
+}
 
 void Servers::init()
 {
@@ -11,7 +14,6 @@ void Servers::init()
 	int i = 0;
     for (it = servs.rbegin(); it != servs.rend();)
 	{
-		//std::cout << servs.size() << std::endl;
         if (it->establish_connection())
 			it = std::vector<Serv>::reverse_iterator(servs.erase(--it.base()));
 		else
@@ -23,16 +25,8 @@ void Servers::init()
 			i++;
 			printlog("Server: " + it->getServerHostPort() + " connection established", -1, YELLOW);
 			++it;
-			// if (servs.empty())
-			// {
-			// 	std::vector<Serv>().swap(servs);
-			// 	break;
-			// }
 		}
 	}
-	// std::vector<int>::iterator ot;
-	// for (ot = todelete.begin(); ot != todelete.end(); ++ot)
-	// 	servs.erase(std::find(servs.begin(), servs.end(), (const Serv)(servs[*ot])));
 }
 
 void Servers::run()
@@ -46,11 +40,8 @@ void Servers::run()
 
 	while (!end_loop(0))
     {
-        // bzero(buffer, sizeof(buffer));
-        // std::cout << fds.size() << std::endl;
         for (size_t i = 0; i < fds.size(); ++i)
         {
-			// std::cout << "erased?22" << std::endl;
 			timeout = 0;
 			if (i >= servs.size())
 				timeout = 10000;
@@ -66,8 +57,6 @@ void Servers::run()
 			if (ret == 0 && !checkSockets(fds[i].fd))
 			{
 				printlog("TIMEOUT CLIENT", fds[i].fd - 2, RED);
-				// close(fds[i].fd);
-        		// fds.erase(fds.begin() + i);
 			}
 			else
 			{
@@ -82,7 +71,6 @@ void Servers::run()
 					}
 					else if (fds[i].revents & POLLOUT)
 					{
-						//printlog("NEW REQUEST FROM CLIENT", fds[i].fd - 2, YELLOW);
 						Request req = parseRecv(fds, i);
 						if (!(req.request().empty()))
 							getCorrectServ(req, fds[i].fd, DEFAULT);
@@ -125,7 +113,6 @@ Request Servers::parseRecv(std::vector<pollfd> &fd, int pos)
 			{
 				printlog("NEW REQUEST FROM CLIENT", fd[pos].fd - 2, YELLOW);
 				Request tempReq(buffer, n);
-				//printlog("REQUEST: " + getFirstLine(tempReq.request()) + " FROM CLIENT", fds[pos].fd - 2, CYAN);
 				if (tempReq.Post() != "")
 					if (!getCorrectServ(tempReq, fd[pos].fd, MAXCHECK))
 						return Request();

@@ -12,7 +12,6 @@ Request Servers::postThings(std::string findbuffer, char *buffer, int fd, int si
             std::string boundary = getINFOtwo(findbuffer, "boundary=", 9);
 	        std::string contentlength = getINFOtwo(findbuffer, "Content-Length: ", 16);
 	        size_t headerlength = findbuffer.find( "\r\n\r\n");
-            // std::cout << (atoi(contentlength.c_str()) + (headerlength + 4)) << std::endl;
             instance.add_map(fd, imgDown((atoi(contentlength.c_str()) + (headerlength + 4)), size, buffer, boundary));
         }
         else
@@ -23,7 +22,6 @@ Request Servers::postThings(std::string findbuffer, char *buffer, int fd, int si
 
 void	Serv::filterRequest( Request req )
 {
-	// std::cout << req.request() << std::endl;
 	if (!(req.Get().empty()))
 		PrepareResponse("GET", req.Get(), req);
 	else if (!(req.Post().empty()))
@@ -32,8 +30,7 @@ void	Serv::filterRequest( Request req )
 		PrepareResponse("DELETE", req.Del(), req);
 	else
 	{
-		//printlog("NOT RECOGNIZED METHOD.", 0, YELLOW);
-		errorPageCheck("501", "Not Implemented", "/501.html", req);
+		errorPageCheck("501", "Not Implemented", "DefaultError/501.html", req);
 	}
 }
 
@@ -50,9 +47,8 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 		if (redirection(path, req))
 			return ;
 		struct stat path_stat;
-		// std::cout << " aabs" << abs << std::endl;
 		if (access(abs.c_str(), F_OK) != -1)
-		{ // need forbidden for no access.
+		{
 			if (stat(abs.c_str(), &path_stat) != 0)
 				perror("Error getting file status");
 			int check = S_ISDIR(path_stat.st_mode);
@@ -80,7 +76,6 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 				if (method == "DELETE")
 					deleteFolderMethod(abs, req);
 				std::string index = CheckIndex(path);
-				// std::cout << "index " << index << std::endl;
 				if (!(index.empty()))
 					parseSend(getResponse(abs, index, getHeader("200 OK", "", index)), req.ClientFd(), req);
 				else
@@ -88,18 +83,18 @@ void	Serv::PrepareResponse( std::string method, std::string path, Request req )
 					if (CheckAutoindex(path) && !access(abs.c_str(), R_OK))
 							parseSend(makeDirectoryList(abs, path), req.ClientFd(), req);
 					else
-						errorPageCheck("403", "Forbidden", "DefaultError/403.html", req); // changed to 403, confirm with nginx
+						errorPageCheck("403", "Forbidden", "DefaultError/403.html", req);
 				}
 			}
 		}
-		else // if it does not exist, error 404
+		else
 		{
 			errorPageCheck("404", "Not Found", "DefaultError/404.html", req);
 		}
 	}
 	else
 	{
-		errorPageCheck("405", "Method Not Allowed", "/405.html", req); // need to do the 405 page.
+		errorPageCheck("405", "Method Not Allowed", "DefaultError/405.html", req);
 		if (req.content.getChunkedBool())
 			req.content.clean();
 	}

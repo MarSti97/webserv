@@ -65,7 +65,6 @@ std::string Content::getContentType( void ) const
 
 void    Content::clean()
 {
-    // fix and make do delete one selected sockets too
     delete[] _content;
 }
 

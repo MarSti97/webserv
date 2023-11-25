@@ -16,6 +16,7 @@ class Serv
 		~Serv() {}
 
 		std::vector<pollfd> *fds;
+
 		int		establish_connection();
 		void	print(int i) const;
 		int		getSocket();
@@ -26,7 +27,6 @@ class Serv
 		bool	compareHostPort(std::string host, std::string port);
 		void	filterRequest( Request req );
 		void	PrepareResponse( std::string method, std::string path, Request req );
-		Methods	CheckAllowed( std::string method, std::string path);
 		bool	ext_CGI(std::string path_info);
 		int		parseSend(std::string response, int fd, Request req);
 		bool	CheckAutoindex( std::string path);
@@ -38,6 +38,9 @@ class Serv
 		bool	compareServerName(std::string ServName);
 		bool	deleteFolderRecusively(std::string path);
 		int		failToStart(std::string error, struct addrinfo *addr, int socket);
+
+		Methods	CheckAllowed( std::string method, std::string path);
+		
 		std::string	getHeader( std::string ARG, std::string extra, std::string filePath );
 		std::string findcommand(std::string command);
 		std::string	findFolder( std::string folder );

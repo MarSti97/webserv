@@ -129,21 +129,16 @@ std::string makeStamp( void )
     time_t currentTime;
     struct tm *localTimeInfo;
 
-    // Get the current time
     time(&currentTime);
 
-    // Convert the current time to a local time structure
     localTimeInfo = localtime(&currentTime);
     std::stringstream hours, minutes, day, month, year;
-    // ss << length;
     std::string lengthStr = hours.str();
-    // Extract the individual components of the time
     hours << localTimeInfo->tm_hour;
     minutes << localTimeInfo->tm_min;
     day << localTimeInfo->tm_mday;
-    month << localTimeInfo->tm_mon + 1; // Months are 0-based
-    year << localTimeInfo->tm_year + 1900; // Years are counted from 1900
+    month << localTimeInfo->tm_mon + 1;
+    year << localTimeInfo->tm_year + 1900;
 
-    // Print the formatted timestamp
     return hours.str() + ':' + minutes.str() + '/' + day.str() + '-' + month.str() + '-' + year.str();
 }

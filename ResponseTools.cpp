@@ -8,7 +8,7 @@ std::string readFile( std::string filePath ) {
     std::ifstream file(filePath.c_str());
 
     if (!file) {
-        return "";//readFile("404.html");
+        return "";
     }
 
     file.seekg(0, std::ios::end);
@@ -24,7 +24,6 @@ std::string readFile( std::string filePath ) {
     return htmlContent;
 }
 
-// Define a map to associate file extensions with MIME types
 void initializeMimeTypes(std::map<std::string, std::string> &mimeTypes) {
     mimeTypes[".html"] = "text/html";
     mimeTypes[".css"] = "text/css";
@@ -42,7 +41,6 @@ void initializeMimeTypes(std::map<std::string, std::string> &mimeTypes) {
     mimeTypes[".ico"] = "image/vnd.microsoft.icon";
 }
 
-// Function to get the MIME type based on the file extension
 std::string getMimeType(const std::string& filePath)
 {
     std::map<std::string, std::string> mimeTypes;

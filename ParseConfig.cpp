@@ -97,7 +97,6 @@ void	Servers::validate_config()
 				insideServerBlock = false;		
 				check_requirements(&temp_config);
 				servs.push_back(Serv(temp_config));
-				// std::cout << "NUMBER OF LINES " << counter << std::endl;
 			}
 			else
 				throw_parsing_exception(line, 2, counter);

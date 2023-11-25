@@ -29,7 +29,7 @@ int Serv::establish_connection()
         return failToStart("Error: listen unsuccesful", addr, socketfd);
 	}
     freeaddrinfo(addr);
-	return 0; //fix returns and also figure out if exceptions are better
+	return 0;
 }
 
 int Serv::failToStart(std::string error, struct addrinfo *addr, int socket)

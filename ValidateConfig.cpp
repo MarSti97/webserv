@@ -99,7 +99,6 @@ void	check_requirements(Config *temp)
 {
 	int error_flag = 0;
 	
-	// check if there is a "/" location
 	std::vector<Location>::iterator it;
 	for (it = temp->location.begin(); it != temp->location.end(); it++)
 	{

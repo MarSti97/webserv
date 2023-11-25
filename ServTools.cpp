@@ -57,10 +57,8 @@ void	Serv::print(int counter) const
 void printMethods(std::map<std::string, Methods> map)
 {
 	std::map<std::string, Methods>::const_iterator its;
-	// std::cout << "PRINTING: methods" << std::endl;
 	for (its = map.begin(); its != map.end(); its++)
 	{
-		// std::cout << "Method: " << its->first << " : "; 
 		switch (its->second)
 		{
 			case ALLOWED :
@@ -77,7 +75,7 @@ void printMethods(std::map<std::string, Methods> map)
 	}
 }
 
-std::string	Serv::findFolder( std::string path ) //parse the path and if called with check it will return the previous folder.
+std::string	Serv::findFolder( std::string path )
 {
     size_t i = path.rfind('/');
 	if (path.substr(i).rfind('.') != std::string::npos)
@@ -85,8 +83,6 @@ std::string	Serv::findFolder( std::string path ) //parse the path and if called 
 	else
 		return "";
 }
-
-//          CGI
 
 bool	Serv::ext_CGI(std::string path_info)
 {

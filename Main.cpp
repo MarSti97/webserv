@@ -43,8 +43,5 @@ void	ctrlc(int signum)
         end_loop(1);
         Download &down = Download::getInstance();
         down.clean();
-		// close(glob_fd);
-		// close(cli_glob);
-		// exit(EXIT_FAILURE);
 	}
 }

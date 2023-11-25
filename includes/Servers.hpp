@@ -21,13 +21,11 @@ class Servers
 
 		void validate_config();
 		bool checkContentSizeToMax(Request req, Serv serv);
-		// bool checkContentSizeToMax(char *buffer, ssize_t n, int clientfd);
-		void expectContinueOrChuncked(std::string buf, Serv serv, int clientfd);
 	
 	public : 
 		Servers() {}
 		Servers(std::string file);
-		~Servers(); //{std::vector<Serv>().swap(servs); std::vector<pollfd>().swap(fds);}
+		~Servers();
 		Servers &operator=(Servers const &other);
 
 		Request parseRecv(std::vector<pollfd> &fds, int pos);

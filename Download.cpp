@@ -13,7 +13,6 @@ Download &Download::getInstance()
 
 void    Download::clean()
 {
-    // fix and make do delete one selected sockets too
     fileMap.clear();
     if (instance)
         delete instance;
@@ -40,8 +39,8 @@ void Download::append_map(int client, char *buf, int bufsize)
     if (it != fileMap.end())
     {
         int totalLength = it->second.current_len + bufsize;
-        char *combinedStr = new char[totalLength + 1]; // +1 for the null-terminator
-        combinedStr[totalLength] = '\0'; // +1 for the null-terminator
+        char *combinedStr = new char[totalLength + 1];
+        combinedStr[totalLength] = '\0';
         memcpy(combinedStr, it->second.file, it->second.current_len);
         memcpy(combinedStr + it->second.current_len, buf, bufsize);
         delete[] it->second.file;
@@ -81,7 +80,6 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
         {
             Request reo(it->second.file, it->second.current_len);
             int to_do = reo.processChunked(it->second.current_len, *this, client);
-            //std::cout << to_do << std::endl;
             if(to_do == 0)
                 return reo;
             else if (to_do == 2)
@@ -94,10 +92,9 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
             if (!(reo.Boundary().empty()))
             {
                 int headless = removehead(reo.C_request());
-                Request req(reo.C_request(), it->second.current_len); // TAKE STRDUP
+                Request req(reo.C_request(), it->second.current_len);
                 size_t size = removeFinalBoundary(reo.C_request() + headless, it->second.content_len, req);
                 reo.content.setContent(reo.C_request() + headless, size);
-                //printlog("Successfully downloaded file", -1, GREEN);
                 reo.content.setContentSize(size);
                 eraseClient(client);
                 return reo;
@@ -108,7 +105,6 @@ Request Download::isitFULL(int client, char *file, size_t filesize)
                 eraseClient(client);
                 return reo;
             }
-            //std::cout << reo.request() << std::endl;
             reo.content.setContent(reo.C_request() + size, strlen(reo.C_request() + size));
             reo.content.setContentSize(it->second.current_len - size);
             eraseClient(client);
