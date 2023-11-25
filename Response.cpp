@@ -4,16 +4,12 @@ std::string	Serv::getResponse(std::string abs, std::string page, std::string res
 {
 	if (*(page.begin()) != '/' && !(page.empty()) && *(abs.end() - 1) != '/')
 		abs = abs + "/";
-	// std::cout << abs + page << std::endl;
     std::string response = readFile(abs + page);
     std::stringstream ss;
     ss << response.length();
     responseHeaders += "Content-Length: " + ss.str() + "\r\n\r\n";
-    if (response == "" || response.empty()){
-		// std::cout << response << "ass" << std::endl;
-        // response = readFile(serv_info.root + "../DefaultError/404.html");
-		// errorPageCheck("404", "Not Found", "../DefaultError/404.html", )
-		return "";
+    if (response.empty()){
+		responseHeaders = "HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n\r\n";
 	}
     return responseHeaders + response;
 
@@ -111,7 +107,7 @@ int Serv::parseSend(std::string response, int fd, Request req)
         return n;
     }
 	else
-		errorPageCheck("404", "Not Found", "../DefaultError/404.html", req);
+		errorPageCheck("500", "Internal Server Error", "DefaultError/500.html", req);
     return 0;
 }
 

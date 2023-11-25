@@ -7,6 +7,11 @@ std::string Serv::createAbsolutePath(std::string path)
 	std::vector<Location>::iterator it;
 	std::string page;
 	std::string newPath;
+	size_t pos = 0;
+	while ((pos = path.find("%20", pos)) != std::string::npos) {
+        path.replace(pos, 3, " ");
+        pos += 1;
+    }
 	size_t i = path.rfind('/');
 	if (path.substr(i).find('.') != std::string::npos)
 	{

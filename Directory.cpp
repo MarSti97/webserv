@@ -37,13 +37,11 @@ std::string	makeDirectoryList(std::string dirpath, std::string rel_path)
 			continue;
 
 		std::string full_path = dirpath + "/" + entry->d_name;
-		size_t i = rel_path.rfind('/');
-		std::string rel_folder = rel_path.substr(i);
 
 		if (stat(full_path.c_str(), &fileStat) == 0)
 		{
 			std::string index_item = "<tr>";
-			index_item.append("<td><a href='" + rel_folder + "/" + std::string(entry->d_name) + "'>" + entry->d_name + "</a></td>");
+			index_item.append("<td><a href='" + rel_path + "/" + std::string(entry->d_name) + "'>" + entry->d_name + "</a></td>");
 			index_item.append("<td>" + std::string(ctime(&fileStat.st_mtime)) + "</td>");
 			index_item.append("<td>" + filesizeToString(fileStat.st_size) + "</td>");
 			index_item.append("</tr>");
