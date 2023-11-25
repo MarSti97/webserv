@@ -106,11 +106,8 @@ void Serv::errorPageCheck(std::string code, std::string message, std::string def
 	std::string error = code + " " + message;
 	if (*(serv_info.error_pages[code].begin()) != '/' && !(serv_info.error_pages[code].empty()) && *(serv_info.root.end() - 1) != '/')
 		serv_info.root = serv_info.root + "/";
-	if (serv_info.error_pages[code].empty() || (access((serv_info.root + serv_info.error_pages[code]).c_str(), F_OK)) == -1)
+	if (serv_info.error_pages[code].empty() || (access(((serv_info.root + serv_info.error_pages[code]).substr(1)).c_str(), F_OK)) == -1)
 		parseSend(getResponse("DefaultError", page, getHeader(error, "", defaultError)), req.ClientFd(), req);
 	else
-	{
-
 		parseSend(getResponse(serv_info.root.substr(1), serv_info.error_pages[code], getHeader(error, "", serv_info.error_pages[code])), req.ClientFd(), req);
-	}
 }
